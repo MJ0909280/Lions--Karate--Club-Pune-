@@ -25,8 +25,8 @@ service cloud.firestore {
       // Allow fetching single admission by ID (for success page and generated ID card view)
       allow get: if true;
       
-      // Only admin can list/query all admissions
-      allow list: if isAdmin();
+      // Allow parent searches by Roll ID to find specific students
+      allow list: if true;
       
       // Only admin can approve, reject, update, or delete records
       allow update, delete: if isAdmin();

@@ -319,18 +319,19 @@ export default function StudentPortal({ initialTab = 'progress' }: StudentPortal
 
     try {
       const admissionsRef = collection(db, 'admissions');
-      // Search for approved admissions by formatted studentId
+      // Search for admissions by formatted studentId
       const q = query(
         admissionsRef, 
-        where('studentId', '==', searchId),
-        where('status', '==', 'approved')
+        where('studentId', '==', searchId)
       );
       
       const snap = await getDocs(q);
-      if (snap.empty) {
+      const approvedDocs = snap.docs.filter(doc => doc.data().status === 'approved');
+
+      if (approvedDocs.length === 0) {
         setSearchError('No approved student found matching this Roll ID. (Note: Admission must be Approved by the coach first).');
       } else {
-        const studentDoc = snap.docs[0];
+        const studentDoc = approvedDocs[0];
         const studentData = {
           id: studentDoc.id,
           ...studentDoc.data()
