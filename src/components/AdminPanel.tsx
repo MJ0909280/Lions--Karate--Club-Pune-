@@ -220,7 +220,47 @@ export default function AdminPanel() {
       await signInWithPopup(auth, provider);
     } catch (err: any) {
       console.error(err);
-      setLoginError('Authentication popup failed or was dismissed.');
+      const errorCode = err?.code || '';
+      const errorMessage = err?.message || '';
+      
+      if (errorCode === 'auth/unauthorized-domain') {
+        setLoginError(
+          `🔑 UNAUTHORIZED DOMAIN ERROR\n\n` +
+          `The domain "${window.location.hostname}" is not allowed to sign in with your Firebase Project.\n\n` +
+          `How to authorize this domain:\n` +
+          `1. Open your Firebase Console (https://console.firebase.google.com)\n` +
+          `2. Click on "Authentication" in the left sidebar.\n` +
+          `3. Go to the "Settings" tab at the top.\n` +
+          `4. Click on "Authorized domains" from the list.\n` +
+          `5. Click "Add domain" and enter:\n` +
+          `   👉   ${window.location.hostname}\n` +
+          `6. Click Add, wait 1 minute, and try clicking "Log in with Google" again!`
+        );
+      } else if (errorCode === 'auth/popup-blocked') {
+        setLoginError(
+          `🚫 POPUP BLOCKED\n\n` +
+          `Your browser blocked the Google Authentication window.\n\n` +
+          `How to fix:\n` +
+          `1. Click the "Log in with Google" button again.\n` +
+          `2. Watch the browser address bar for a "Popup Blocked" icon.\n` +
+          `3. Click that icon and choose "Always allow popups from this site".`
+        );
+      } else if (errorCode === 'auth/operation-not-allowed') {
+        setLoginError(
+          `⚙️ GOOGLE PROVIDER IS DISABLED\n\n` +
+          `Google Sign-In hasn't been enabled under your Firebase Project yet.\n\n` +
+          `How to enable:\n` +
+          `1. Go to Firebase Console -> Authentication -> Sign-in method.\n` +
+          `2. Click "Add new provider" and select Google.\n` +
+          `3. Enable it, fill in your project support email, and save.`
+        );
+      } else {
+        setLoginError(
+          `⚠️ AUTHENTICATION ERROR (${errorCode || 'unknown'})\n\n` +
+          `${errorMessage || 'Verify popup settings or network connection.'}\n\n` +
+          `Tip: If this is running on your Vercel URL, make sure "${window.location.hostname}" is added to "Authorized domains" in your Firebase console under Authentication -> Settings.`
+        );
+      }
     }
   };
 
@@ -897,9 +937,11 @@ export default function AdminPanel() {
           </p>
 
           {loginError && (
-            <div className="mb-6 bg-red-950/40 border border-red-500/20 text-red-400 p-4 rounded-lg flex items-start space-x-2 text-left text-xs leading-relaxed">
+            <div className="mb-6 bg-red-950/40 border border-red-500/20 text-red-400 p-4 rounded-lg flex items-start space-x-2 text-left text-[11px] leading-relaxed max-h-[300px] overflow-y-auto">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-              <span>{loginError}</span>
+              <div className="whitespace-pre-line break-words flex-1 text-red-300 font-sans">
+                {loginError}
+              </div>
             </div>
           )}
 
