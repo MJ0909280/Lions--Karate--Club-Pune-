@@ -346,16 +346,18 @@ export default function StudentPortal({ initialTab = 'progress' }: StudentPortal
         setBranch(studentData.branch || DOJO_BRANCHES[0].name);
 
         // Intelligently guess the next belt rank for the student
-        const currentIdx = BELT_LEVELS.findIndex(b => studentData.beltLevel.includes(b.name.split(' (')[0]));
+        const studentBeltLevel = studentData.beltLevel || '';
+        const currentIdx = BELT_LEVELS.findIndex(b => b.name && studentBeltLevel && studentBeltLevel.includes(b.name.split(' (')[0]));
         if (currentIdx !== -1 && currentIdx < BELT_LEVELS.length - 1) {
           setTargetBelt(BELT_LEVELS[currentIdx + 1].name);
         } else {
           setTargetBelt(BELT_LEVELS[1].name); // Fallback to Yellow Belt
         }
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error looking up student ID:", err);
-      setSearchError('An unexpected server error occurred. Please try searching again.');
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      setSearchError(`An unexpected server error occurred: ${errorMessage}. Please try searching again.`);
     } finally {
       setSearching(false);
     }
