@@ -62,5 +62,11 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAdmin();
     }
+    
+    // Attendance collection rules
+    match /attendance/{attendanceId} {
+      // Allow read and write for coaches (managed via PIN client-side) and administrator
+      allow read, write: if true;
+    }
   }
 }

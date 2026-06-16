@@ -10,6 +10,7 @@ import {
 } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { Admission, BELT_LEVELS, DOJO_BRANCHES } from '../types';
+import AttendanceTracker from './AttendanceTracker';
 import { 
   Search, 
   Award, 
@@ -31,7 +32,8 @@ import {
   TrendingUp,
   GraduationCap,
   Printer,
-  X
+  X,
+  CheckSquare
 } from 'lucide-react';
 
 interface ExamRecord {
@@ -207,11 +209,11 @@ function KarateBeltGraphic({ beltName }: { beltName: string }) {
 }
 
 interface StudentPortalProps {
-  initialTab?: 'progress' | 'exam';
+  initialTab?: 'progress' | 'exam' | 'attendance';
 }
 
 export default function StudentPortal({ initialTab = 'progress' }: StudentPortalProps) {
-  const [activeTab, setActiveTabState] = useState<'progress' | 'exam'>(initialTab);
+  const [activeTab, setActiveTabState] = useState<'progress' | 'exam' | 'attendance'>(initialTab);
 
   useEffect(() => {
     setActiveTabState(initialTab);
@@ -457,7 +459,7 @@ export default function StudentPortal({ initialTab = 'progress' }: StudentPortal
       <div className="max-w-4xl mx-auto">
         
         {/* SEGMENTED TABS CONTROLS */}
-        <div className="flex bg-slate-900/60 p-1.5 rounded-xl max-w-md mx-auto mb-10 border border-zinc-900 w-full animate-fade-in gap-1">
+        <div className="flex bg-slate-900/60 p-1.5 rounded-xl max-w-lg mx-auto mb-10 border border-zinc-900 w-full animate-fade-in gap-1">
           <button
             onClick={() => setActiveTabState('progress')}
             type="button"
@@ -487,6 +489,18 @@ export default function StudentPortal({ initialTab = 'progress' }: StudentPortal
             <Calendar className="w-3.5 h-3.5 hidden xs:block shrink-0" />
             <span>Apply For Exam</span>
           </button>
+          <button
+            onClick={() => setActiveTabState('attendance')}
+            type="button"
+            className={`flex-1 py-2.5 sm:py-3 text-center rounded-lg font-heading font-black text-[9px] xs:text-[10px] sm:text-[11px] uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center space-x-1 sm:space-x-2 px-1 sm:px-3 ${
+              activeTab === 'attendance'
+                ? 'bg-emerald-500 text-white shadow-md font-black animate-fade-in'
+                : 'text-zinc-400 hover:text-white hover:bg-slate-850/50'
+            }`}
+          >
+            <CheckSquare className="w-3.5 h-3.5 hidden xs:block shrink-0" />
+            <span>Attendance</span>
+          </button>
         </div>
 
         {/* Header Header */}
@@ -504,7 +518,7 @@ export default function StudentPortal({ initialTab = 'progress' }: StudentPortal
                 Enter your child's Karate Roll ID to view their current belt level, results, and past exam history.
               </p>
             </>
-          ) : (
+          ) : activeTab === 'exam' ? (
             <>
               <div className="inline-flex items-center space-x-2 bg-red-500/10 text-[#FF3B3F] text-[10px] font-heading font-black tracking-widest px-3 py-1 rounded-full uppercase border border-red-500/15">
                 <Calendar className="w-3.5 h-3.5" />
@@ -517,11 +531,24 @@ export default function StudentPortal({ initialTab = 'progress' }: StudentPortal
                 Register your child for an upcoming ranking belt exam. First enter their Karate Roll ID below, then choose their next level belt.
               </p>
             </>
+          ) : (
+            <>
+              <div className="inline-flex items-center space-x-2 bg-emerald-500/10 text-emerald-400 text-[10px] font-heading font-black tracking-widest px-3 py-1 rounded-full uppercase border border-emerald-500/15">
+                <ClipboardList className="w-3.5 h-3.5" />
+                <span>COACHING REGISTER</span>
+              </div>
+              <h2 className="font-title text-3xl sm:text-5xl font-extrabold text-white tracking-tight leading-none uppercase">
+                Attendance <span className="text-transparent" style={{ WebkitTextStroke: '1.5px #e5e5e5' }}>Tracker</span>
+              </h2>
+              <p className="text-zinc-500 text-xs sm:text-sm">
+                Daily attendance logs, bulk registration shortcuts, and instant parent notification broadcasters over WhatsApp.
+              </p>
+            </>
           )}
         </div>
 
-        {/* LOOKUP FORM: Only visible if no active student session */}
-        {!activeStudent && (
+        {/* LOOKUP FORM: Only visible if no active student session and not on attendance tab */}
+        {!activeStudent && activeTab !== 'attendance' && (
           <div className="bg-slate-900/40 border border-zinc-900 p-6 sm:p-8 rounded-2xl relative shadow-2xl">
             <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-yellow-500/30 to-transparent" />
             
@@ -586,7 +613,7 @@ export default function StudentPortal({ initialTab = 'progress' }: StudentPortal
         )}
 
         {/* ACTIVE STUDENT WORKFLOW SCREEN */}
-        {activeStudent && (
+        {activeStudent && activeTab !== 'attendance' && (
           <div className="space-y-8">
             
             {/* Student Header row */}
@@ -1135,6 +1162,13 @@ export default function StudentPortal({ initialTab = 'progress' }: StudentPortal
               </a>
             </div>
 
+          </div>
+        )}
+
+        {/* ATTENDANCE TRACKER MAIN PORTAL VIEW */}
+        {activeTab === 'attendance' && (
+          <div className="animate-fade-in shadow-xl">
+            <AttendanceTracker />
           </div>
         )}
 

@@ -90,6 +90,24 @@
         "heroVideoUrl": { "type": "string", "description": "URL or local reference of background video in hero section" },
         "aboutVideoUrl": { "type": "string", "description": "URL or local reference of active training video in about section" }
       }
+    },
+    "attendance": {
+      "title": "Attendance",
+      "description": "Represents a student's daily attendance record.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique key matching studentId_date" },
+        "studentId": { "type": "string", "description": "Student LKCP ID" },
+        "studentName": { "type": "string", "description": "Student full name" },
+        "date": { "type": "string", "description": "Date in YYYY-MM-DD format" },
+        "status": { "type": "string", "enum": ["Present", "Absent"], "description": "Attendance status" },
+        "coachName": { "type": "string", "description": "Coach who marked this attendance" },
+        "batchName": { "type": "string", "description": "Batch of the student" },
+        "notes": { "type": "string", "description": "Optional notes or announcement details" },
+        "createdAt": { "type": "number", "description": "Timestamp created" },
+        "updatedAt": { "type": "number", "description": "Timestamp updated" }
+      },
+      "required": ["studentId", "studentName", "date", "status"]
     }
   },
   "firestore": {
@@ -112,6 +130,10 @@
     "/settings/{settingId}": {
       "schema": "siteSettings",
       "description": "Store modular configurations and adjustable variables represent site pages."
+    },
+    "/attendance/{attendanceId}": {
+      "schema": "attendance",
+      "description": "Store daily attendance records keyed by studentId_date or auto-id."
     }
   }
 }
