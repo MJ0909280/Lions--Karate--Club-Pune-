@@ -30,6 +30,66 @@ import {
   CheckSquare
 } from 'lucide-react';
 
+const playKarateBell = () => {
+  try {
+    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContextClass) return;
+    const ctx = new AudioContextClass();
+    const now = ctx.currentTime;
+
+    const fundamental = 330; // pitch frequency (E4 resonant tone)
+    
+    // Main chime oscillator
+    const osc1 = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    osc1.frequency.setValueAtTime(fundamental, now);
+    osc1.type = 'sine';
+    
+    // Harmonic metallic third overtone ring
+    const osc2 = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+    osc2.frequency.setValueAtTime(fundamental * 1.20, now);
+    osc2.type = 'sine';
+
+    // Harmonic octave bell chime ring
+    const osc3 = ctx.createOscillator();
+    const gain3 = ctx.createGain();
+    osc3.frequency.setValueAtTime(fundamental * 2.0, now);
+    osc3.type = 'sine';
+
+    const masterGain = ctx.createGain();
+    masterGain.gain.setValueAtTime(0.45, now);
+    masterGain.gain.exponentialRampToValueAtTime(0.001, now + 1.4);
+
+    osc1.connect(gain1);
+    gain1.gain.setValueAtTime(0.35, now);
+    gain1.gain.exponentialRampToValueAtTime(0.001, now + 1.4);
+    gain1.connect(masterGain);
+
+    osc2.connect(gain2);
+    gain2.gain.setValueAtTime(0.25, now);
+    gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.9);
+    gain2.connect(masterGain);
+
+    osc3.connect(gain3);
+    gain3.gain.setValueAtTime(0.15, now);
+    gain3.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+    gain3.connect(masterGain);
+
+    masterGain.connect(ctx.destination);
+
+    osc1.start(now);
+    osc2.start(now);
+    osc3.start(now);
+
+    osc1.stop(now + 1.5);
+    osc2.stop(now + 1.0);
+    osc3.stop(now + 0.6);
+  } catch (err) {
+    console.warn("Audio Context playback couldn't initialize on gesture:", err);
+  }
+};
+
 export default function AttendanceTracker() {
   // Authentication & Access state
   const [isUnlocked, setIsUnlocked] = useState<boolean>(() => {
@@ -53,6 +113,7 @@ export default function AttendanceTracker() {
 
   const [selectedBatch, setSelectedBatch] = useState<string>('All Batches');
   const [searchQuery, setSearchQuery] = useState('');
+  const [isAutocompleteOpen, setIsAutocompleteOpen] = useState(false);
 
   // Student lists and attendance records
   const [allStudents, setAllStudents] = useState<Admission[]>([]);
@@ -219,6 +280,7 @@ export default function AttendanceTracker() {
 
   const triggerToast = (msg: string) => {
     setSaveStatus(msg);
+    playKarateBell();
     setTimeout(() => {
       setSaveStatus(null);
     }, 3000);
@@ -528,7 +590,7 @@ export default function AttendanceTracker() {
           )}
 
           {/* SEARCH INPUT BAR */}
-          <div className="bg-slate-900/10 border border-zinc-900 p-4 rounded-xl flex items-center sm:space-x-3">
+          <div className="relative bg-slate-900/10 border border-zinc-900 p-4 rounded-xl flex items-center gap-3 z-30">
             <div className="relative flex-grow">
               <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-700">
                 <Search className="w-4 h-4" />
@@ -536,11 +598,92 @@ export default function AttendanceTracker() {
               <input
                 type="text"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => setIsAutocompleteOpen(true)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setIsAutocompleteOpen(true);
+                }}
                 placeholder="Search scholar by Full Name, LKCP Roll ID, or Mob Number..."
                 className="w-full bg-slate-950 border border-zinc-850 pl-10 pr-4 py-3 text-xs placeholder:text-zinc-700 text-white rounded-lg focus:outline-none focus:border-yellow-500"
               />
+
+              {/* Autocomplete suggestions dropdown panel overlay backdrop filter */}
+              <AnimatePresence>
+                {isAutocompleteOpen && searchQuery.trim().length > 0 && (
+                  <>
+                    <div 
+                      className="fixed inset-0 z-30 bg-transparent" 
+                      onClick={() => setIsAutocompleteOpen(false)} 
+                    />
+                    <motion.div
+                      initial={{ opacity: 0, y: -6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -6 }}
+                      className="absolute left-0 right-0 mt-2 bg-slate-900/95 backdrop-blur-md border border-zinc-800 rounded-xl max-h-64 overflow-y-auto shadow-2xl z-40 divide-y divide-zinc-800/50"
+                    >
+                      {allStudents.filter(st => 
+                        st.fullName.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                        st.studentId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                        (st.phone && st.phone.includes(searchQuery))
+                      ).slice(0, 5).length === 0 ? (
+                        <div className="p-4 text-xs text-zinc-500 text-center font-heading">
+                          No matching scholars found
+                        </div>
+                      ) : (
+                        allStudents.filter(st => 
+                          st.fullName.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          st.studentId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          (st.phone && st.phone.includes(searchQuery))
+                        ).slice(0, 5).map(st => (
+                          <div
+                            key={st.studentId}
+                            onClick={() => {
+                              setSearchQuery(st.fullName);
+                              setIsAutocompleteOpen(false);
+                            }}
+                            className="p-3 hover:bg-slate-800/85 cursor-pointer flex items-center justify-between text-left transition-colors group"
+                          >
+                            <div className="flex items-center space-x-3">
+                              <img
+                                src={st.photoUrl || "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=80&fit=crop"}
+                                alt={st.fullName}
+                                className="w-8 h-8 rounded-full border border-zinc-805 object-cover group-hover:border-yellow-500/40 transition-all"
+                                referrerPolicy="no-referrer"
+                              />
+                              <div>
+                                <span className="text-xs font-bold text-white block group-hover:text-yellow-500 transition-colors">
+                                  {st.fullName}
+                                </span>
+                                <span className="font-mono text-[9px] text-zinc-500 uppercase block tracking-wider mt-0.5">
+                                  {st.studentId} • <span className="text-red-400">{st.beltLevel.split(' (')[0]}</span>
+                                </span>
+                              </div>
+                            </div>
+                            <div className="text-right shrink-0">
+                              <span className="text-[10px] bg-slate-950 px-2 py-1 rounded border border-zinc-850 text-zinc-400 group-hover:border-yellow-500/20 group-hover:text-yellow-500 transition-all font-heading font-black uppercase tracking-wider block">
+                                Select
+                              </span>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
             </div>
+
+            {searchQuery && (
+              <button
+                onClick={() => {
+                  setSearchQuery('');
+                  setIsAutocompleteOpen(false);
+                }}
+                className="p-3 text-[10px] font-heading font-black bg-zinc-950 hover:bg-zinc-900 border border-zinc-850 hover:border-zinc-700 text-zinc-400 hover:text-white rounded-lg transition-all cursor-pointer shadow-md inline-flex items-center shrink-0 uppercase tracking-widest"
+              >
+                Clear
+              </button>
+            )}
           </div>
 
           {/* REGISTERED STUDENTS ATTENDANCE GRID */}

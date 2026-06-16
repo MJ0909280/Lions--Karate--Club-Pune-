@@ -25,7 +25,7 @@ type ViewType = 'home' | 'admission' | 'success' | 'admin' | 'student-portal';
 export default function App() {
   const [view, setView] = useState<ViewType>('home');
   const [selectedBatchText, setSelectedBatchText] = useState('');
-  const [studentPortalTab, setStudentPortalTab] = useState<'progress' | 'exam'>('progress');
+  const [studentPortalTab, setStudentPortalTab] = useState<'progress' | 'exam' | 'attendance'>('progress');
   
   // Success states
   const [successDocId, setSuccessDocId] = useState('');
@@ -44,6 +44,9 @@ export default function App() {
       } else if (hash.startsWith('#belt-exam')) {
         setView('student-portal');
         setStudentPortalTab('exam');
+      } else if (hash.startsWith('#attendance')) {
+        setView('student-portal');
+        setStudentPortalTab('attendance');
       } else if (hash.startsWith('#admission')) {
         setView('admission');
       } else if (hash.startsWith('#success')) {
@@ -95,7 +98,7 @@ export default function App() {
   }, [view, successDocId]);
 
   // Safe wrapper representing router navigator logic
-  const navigateTo = (nextView: ViewType | 'belt-exam', options?: { batchName?: string; docId?: string }) => {
+  const navigateTo = (nextView: ViewType | 'belt-exam' | 'attendance', options?: { batchName?: string; docId?: string }) => {
     if (options?.batchName) {
       setSelectedBatchText(options.batchName);
     }
@@ -116,6 +119,10 @@ export default function App() {
     } else if (nextView === 'belt-exam') {
       setStudentPortalTab('exam');
       window.location.hash = 'belt-exam';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else if (nextView === 'attendance') {
+      setStudentPortalTab('attendance');
+      window.location.hash = 'attendance';
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else if (nextView === 'success' && options?.docId) {
       setSuccessDocId(options.docId);

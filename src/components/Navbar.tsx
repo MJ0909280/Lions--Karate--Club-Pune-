@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 
 interface NavbarProps {
   currentView: string;
-  studentPortalTab?: 'progress' | 'exam';
+  studentPortalTab?: 'progress' | 'exam' | 'attendance';
   onNavigate: (view: string) => void;
 }
 
@@ -95,6 +95,19 @@ export default function Navbar({ currentView, studentPortalTab, onNavigate }: Na
             )}
 
             <button
+              onClick={() => onNavigate('attendance')}
+              className={`flex items-center space-x-1.5 font-heading text-xs uppercase tracking-wider px-3 py-1.5 rounded border transition-all ${
+                currentView === 'student-portal' && studentPortalTab === 'attendance'
+                  ? 'bg-yellow-500/10 border-yellow-500 text-yellow-500 font-extrabold'
+                  : 'border-zinc-700 text-zinc-400 hover:text-yellow-500 hover:border-zinc-500'
+              }`}
+              title="Quick Attendance Tracker"
+            >
+              <Calendar className="w-3.5 h-3.5 text-yellow-500 animate-pulse" />
+              <span>Attendance</span>
+            </button>
+
+            <button
               onClick={() => onNavigate('admin')}
               className={`flex items-center space-x-1.5 font-heading text-xs uppercase tracking-wider px-3 py-1.5 rounded border transition-all ${
                 currentView === 'admin'
@@ -140,6 +153,19 @@ export default function Navbar({ currentView, studentPortalTab, onNavigate }: Na
 
           {/* Mobile hamburger menu toggle with increased accessibility & custom morph indicator */}
           <div className="flex md:hidden items-center space-x-3">
+            <button
+              onClick={() => onNavigate('attendance')}
+              aria-label="Attendance Portal"
+              title="Quick Attendance Tracker"
+              className={`p-2.5 rounded-lg border focus:outline-none focus:ring-2 focus:ring-yellow-500 transition-colors ${
+                currentView === 'student-portal' && studentPortalTab === 'attendance'
+                  ? 'bg-yellow-500/10 border-yellow-500 text-yellow-500'
+                  : 'border-zinc-800 bg-slate-900/40 text-zinc-400 hover:text-yellow-400 hover:border-zinc-500'
+              }`}
+            >
+              <Calendar className="w-4 h-4 text-yellow-500" />
+            </button>
+
             <button
               onClick={() => onNavigate('admin')}
               aria-label="Admin Portal"
