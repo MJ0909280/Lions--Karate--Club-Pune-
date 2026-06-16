@@ -33,8 +33,96 @@ import {
   GraduationCap,
   Printer,
   X,
-  CheckSquare
+  CheckSquare,
+  Bell
 } from 'lucide-react';
+
+const playKarateBell = () => {
+  try {
+    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContextClass) return;
+    const ctx = new AudioContextClass();
+    const now = ctx.currentTime;
+
+    const fundamental = 330; // pitch frequency (E4 resonant tone)
+    
+    // Main chime oscillator
+    const osc1 = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    osc1.frequency.setValueAtTime(fundamental, now);
+    osc1.type = 'sine';
+    
+    // Harmonic metallic third overtone ring
+    const osc2 = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+    osc2.frequency.setValueAtTime(fundamental * 1.20, now);
+    osc2.type = 'sine';
+
+    // Harmonic octave bell chime ring
+    const osc3 = ctx.createOscillator();
+    const gain3 = ctx.createGain();
+    osc3.frequency.setValueAtTime(fundamental * 2.0, now);
+    osc3.type = 'sine';
+
+    const masterGain = ctx.createGain();
+    masterGain.gain.setValueAtTime(0.45, now);
+    masterGain.gain.exponentialRampToValueAtTime(0.001, now + 1.4);
+
+    osc1.connect(gain1);
+    gain1.gain.setValueAtTime(0.35, now);
+    gain1.gain.exponentialRampToValueAtTime(0.001, now + 1.4);
+    gain1.connect(masterGain);
+
+    osc2.connect(gain2);
+    gain2.gain.setValueAtTime(0.25, now);
+    gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.9);
+    gain2.connect(masterGain);
+
+    osc3.connect(gain3);
+    gain3.gain.setValueAtTime(0.15, now);
+    gain3.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+    gain3.connect(masterGain);
+
+    masterGain.connect(ctx.destination);
+
+    osc1.start(now);
+    osc2.start(now);
+    osc3.start(now);
+
+    osc1.stop(now + 1.5);
+    osc2.stop(now + 1.0);
+    osc3.stop(now + 0.6);
+  } catch (err) {
+    console.warn("Audio Context playback couldn't initialize on user gesture:", err);
+  }
+};
+
+const getRequiredClassesForCurrentBelt = (beltLevel: string): { required: number; nextBelt: string } => {
+  const currentClean = (beltLevel || '').toLowerCase();
+  
+  if (currentClean.includes('white') || currentClean.includes('10th kyu')) {
+    return { required: 15, nextBelt: 'Yellow Belt (9th & 8th Kyu)' };
+  }
+  if (currentClean.includes('yellow') || currentClean.includes('9th') || currentClean.includes('8th')) {
+    return { required: 20, nextBelt: 'Orange Belt (7th Kyu)' };
+  }
+  if (currentClean.includes('orange') || currentClean.includes('7th')) {
+    return { required: 25, nextBelt: 'Green Belt (6th Kyu)' };
+  }
+  if (currentClean.includes('green') || currentClean.includes('6th')) {
+    return { required: 30, nextBelt: 'Blue Belt (5th Kyu)' };
+  }
+  if (currentClean.includes('blue') || currentClean.includes('5th')) {
+    return { required: 35, nextBelt: 'Purple Belt (4th Kyu)' };
+  }
+  if (currentClean.includes('purple') || currentClean.includes('4th')) {
+    return { required: 40, nextBelt: 'Brown Belt (3rd to 1st Kyu)' };
+  }
+  if (currentClean.includes('brown') || currentClean.includes('3rd') || currentClean.includes('1st')) {
+    return { required: 45, nextBelt: 'Black Belt (1st Dan +)' };
+  }
+  return { required: 50, nextBelt: 'Higher Dan Grade' };
+};
 
 interface ExamRecord {
   id: string;
@@ -245,6 +333,55 @@ export default function StudentPortal({ initialTab = 'progress' }: StudentPortal
   const [formLoading, setFormLoading] = useState(false);
   const [formSuccess, setFormSuccess] = useState(false);
   const [formError, setFormError] = useState('');
+
+  // Automated Progress Status & Alert states
+  const [attendanceCount, setAttendanceCount] = useState<number>(0);
+  const [attendanceLoading, setAttendanceLoading] = useState<boolean>(false);
+  const [hasShownAlert, setHasShownAlert] = useState<boolean>(false);
+
+  // Real-time listener for child's class attendance logs
+  useEffect(() => {
+    if (!activeStudent) {
+      setAttendanceCount(0);
+      setHasShownAlert(false);
+      return;
+    }
+
+    setAttendanceLoading(true);
+    const attendanceRef = collection(db, 'attendance');
+    const q = query(
+      attendanceRef,
+      where('studentId', '==', activeStudent.studentId),
+      where('status', '==', 'Present')
+    );
+
+    // Track in real-time if a coach checks them in during class
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const count = snapshot.size;
+      setAttendanceCount(count);
+      setAttendanceLoading(false);
+
+      const { required } = getRequiredClassesForCurrentBelt(activeStudent.beltLevel);
+      if (count >= required && !hasShownAlert) {
+        setHasShownAlert(true);
+        // Play traditional resonant Karate Bell chime
+        playKarateBell();
+
+        // Push real browser notification if supported and allowed
+        if ('Notification' in window && Notification.permission === 'granted') {
+          new Notification('🥋 Lions Karate Exam Stage Reached!', {
+            body: `${activeStudent.fullName} completed ${count}/${required} classes! Now eligible for the upcoming ranking belt test.`,
+            tag: 'lkcp-exam-alert'
+          });
+        }
+      }
+    }, (error) => {
+      console.error("Failed to load student attendance logs:", error);
+      setAttendanceLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [activeStudent, hasShownAlert]);
 
   // Sync scheduled exams dynamically from db
   useEffect(() => {
@@ -956,6 +1093,159 @@ export default function StudentPortal({ initialTab = 'progress' }: StudentPortal
                 </div>
               </div>
             )}
+
+            {/* AUTOMATED ELIGIBILITY ALERT CARD */}
+            {activeTab === 'progress' && (() => {
+              const { required, nextBelt } = getRequiredClassesForCurrentBelt(activeStudent.beltLevel);
+              const isEligible = attendanceCount >= required;
+              // Find any upcoming exam schedule that matches the student's branch or target belt
+              const nextExam = examSchedules.length > 0 ? examSchedules[0] : null;
+
+              if (attendanceLoading) {
+                return (
+                  <div className="bg-slate-900/10 border border-zinc-900/50 p-5 rounded-2xl flex items-center justify-center gap-3 animate-pulse">
+                    <RefreshCw className="w-4 h-4 animate-spin text-zinc-550" />
+                    <span className="text-xs text-zinc-500 font-heading select-none uppercase tracking-wider">Verifying class attendance records...</span>
+                  </div>
+                );
+              }
+
+              if (isEligible) {
+                const parentText = `Hello Coach Shihan Maruti Jadhav, my child *${activeStudent.fullName}* (Roll ID: *${activeStudent.studentId}*) has successfully completed *${attendanceCount}/${required}* classes and is fully eligible for promotion to *${nextBelt}*! Please find our request for the upcoming belt test slot. Thank you!`;
+                const encodedParentText = encodeURIComponent(parentText);
+                const parentWhatsAppUrl = `https://wa.me/919049688172?text=${encodedParentText}`;
+
+                return (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.98, y: 10 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    className="relative bg-gradient-to-br from-yellow-500/10 via-yellow-500/5 to-slate-950 border-2 border-yellow-500 p-6 rounded-2xl shadow-xl overflow-hidden animate-fade-in group text-left"
+                  >
+                    <div className="absolute top-0 right-0 p-5 opacity-10 group-hover:scale-110 pointer-events-none transition-transform">
+                      <GraduationCap className="w-24 h-24 text-yellow-500 animate-pulse" />
+                    </div>
+                    
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+                      <div className="space-y-2.5 max-w-xl">
+                        <div className="flex items-center space-x-2">
+                          <span className="flex h-2.5 w-2.5 relative">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-500 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-yellow-500"></span>
+                          </span>
+                          <span className="text-[10px] font-heading font-black text-yellow-500 uppercase tracking-widest bg-yellow-500/10 px-2.5 py-1 rounded-md border border-yellow-500/15">
+                            Exam Stage Reached! 🎉
+                          </span>
+                        </div>
+                        
+                        <h4 className="font-title text-xl sm:text-2xl font-black text-white uppercase tracking-tight">
+                          Eligible For Promotion Exam!
+                        </h4>
+                        
+                        <p className="text-zinc-350 text-xs leading-relaxed font-sans">
+                          Awesome work! <strong>{activeStudent.fullName}</strong> has completed <strong>{attendanceCount}</strong> classes of high-intensity training. The required promotion milestone for their rank is <strong>{required}</strong> classes. They are now fully qualified to apply for the <strong>{nextBelt}</strong> test!
+                        </p>
+
+                        {nextExam ? (
+                          <div className="bg-slate-950/80 border border-zinc-850 p-3.5 rounded-xl text-[11px] text-zinc-400 mt-3 font-sans space-y-1">
+                            <div className="text-yellow-500 font-extrabold flex items-center gap-1 uppercase tracking-wider text-[10px]">
+                              <Calendar className="w-3.5 h-3.5" /> Upcoming Scheduled Exam Date:
+                            </div>
+                            <div>
+                              📅 <strong>{nextExam.examDate}</strong> @ <strong>{nextExam.venueDetails || "Lions Main Dojo Gym"}</strong>
+                            </div>
+                            <div className="italic text-zinc-550 mt-1">
+                              Prerequisites: {nextExam.prerequisites || "Full LKCP Dojo Uniform (Gi) and approved belt guards."}
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="text-[10px] text-zinc-550 italic mt-2">
+                            The upcoming scheduling test slots are being determined. Standard fees and Gi review instructions will be announced soon.
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="flex flex-col sm:flex-row md:flex-col gap-3 shrink-0 self-stretch md:self-center justify-center md:min-w-[210px]">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActiveTabState('exam');
+                            setShowExamForm(true);
+                          }}
+                          className="bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-heading font-black text-[10px] uppercase tracking-wider px-5 py-3 rounded-xl transition-all cursor-pointer shadow-md shadow-yellow-500/5 text-center flex items-center justify-center gap-2"
+                        >
+                          <PlusCircle className="w-3.5 h-3.5 text-slate-950" />
+                          <span>Apply For Exam Now</span>
+                        </button>
+
+                        <a
+                          href={parentWhatsAppUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="bg-emerald-600 hover:bg-emerald-500 text-white font-heading font-black text-[10px] uppercase tracking-wider px-5 py-3 rounded-xl transition-all shadow-md text-center flex items-center justify-center gap-2 cursor-pointer no-underline"
+                        >
+                          <MessageCircle className="w-3.5 h-3.5 text-white animate-bounce" />
+                          <span>Send WhatsApp Alert</span>
+                        </a>
+
+                        {'Notification' in window && Notification.permission !== 'granted' && (
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              const permission = await Notification.requestPermission();
+                              if (permission === 'granted') {
+                                new Notification('Lions Karate Club', {
+                                  body: 'Automatic browser-based exam eligibility notification active!'
+                                });
+                              }
+                            }}
+                            className="bg-slate-950 hover:bg-slate-900 border border-zinc-850 text-zinc-400 hover:text-white font-heading font-black text-[9px] uppercase tracking-wider py-2 rounded-xl transition-all text-center flex items-center justify-center gap-1.5 cursor-pointer"
+                          >
+                            <Bell className="w-3 h-3 text-yellow-500 animate-pulse" />
+                            <span>Allow Push Alerts</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              } else {
+                const pct = Math.min(100, Math.floor((attendanceCount / required) * 100));
+                return (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-slate-900/10 border border-zinc-900 p-5 rounded-2xl text-left"
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div className="space-y-1.5 flex-grow">
+                        <span className="text-[9px] font-heading font-black text-yellow-500 bg-yellow-500/5 border border-yellow-500/10 px-2.5 py-1 rounded-md uppercase tracking-widest">
+                          Next Promotion Target Stage 🥋
+                        </span>
+                        <h4 className="font-heading text-xs font-black text-white uppercase tracking-wider mt-1.5">
+                          Belt Promo Training Progress
+                        </h4>
+                        <p className="text-[11px] text-zinc-400 font-sans leading-relaxed">
+                          <strong>{activeStudent.fullName}</strong> is working towards their <strong>{nextBelt}</strong> certification. They have successfully attended <strong>{attendanceCount}</strong> classes out of the required <strong>{required}</strong> sessions to qualify for testing.
+                        </p>
+                      </div>
+
+                      <div className="shrink-0 w-full sm:w-48 text-right self-stretch sm:self-center flex flex-col justify-center">
+                        <div className="flex justify-between items-center text-[10px] mb-1.5">
+                          <span className="text-zinc-500 uppercase tracking-widest font-heading font-black">Progress Status</span>
+                          <span className="font-mono text-white font-bold">{pct}% ({attendanceCount}/{required})</span>
+                        </div>
+                        <div className="w-full bg-slate-950 h-2.5 rounded-full overflow-hidden border border-zinc-900/60">
+                          <div 
+                            className="bg-yellow-500 h-full rounded-full transition-all duration-700" 
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              }
+            })()}
 
             {/* VISUAL BELT PROGRESS TIMELINE */}
             {activeTab === 'progress' && (
