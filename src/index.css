@@ -1,0 +1,82 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-heading: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-title: "Cinzel", Georgia, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  
+  /* Color modifications to match Artistic Flair (Crimson Red & Deep Pitch Space Black) */
+  --color-yellow-500: #FF3B3F;
+  --color-yellow-400: #FF5E62;
+  --color-yellow-600: #D82E32;
+  --color-yellow-300: #FF3B3F;
+  --color-yellow-500-10: rgba(255, 59, 63, 0.1);
+  --color-slate-950: #050505;
+  --color-slate-900: #111111;
+  --color-zinc-950: #050505;
+  --color-zinc-900: #111111;
+  --color-zinc-850: #18181b;
+  --color-zinc-800: #202022;
+}
+
+/* Custom styles for premium styling and printable elements */
+body {
+  background-color: #050505; /* Extreme Pitch Black */
+  color: #e5e5e5; /* Grayed text out of theme design */
+  font-family: var(--font-sans);
+  scroll-behavior: smooth;
+}
+
+/* Print CSS setup for downloading & printing the ID Card */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #printable-id-card, #printable-id-card * {
+    visibility: visible;
+  }
+  #printable-id-card {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%) scale(1.2);
+    box-shadow: none !important;
+    border: 6px solid #000000 !important;
+    background-color: #ffffff !important;
+    color: #000000 !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+}
+
+/* Custom glowing effects representing Crimson Artistic details */
+.glow-gold {
+  box-shadow: 0 0 15px rgba(255, 59, 63, 0.25);
+}
+.glow-red {
+  box-shadow: 0 0 20px rgba(255, 59, 63, 0.35);
+}
+.glow-border-gold {
+  border-color: rgba(255, 59, 63, 0.6);
+  box-shadow: 0 0 10px rgba(255, 59, 63, 0.25);
+}
+.gradient-text-gold {
+  background: linear-gradient(135deg, #ffffff 0%, #FF3B3F 50%, #991b1b 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.gradient-text-red {
+  background: linear-gradient(135deg, #ffffff 0%, #FF3B3F 50%, #7f1d1d 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Text Stroke effect for extra artistic drama */
+.text-stroke-title {
+  -webkit-text-stroke: 1.5px #e5e5e5;
+  color: transparent;
+}
+

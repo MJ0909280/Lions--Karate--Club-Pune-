@@ -1,0 +1,66 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Default fallback to block everything
+    match /{document=**} {
+      allow read, write: if false;
+    }
+    
+    // Admin check logic
+    function isAdmin() {
+      return request.auth != null && 
+             request.auth.token.email == "writingandreserching18@gmail.com";
+    }
+    
+    // Admissions collection rules
+    match /admissions/{admissionId} {
+      // Anyone can submit their admission request, or admin can directly insert records
+      allow create: if (request.resource.data.status == "pending" &&
+                    request.resource.data.fullName is string &&
+                    request.resource.data.fullName.size() <= 100 &&
+                    request.resource.data.phone is string &&
+                    request.resource.data.phone.size() <= 30) || isAdmin();
+                    
+      // Allow fetching single admission by ID (for success page and generated ID card view)
+      allow get: if true;
+      
+      // Only admin can list/query all admissions
+      allow list: if isAdmin();
+      
+      // Only admin can approve, reject, update, or delete records
+      allow update, delete: if isAdmin();
+    }
+    
+    // Batches collection rules
+    match /batches/{batchId} {
+      // Anyone can view training batches on lander and form
+      allow read: if true;
+      
+      // Only authorized admin can manage (create, update, delete) batches
+      allow write: if isAdmin();
+    }
+    
+    // Exams collection rules
+    match /exams/{examId} {
+      allow create: if request.resource.data.studentId is string &&
+                    request.resource.data.studentName is string &&
+                    request.resource.data.targetBelt is string;
+      allow get, list: if true;
+      allow update, delete: if isAdmin();
+    }
+    
+    // Exam Schedules collection rules
+    match /exam_schedules/{scheduleId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    // Settings collection rules
+    match /settings/{settingId} {
+      // Allow public get and list queries to sync site configurations dynamically
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+  }
+}
