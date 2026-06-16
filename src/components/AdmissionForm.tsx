@@ -160,13 +160,14 @@ export default function AdmissionForm({ preselectedBatch = "", onSuccess }: Admi
       const q = query(admissionsRef, where('createdAt', '>=', new Date(`${currentYear}-01-01`).getTime()));
       const snap = await getDocs(q);
       
-      const count = snap.size + 1;
+      // Starting systematic number from 100
+      const count = snap.size + 100;
       // Pad to 3 digits
       const paddedSerial = String(count).padStart(3, '0');
       return `LKCP-${currentYear}-${paddedSerial}`;
     } catch {
-      // Simple random serial if connection fails or rule blocks read during submission
-      const randomId = Math.floor(100+ Math.random() * 899);
+      // Simple random serial starting from 100 if connection fails or rule blocks read during submission
+      const randomId = Math.floor(100 + Math.random() * 900);
       return `LKCP-${currentYear}-${randomId}`;
     }
   };

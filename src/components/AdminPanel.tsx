@@ -405,7 +405,7 @@ export default function AdminPanel() {
 
   const suggestNextStudentId = () => {
     const currentYear = new Date().getFullYear();
-    const count = admissions.length + 1;
+    const count = admissions.length + 100;
     const paddedSerial = String(count).padStart(3, '0');
     setMStudentId(`LKCP-${currentYear}-${paddedSerial}`);
   };
