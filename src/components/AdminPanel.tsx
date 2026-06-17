@@ -132,6 +132,23 @@ export default function AdminPanel() {
   // Detail Modal view
   const [selectedAdmission, setSelectedAdmission] = useState<Admission | null>(null);
   const [viewingIDCard, setViewingIDCard] = useState<Admission | null>(null);
+
+  // Custom modal-dialog state to replace native window.confirm (which gets blocked inside iframe environments)
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    confirmText: string;
+    cancelText: string;
+    onConfirm: () => void | Promise<void>;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    confirmText: 'Confirm',
+    cancelText: 'Cancel',
+    onConfirm: () => {},
+  });
   
   // Custom operational states
   const [loginError, setLoginError] = useState('');
@@ -615,16 +632,22 @@ export default function AdminPanel() {
     }
   };
 
-  const handleDeleteExamRecord = async (examId: string) => {
-    if (!window.confirm("Are you absolutely sure you want to permanently erase this exam registration? This action is irreversible.")) {
-      return;
-    }
-    try {
-      await deleteDoc(doc(db, 'exams', examId));
-    } catch (error) {
-      console.error("Failed to delete exam record:", error);
-      handleFirestoreError(error, OperationType.DELETE, `exams/${examId}`);
-    }
+  const handleDeleteExamRecord = (examId: string) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: "Erase Exam Registration",
+      message: "Are you absolutely sure you want to permanently erase this exam registration? This action is irreversible.",
+      confirmText: "Erase Record",
+      cancelText: "Cancel",
+      onConfirm: async () => {
+        try {
+          await deleteDoc(doc(db, 'exams', examId));
+        } catch (error) {
+          console.error("Failed to delete exam record:", error);
+          handleFirestoreError(error, OperationType.DELETE, `exams/${examId}`);
+        }
+      }
+    });
   };
 
   const handleSaveScheduleSubmit = async (e: React.FormEvent) => {
@@ -673,16 +696,22 @@ export default function AdminPanel() {
     }
   };
 
-  const handleDeleteSchedule = async (scheduleId: string) => {
-    if (!window.confirm("Are you sure you want to delete this scheduled exam? This will remove it from the scheduling boards and list.")) {
-      return;
-    }
-    try {
-      await deleteDoc(doc(db, 'exam_schedules', scheduleId));
-    } catch (error) {
-      console.error("Failed to delete exam schedule:", error);
-      handleFirestoreError(error, OperationType.DELETE, `exam_schedules/${scheduleId}`);
-    }
+  const handleDeleteSchedule = (scheduleId: string) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: "Delete Exam Schedule",
+      message: "Are you sure you want to delete this scheduled exam? This will remove it from the scheduling boards and list.",
+      confirmText: "Delete Schedule",
+      cancelText: "Cancel",
+      onConfirm: async () => {
+        try {
+          await deleteDoc(doc(db, 'exam_schedules', scheduleId));
+        } catch (error) {
+          console.error("Failed to delete exam schedule:", error);
+          handleFirestoreError(error, OperationType.DELETE, `exam_schedules/${scheduleId}`);
+        }
+      }
+    });
   };
 
   const openCreateScheduleModal = () => {
@@ -792,16 +821,22 @@ export default function AdminPanel() {
     }
   };
 
-  const handleDeleteBatch = async (batchId: string) => {
-    if (!window.confirm("Are you sure you want to delete this training batch? Direct selection on enrollment will be removed.")) {
-      return;
-    }
-    try {
-      await deleteDoc(doc(db, 'batches', batchId));
-    } catch (error) {
-      console.error("Failed to delete batch: ", error);
-      handleFirestoreError(error, OperationType.DELETE, `batches/${batchId}`);
-    }
+  const handleDeleteBatch = (batchId: string) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: "Delete Training Batch",
+      message: "Are you sure you want to delete this training batch? Direct selection on enrollment will be removed.",
+      confirmText: "Delete Batch",
+      cancelText: "Cancel",
+      onConfirm: async () => {
+        try {
+          await deleteDoc(doc(db, 'batches', batchId));
+        } catch (error) {
+          console.error("Failed to delete batch: ", error);
+          handleFirestoreError(error, OperationType.DELETE, `batches/${batchId}`);
+        }
+      }
+    });
   };
 
   // Perform operational status changes: Approve / Reject
@@ -856,19 +891,24 @@ export default function AdminPanel() {
   };
 
   // Perform destructive entry removal
-  const deleteAdmissionRecord = async (docId: string) => {
-    if (!window.confirm("Are you absolutely sure you want to permanently erase this student's admission files? This action is irreversible.")) {
-      return;
-    }
-
-    try {
-      await deleteDoc(doc(db, 'admissions', docId));
-      setSelectedAdmission(null);
-      setViewingIDCard(null);
-    } catch (error) {
-      console.error("Failed to delete record: ", error);
-      handleFirestoreError(error, OperationType.DELETE, `admissions/${docId}`);
-    }
+  const deleteAdmissionRecord = (docId: string) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: "Erase Student Admission File",
+      message: "Are you absolutely sure you want to permanently erase this student's admission files? This action is irreversible.",
+      confirmText: "Erase Entry",
+      cancelText: "Cancel",
+      onConfirm: async () => {
+        try {
+          await deleteDoc(doc(db, 'admissions', docId));
+          setSelectedAdmission(null);
+          setViewingIDCard(null);
+        } catch (error) {
+          console.error("Failed to delete record: ", error);
+          handleFirestoreError(error, OperationType.DELETE, `admissions/${docId}`);
+        }
+      }
+    });
   };
 
   // Calculate high-fidelity stats aggregates
@@ -2783,7 +2823,7 @@ export default function AdminPanel() {
 
       {/* MODAL 6: EXAM ASSESSMENT AND GRADING MODEL OVERLAY */}
       {gradingExam && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+        <div className="fixed inset-0 z-55 overflow-y-auto bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
           <div className="bg-slate-900 border border-zinc-850 w-full max-w-md rounded-2xl overflow-hidden shadow-2xl relative">
             <div className={`absolute top-0 left-0 right-0 h-1.5 ${gradingExam.statusAction === 'passed' ? 'bg-emerald-500' : 'bg-red-500'}`} />
             
@@ -2859,7 +2899,7 @@ export default function AdminPanel() {
                 <button
                   type="submit"
                   disabled={gradingSaving}
-                  className="bg-yellow-500 hover:bg-yellow-450 text-slate-950 px-5 py-2.5 text-[10px] font-heading font-black uppercase tracking-wider rounded-lg transition-all flex items-center space-x-1.5 disabled:opacity-50 cursor-pointer text-slate-950"
+                  className="bg-yellow-500 hover:bg-yellow-455 text-slate-950 px-5 py-2.5 text-[10px] font-heading font-black uppercase tracking-wider rounded-lg transition-all flex items-center space-x-1.5 disabled:opacity-50 cursor-pointer text-slate-950"
                 >
                   {gradingSaving ? (
                     <RefreshCw className="w-3.5 h-3.5 animate-spin" />
@@ -2872,6 +2912,52 @@ export default function AdminPanel() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* CUSTOM CONFIRMATION DIALOG OVERLAY */}
+      {confirmDialog.isOpen && (
+        <div className="fixed inset-0 z-55 overflow-y-auto bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-slate-900 border border-zinc-850 w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl p-6 space-y-5 text-left relative">
+            <div className="space-y-3">
+              <div className="w-12 h-12 rounded-full bg-red-500/10 text-red-500 flex items-center justify-center">
+                <Trash2 className="w-5 h-5 text-red-500" />
+              </div>
+              <div>
+                <h4 className="font-title text-base font-extrabold text-white uppercase tracking-wider">
+                  {confirmDialog.title}
+                </h4>
+                <p className="text-xs text-zinc-400 leading-relaxed mt-1.5 font-sans">
+                  {confirmDialog.message}
+                </p>
+              </div>
+            </div>
+            
+            <div className="pt-3 border-t border-zinc-850 flex items-center justify-end space-x-3">
+              <button
+                type="button"
+                onClick={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}
+                className="px-4 py-2 text-[10.5px] font-heading font-black uppercase tracking-wider text-zinc-400 hover:text-white transition-colors cursor-pointer"
+              >
+                {confirmDialog.cancelText}
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    await confirmDialog.onConfirm();
+                  } catch (e) {
+                    console.error("Action error during delete: ", e);
+                  } finally {
+                    setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+                  }
+                }}
+                className="bg-red-500 hover:bg-red-650 text-white px-5 py-2.5 text-[10.5px] font-heading font-black uppercase tracking-wider rounded-lg transition-all cursor-pointer"
+              >
+                {confirmDialog.confirmText}
+              </button>
+            </div>
           </div>
         </div>
       )}

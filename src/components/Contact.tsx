@@ -17,8 +17,8 @@ export default function Contact() {
     {
       icon: <MapPin className="w-5 h-5 text-yellow-500" />,
       title: "LIONS DOJO VENUE",
-      val: "VASUNDHARA PRE-PRIMARY SCHOOL, Narhe Ambegaon Road, Pune, MH 411041",
-      clickUrl: "https://maps.google.com/?q=VASUNDHARA+PRE-PRIMARY+SCHOOL+Narhe+Pune"
+      val: "Shrinivas Building, Narhe, Pune, Maharashtra 411041 (FR2F+JG)",
+      clickUrl: "https://maps.google.com/?q=FR2F+JG+Pune,+Maharashtra,+Shrinivas+Building,+Narhe"
     }
   ];
 
@@ -40,7 +40,7 @@ export default function Contact() {
             FIND THE <span className="gradient-text-gold">WAY</span>
           </h2>
           <p className="text-zinc-400 text-sm">
-            Our training academy is centrally located at Vasundhara Pre-Primary School in Narhe, Pune, fully accessible with premium safety flooring and guidance parameters.
+            Our training academy is centrally located at Shrinivas Building in Narhe, Pune, fully accessible with premium safety flooring and guidance parameters.
           </p>
         </div>
 
@@ -102,7 +102,7 @@ export default function Contact() {
           <div className="flex flex-col space-y-4">
             <div className="h-[340px] rounded-lg overflow-hidden border border-zinc-900 relative">
               <iframe 
-                src="https://maps.google.com/maps?q=VASUNDHARA%20PRE-PRIMARY%20SCHOOL,%20Narhe%20Ambegaon%20Road,%20Near%20Bhumkar%20Chowk,%20Beside%20Silver%20Birch%20Hospital,%20Narhe,%20Pune&t=&z=15&ie=UTF8&iwloc=&output=embed"
+                src="https://maps.google.com/maps?q=FR2F%2BJG%20Pune,%20Maharashtra&t=&z=16&ie=UTF8&iwloc=&output=embed"
                 width="100%" 
                 height="100%" 
                 style={{ border: 0, filter: 'invert(90%) hue-rotate(180deg) brightness(85%) contrast(110%)' }}
@@ -118,16 +118,15 @@ export default function Contact() {
               <div className="space-y-1">
                 <span className="text-[10px] text-zinc-500 uppercase font-bold tracking-widest font-mono block">Official Venue Address:</span>
                 <p className="text-zinc-300 text-xs leading-relaxed font-medium">
-                  VASUNDHARA PRE-PRIMARY SCHOOL,<br />
-                  Narhe Ambegaon Road, Near Bhumkar Chowk,<br />
-                  Beside Silver Birch Hospital, Narhe,<br />
-                  Pune, Maharashtra 411041, India
+                  Shrinivas Building, Narhe, Pune, <br />
+                  Maharashtra 411041, India<br />
+                  <span className="text-yellow-500 font-bold block mt-1">Plus Code: FR2F+JG Pune</span>
                 </p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                 <a 
-                  href="https://www.google.com/maps/dir/?api=1&destination=VASUNDHARA+PRE-PRIMARY+SCHOOL+Narhe+Pune&travelmode=driving"
+                  href="https://www.google.com/maps/dir/?api=1&destination=FR2F%2BJG+Pune+Maharashtra+Shrinivas+Building&travelmode=driving"
                   target="_blank"
                   rel="noreferrer"
                   className="flex items-center justify-center space-x-2 bg-yellow-500 hover:bg-yellow-400 text-slate-950 text-xs font-heading font-extrabold tracking-wider uppercase py-3 px-4 rounded transition-colors text-center"
@@ -137,7 +136,7 @@ export default function Contact() {
                 </a>
 
                 <a 
-                  href="https://maps.google.com/?q=VASUNDHARA+PRE-PRIMARY+SCHOOL+Narhe+Ambegaon+Road+Near+Bhumkar+Chowk+Beside+Silver+Birch+Hospital+Narhe+Pune+Maharashtra+411041"
+                  href="https://maps.google.com/?q=FR2F%2BJG+Pune,+Maharashtra,+Shrinivas+Building,+Narhe"
                   target="_blank"
                   rel="noreferrer"
                   className="flex items-center justify-center space-x-2 bg-zinc-900 hover:bg-zinc-850 border border-zinc-800 text-zinc-100 text-xs font-heading font-extrabold tracking-wider uppercase py-3 px-4 rounded transition-colors text-center"

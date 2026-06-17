@@ -11,6 +11,8 @@ export default function IDCard({ admission, showSuccessBanner = false }: IDCardP
   const cardRef = useRef<HTMLDivElement>(null);
   const [downloading, setDownloading] = useState(false);
 
+  const qrDataString = `LIONS KARATE CLUB PUNE\nStudent ID: ${admission.studentId}\nName: ${admission.fullName}\nBatch: ${admission.batch}\nBranch: ${admission.branch || 'Manaji Nagar Branch'}`;
+
   // Print function isolates card and triggers native browser prompt
   const handlePrint = () => {
     window.print();
@@ -20,8 +22,9 @@ export default function IDCard({ admission, showSuccessBanner = false }: IDCardP
   const handleDownloadPNG = () => {
     setDownloading(true);
     const canvas = document.createElement('canvas');
-    canvas.width = 400;
-    canvas.height = 580;
+    const scaleFactor = 4; // 4x high-resolution multiplier for ultra-sharp details
+    canvas.width = 400 * scaleFactor;
+    canvas.height = 580 * scaleFactor;
     const ctx = canvas.getContext('2d');
 
     if (!ctx) {
@@ -29,14 +32,19 @@ export default function IDCard({ admission, showSuccessBanner = false }: IDCardP
       return;
     }
 
+    // Apply high density drawing metrics
+    ctx.scale(scaleFactor, scaleFactor);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+
     // Happy sky blue background for premium print representation
     ctx.fillStyle = '#BAE6FD';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillRect(0, 0, 400, 580);
 
     // Thick solid black border
     ctx.strokeStyle = '#000000';
     ctx.lineWidth = 14;
-    ctx.strokeRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeRect(0, 0, 400, 580);
 
     // Load logo elements dynamically
     const logoImg = new Image();
@@ -106,19 +114,19 @@ export default function IDCard({ admission, showSuccessBanner = false }: IDCardP
         ctx.textAlign = 'center';
         ctx.fillStyle = '#000000';
         ctx.font = '900 18px "Space Grotesk", sans-serif';
-        ctx.fillText(admission.fullName.toUpperCase(), canvas.width / 2, 365);
+        ctx.fillText(admission.fullName.toUpperCase(), 200, 365);
 
         // Draw Rank / Belt Level (Vivid Artistic Red)
         ctx.fillStyle = '#FF3B3F';
         ctx.font = 'bold 11px "Space Grotesk", sans-serif';
-        ctx.fillText(admission.beltLevel.toUpperCase(), canvas.width / 2, 385);
+        ctx.fillText(admission.beltLevel.toUpperCase(), 200, 385);
 
         // Draw divider line
         ctx.strokeStyle = 'rgba(0,0,0,0.1)';
         ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.moveTo(40, 410);
-        ctx.lineTo(canvas.width - 40, 410);
+        ctx.lineTo(360, 410);
         ctx.stroke();
 
         // Metadata left side: Student ID
@@ -135,11 +143,11 @@ export default function IDCard({ admission, showSuccessBanner = false }: IDCardP
         ctx.textAlign = 'right';
         ctx.fillStyle = '#9e9e9e';
         ctx.font = 'bold 7px "Outfit", sans-serif';
-        ctx.fillText('PROGRAM BATCH', canvas.width - 45, 422);
+        ctx.fillText('PROGRAM BATCH', 355, 422);
 
         ctx.fillStyle = '#000000';
         ctx.font = 'bold 10px "Outfit", sans-serif';
-        ctx.fillText(admission.batch, canvas.width - 45, 437);
+        ctx.fillText(admission.batch, 355, 437);
 
         // Metadata Row 2: Dojo Branch & Dedicated Coach
         ctx.textAlign = 'left';
@@ -154,12 +162,12 @@ export default function IDCard({ admission, showSuccessBanner = false }: IDCardP
         ctx.textAlign = 'right';
         ctx.fillStyle = '#9e9e9e';
         ctx.font = 'bold 7px "Outfit", sans-serif';
-        ctx.fillText('ASSIGNED COACH', canvas.width - 45, 457);
+        ctx.fillText('ASSIGNED COACH', 355, 457);
 
         ctx.fillStyle = '#000000';
         ctx.font = 'bold 9px "Outfit", sans-serif';
         const cleanCoach = (admission.coachName || 'Maruti Sir').split(' Black')[0].split(' black')[0].split(' Sir')[0].split(' Mam')[0].trim();
-        ctx.fillText(cleanCoach.toUpperCase(), canvas.width - 45, 472);
+        ctx.fillText(cleanCoach.toUpperCase(), 355, 472);
 
         // QR Code Render on bottom-left, signature on bottom-right
         const qrImg = new Image();
@@ -179,11 +187,11 @@ export default function IDCard({ admission, showSuccessBanner = false }: IDCardP
           ctx.textAlign = 'right';
           ctx.fillStyle = '#000000';
           ctx.font = 'italic italic bold 10px Georgia, serif';
-          ctx.fillText('Sensei M. Jadhav', canvas.width - 45, 520);
+          ctx.fillText('Sensei M. Jadhav', 355, 520);
 
           ctx.fillStyle = '#71717a';
           ctx.font = '900 6px "JetBrains Mono", sans-serif';
-          ctx.fillText('LIONS KARATE CLUB PUNE', canvas.width - 45, 537);
+          ctx.fillText('LIONS KARATE CLUB PUNE', 355, 537);
 
           // Download PNG file directly
           const dataUrl = canvas.toDataURL('image/png');
@@ -194,7 +202,7 @@ export default function IDCard({ admission, showSuccessBanner = false }: IDCardP
           setDownloading(false);
         };
         
-        qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(admission.studentId + "|" + admission.fullName)}`;
+        qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=350x350&data=${encodeURIComponent(qrDataString)}`;
       };
       
       studentImg.src = admission.photoUrl;
@@ -301,7 +309,7 @@ export default function IDCard({ admission, showSuccessBanner = false }: IDCardP
         <div className="mt-auto w-full flex justify-between items-end border-t border-black/5 pt-2">
           <div className="w-12 h-12 border border-black/10 flex items-center justify-center p-0.5 bg-white shadow-sm">
             <img 
-              src={`https://api.qrserver.com/v1/create-qr-code/?size=80&data=${encodeURIComponent(admission.studentId + "|" + admission.fullName)}`}
+              src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(qrDataString)}`}
               alt="Validation QR code"
               className="w-full h-full"
               referrerPolicy="no-referrer"

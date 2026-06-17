@@ -322,7 +322,17 @@ export default function AttendanceTracker() {
     setMessageType(type);
     
     if (type === 'fees') {
-      const template = `Dear Parent, this is Sensei ${selectedCoach.split(' Sir')[0]} from Lions Karate Club Pune. This is a friendly reminder that the karate coaching / tuition fees for ${student.fullName} are pending. Kindly settle the pending amount at the Dojo center as soon as possible. Thank you!`;
+      const template = `[Reminder from LIONS KARATE CLUB Website]
+[Auto-generated Message]
+
+Dear Parent,
+
+A gentle reminder that the karate fees for ${student.fullName} are pending. Kindly clear the dues at the earliest.
+
+📞 Sensei Maruti Jadhav
+9049688172
+
+Thank you.`;
       setCustomText(template);
     } else {
       const template = `Dear Parent, this is Sensei ${selectedCoach.split(' Sir')[0]} from Lions Karate Club Pune. Important Notice for ${student.fullName}: Please note that we have special karate practice sessions this week. Kindly ensure they attend on time. Thank you!`;
@@ -869,7 +879,17 @@ export default function AttendanceTracker() {
                   type="button"
                   onClick={() => {
                     setMessageType('fees');
-                    setCustomText(`Dear Parent, this is Sensei ${selectedCoach.split(' Sir')[0]} from Lions Karate Club Pune. This is a friendly reminder that the karate coaching / tuition fees for ${messageTarget.fullName} are pending. Kindly settle the pending amount at the Dojo center as soon as possible. Thank you!`);
+                    setCustomText(`[Reminder from LIONS KARATE CLUB Website]
+[Auto-generated Message]
+
+Dear Parent,
+
+A gentle reminder that the karate fees for ${messageTarget.fullName} are pending. Kindly clear the dues at the earliest.
+
+📞 Sensei Maruti Jadhav
+9049688172
+
+Thank you.`);
                   }}
                   className={`flex-1 py-1.5 text-center text-[10px] font-black uppercase tracking-wider rounded transition-all ${
                     messageType === 'fees'

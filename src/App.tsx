@@ -138,7 +138,7 @@ export default function App() {
       {view === 'home' && (
         <SEOConfig 
           title="Best Karate Classes in Narhe Pune | Self Defence Classes" 
-          description="LIONS KARATE CLUB PUNE is Pune's leading martial arts and self defence academy, training at Vasundhara Pre-Primary School, Narhe. Certified programs for kids & adults."
+          description="LIONS KARATE CLUB PUNE is Pune's leading martial arts and self defence academy, training at Shrinivas Building, Narhe. Certified programs for kids & adults."
           pagePath=""
         />
       )}
@@ -339,11 +339,11 @@ export default function App() {
           <div className="space-y-3">
             <span className="font-heading font-black text-[10px] text-zinc-300 uppercase tracking-widest block">Main Venue</span>
             <p className="text-xs text-zinc-500 leading-relaxed">
-              VASUNDHARA PRE-PRIMARY SCHOOL,<br />
-              Narhe Ambegaon Road, Near Bhumkar Chowk,<br />
-              Beside Silver Birch Hospital, Narhe, Pune, MH 411041<br />
+              Shrinivas Building,<br />
+              Narhe, Pune,<br />
+              Maharashtra 411041 (FR2F+JG)<br />
               <a 
-                href="https://maps.google.com/?q=VASUNDHARA+PRE-PRIMARY+SCHOOL+Narhe+Ambegaon+Road+Near+Bhumkar+Chowk+Pune" 
+                href="https://maps.google.com/?q=FR2F+JG+Pune,+Maharashtra,+Shrinivas+Building,+Narhe" 
                 target="_blank" 
                 rel="noreferrer" 
                 className="text-yellow-500 hover:underline mt-1 inline-block"

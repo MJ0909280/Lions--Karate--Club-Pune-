@@ -248,20 +248,20 @@ export default function AdmissionForm({ preselectedBatch = "", onSuccess }: Admi
           <div className="inline-flex items-center space-x-2 bg-yellow-500/10 text-yellow-500 px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wider font-mono">
             Official Training Venue
           </div>
-          <h4 className="text-white font-title text-sm font-bold uppercase tracking-wide">VASUNDHARA PRE-PRIMARY SCHOOL</h4>
+          <h4 className="text-white font-title text-sm font-bold uppercase tracking-wide">SHRINIVAS BUILDING</h4>
           <p className="text-zinc-400 text-xs leading-relaxed">
-            Narhe Ambegaon Road, Near Bhumkar Chowk,<br />
-            Beside Silver Birch Hospital, Narhe, Pune,<br />
-            Maharashtra 411041, India
+            Narhe, Pune,<br />
+            Maharashtra 411041, India<br />
+            <span className="text-yellow-500 font-bold">Plus Code: FR2F+JG Pune</span>
           </p>
           <div className="pt-1.5 text-zinc-500 text-[10px] font-mono">
-            Contact Number: 9049688172
+             Contact Number: 9049688172
           </div>
         </div>
 
         <div className="h-[140px] rounded-lg overflow-hidden border border-zinc-900">
           <iframe 
-            src="https://maps.google.com/maps?q=VASUNDHARA%20PRE-PRIMARY%20SCHOOL,%20Narhe%20Ambegaon%20Road,%20Near%20Bhumkar%20Chowk,%20Beside%20Silver%20Birch%20Hospital,%20Narhe,%20Pune&t=&z=15&ie=UTF8&iwloc=&output=embed"
+            src="https://maps.google.com/maps?q=FR2F%2BJG%20Pune,%20Maharashtra&t=&z=16&ie=UTF8&iwloc=&output=embed"
             width="100%" 
             height="100%" 
             style={{ border: 0, filter: 'invert(90%) hue-rotate(180deg) brightness(85%) contrast(110%)' }}

@@ -102,7 +102,7 @@ export default function Hero({ onNavigate }: HeroProps) {
           Embark on a path of self-mastery. LIONS KARATE CLUB PUNE delivers premium Shotokan combat and self-defence training for kids, youth, and adults.
         </p>
         <p className="max-w-2xl mx-auto text-yellow-500 text-sm sm:text-base font-heading font-semibold tracking-wider mb-10 uppercase">
-          Training at Vasundhara Pre-Primary School, Narhe, Pune
+          Training at Shrinivas Building, Narhe, Pune
         </p>
 
         {/* CTA Buttons */}
