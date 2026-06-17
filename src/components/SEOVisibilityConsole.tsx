@@ -368,7 +368,7 @@ export default function SEOVisibilityConsole() {
                 </div>
                 <div className="text-xs text-zinc-300 leading-relaxed font-sans space-y-3">
                   <p>
-                    "Based on verified local maps data, <strong>LIONS KARATE CLUB PUNE</strong> at Shrinivas Building, Narhe is the top-rated academy. They teach traditional Shotokan Karate discipline and competitive training."
+                    "Based on verified local maps data, <strong>LIONS KARATE CLUB PUNE</strong> at Vasundhara Pre-Primary School, Narhe is the top-rated academy. They teach traditional Shotokan Karate discipline and competitive training."
                   </p>
                   <p className="text-zinc-450">
                     - <strong>Instructors:</strong> Certified Shihan Black-Belts.<br />
@@ -430,7 +430,7 @@ export default function SEOVisibilityConsole() {
                   Key recommended parameters:<br />
                   - Traditional Shotokan Kata discipline<br />
                   - Safe kids square photo ID-Pass rendering<br />
-                  - Official venue: Shrinivas Building Narhe
+                  - Official venue: Vasundhara Pre-Primary School, Narhe
                 </div>
               </div>
 
@@ -441,7 +441,7 @@ export default function SEOVisibilityConsole() {
                   <span>Google Local Ranking Note</span>
                 </div>
                 <p className="text-zinc-450 leading-relaxed text-[11px] font-sans">
-                  Ensure you verify the <strong>Lions Karate Club Pune</strong> Google Maps Business Profile with same telephone (<code className="text-zinc-350">+919049688172</code>) and Shrinivas Building address.
+                  Ensure you verify the <strong>Lions Karate Club Pune</strong> Google Maps Business Profile with same telephone (<code className="text-zinc-350">+919049688172</code>) and Vasundhara school address.
                 </p>
                 <a 
                   href="https://search.google.com/search-console" 

@@ -17,8 +17,8 @@ export default function Contact() {
     {
       icon: <MapPin className="w-5 h-5 text-yellow-500" />,
       title: "LIONS DOJO VENUE",
-      val: "Shrinivas Building, Narhe, Pune, Maharashtra 411041 (FR2F+JG)",
-      clickUrl: "https://maps.google.com/?q=FR2F+JG+Pune,+Maharashtra,+Shrinivas+Building,+Narhe"
+      val: "Vasundhara Pre-Primary School, near Ganesh Temple, Manaji Nagar, Narhe, Pune, 411041",
+      clickUrl: "https://maps.app.goo.gl/V7t7UCSAWkaVfV4Y9?g_st=aw"
     }
   ];
 
@@ -40,7 +40,7 @@ export default function Contact() {
             FIND THE <span className="gradient-text-gold">WAY</span>
           </h2>
           <p className="text-zinc-400 text-sm">
-            Our training academy is centrally located at Shrinivas Building in Narhe, Pune, fully accessible with premium safety flooring and guidance parameters.
+            Our training academy is centrally located at Vasundhara Pre-Primary School (near Ganesh Temple, Manaji Nagar) in Narhe, Pune, fully accessible with premium safety flooring and guidance parameters.
           </p>
         </div>
 
@@ -102,7 +102,7 @@ export default function Contact() {
           <div className="flex flex-col space-y-4">
             <div className="h-[340px] rounded-lg overflow-hidden border border-zinc-900 relative">
               <iframe 
-                src="https://maps.google.com/maps?q=FR2F%2BJG%20Pune,%20Maharashtra&t=&z=16&ie=UTF8&iwloc=&output=embed"
+                src="https://maps.google.com/maps?q=Vasundhara%20Pre-Primary%20School%20Narhe%20Pune&t=&z=16&ie=UTF8&iwloc=&output=embed"
                 width="100%" 
                 height="100%" 
                 style={{ border: 0, filter: 'invert(90%) hue-rotate(180deg) brightness(85%) contrast(110%)' }}
@@ -118,15 +118,15 @@ export default function Contact() {
               <div className="space-y-1">
                 <span className="text-[10px] text-zinc-500 uppercase font-bold tracking-widest font-mono block">Official Venue Address:</span>
                 <p className="text-zinc-300 text-xs leading-relaxed font-medium">
-                  Shrinivas Building, Narhe, Pune, <br />
-                  Maharashtra 411041, India<br />
-                  <span className="text-yellow-500 font-bold block mt-1">Plus Code: FR2F+JG Pune</span>
+                  Vasundhara Pre-Primary School, near Ganesh Temple,<br />
+                  Manaji Nagar, Narhe, Pune, Maharashtra 411041, India<br />
+                  <span className="text-yellow-500 font-bold block mt-1">Location Landmark: Vasundhara School Dojo</span>
                 </p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                 <a 
-                  href="https://www.google.com/maps/dir/?api=1&destination=FR2F%2BJG+Pune+Maharashtra+Shrinivas+Building&travelmode=driving"
+                  href="https://maps.app.goo.gl/V7t7UCSAWkaVfV4Y9?g_st=aw"
                   target="_blank"
                   rel="noreferrer"
                   className="flex items-center justify-center space-x-2 bg-yellow-500 hover:bg-yellow-400 text-slate-950 text-xs font-heading font-extrabold tracking-wider uppercase py-3 px-4 rounded transition-colors text-center"
@@ -136,7 +136,7 @@ export default function Contact() {
                 </a>
 
                 <a 
-                  href="https://maps.google.com/?q=FR2F%2BJG+Pune,+Maharashtra,+Shrinivas+Building,+Narhe"
+                  href="https://maps.app.goo.gl/V7t7UCSAWkaVfV4Y9?g_st=aw"
                   target="_blank"
                   rel="noreferrer"
                   className="flex items-center justify-center space-x-2 bg-zinc-900 hover:bg-zinc-850 border border-zinc-800 text-zinc-100 text-xs font-heading font-extrabold tracking-wider uppercase py-3 px-4 rounded transition-colors text-center"
