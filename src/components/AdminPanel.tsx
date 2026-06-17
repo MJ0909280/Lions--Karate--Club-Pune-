@@ -21,6 +21,7 @@ import {
 import { db, auth, handleFirestoreError, OperationType } from '../firebase';
 import { Admission, BatchInfo, BATCH_TIMINGS, DOJO_BRANCHES, BELT_LEVELS } from '../types';
 import IDCard from './IDCard';
+import SEOVisibilityConsole from './SEOVisibilityConsole';
 import { 
   ShieldCheck, 
   LogOut, 
@@ -50,7 +51,8 @@ import {
   Video,
   RefreshCw,
   Upload,
-  Camera
+  Camera,
+  Sparkles
 } from 'lucide-react';
 
 // Required Admin check email literal configuration
@@ -65,7 +67,7 @@ export default function AdminPanel() {
   const [dataLoading, setDataLoading] = useState(false);
 
   // Tab navigation console state
-  const [adminTab, setAdminTab] = useState<'admissions' | 'batches' | 'site_settings' | 'exams'>('admissions');
+  const [adminTab, setAdminTab] = useState<'admissions' | 'batches' | 'site_settings' | 'exams' | 'seo_ai'>('admissions');
 
   // Live Exams Admin Syncing States
   const [exams, setExams] = useState<any[]>([]);
@@ -1127,10 +1129,21 @@ export default function AdminPanel() {
               className={`font-heading font-black text-xs tracking-widest uppercase pb-4 border-b-2 transition-all cursor-pointer ${
                 adminTab === 'exams' 
                   ? 'border-yellow-500 text-yellow-500 font-extrabold' 
-                  : 'border-transparent text-zinc-550 hover:text-zinc-350'
+                  : 'border-transparent text-zinc-555 hover:text-zinc-350'
               }`}
             >
               Exams & Belt Grading
+            </button>
+            <button
+              onClick={() => setAdminTab('seo_ai')}
+              className={`font-heading font-black text-xs tracking-widest uppercase pb-4 border-b-2 transition-all cursor-pointer flex items-center space-x-1 ${
+                adminTab === 'seo_ai' 
+                  ? 'border-yellow-500 text-yellow-500 font-extrabold' 
+                  : 'border-transparent text-zinc-550 hover:text-zinc-300'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5 shrink-0" />
+              <span>GSC & AI SEO</span>
             </button>
           </div>
 
@@ -2046,6 +2059,12 @@ export default function AdminPanel() {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {adminTab === 'seo_ai' && (
+          <div className="animate-fade-in py-2">
+            <SEOVisibilityConsole />
           </div>
         )}
 
