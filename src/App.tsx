@@ -17,6 +17,8 @@ import AdmissionForm from './components/AdmissionForm';
 import IDCard from './components/IDCard';
 import AdminPanel from './components/AdminPanel';
 import StudentPortal from './components/StudentPortal';
+import WhatsAppFAB from './components/WhatsAppFAB';
+import TrailerOverlay from './components/TrailerOverlay';
 
 import { Award, ShieldAlert, ShieldCheck, ArrowLeft, RefreshCw, Star, MapPin, Instagram, Youtube, MessageCircle } from 'lucide-react';
 
@@ -27,6 +29,32 @@ export default function App() {
   const [selectedBatchText, setSelectedBatchText] = useState('');
   const [studentPortalTab, setStudentPortalTab] = useState<'progress' | 'exam' | 'attendance'>('progress');
   
+  // Trailer state persistent per session
+  const [trailerCompleted, setTrailerCompleted] = useState(() => !!sessionStorage.getItem('dojo_trailer_entered'));
+
+  // Mouse position cursor tracking
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [isMouseActive, setIsMouseActive] = useState(false);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      setMousePosition({ x: e.clientX, y: e.clientY });
+      setIsMouseActive(true);
+    };
+    const handleMouseLeave = () => setIsMouseActive(false);
+    const handleMouseEnter = () => setIsMouseActive(true);
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseleave', handleMouseLeave);
+    document.addEventListener('mouseenter', handleMouseEnter);
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseleave', handleMouseLeave);
+      document.removeEventListener('mouseenter', handleMouseEnter);
+    };
+  }, []);
+
   // Success states
   const [successDocId, setSuccessDocId] = useState('');
   const [successAdmission, setSuccessAdmission] = useState<Admission | null>(null);
@@ -132,20 +160,39 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col justify-between selection:bg-yellow-500 selection:text-slate-950 text-slate-100">
+    <div className="min-h-screen bg-slate-950 flex flex-col justify-between selection:bg-yellow-500 selection:text-slate-950 text-[#F0E6D3]">
       
+      {/* Immersive Trailer Overlay */}
+      {!trailerCompleted && (
+        <TrailerOverlay onEnter={() => {
+          setTrailerCompleted(true);
+          sessionStorage.setItem('dojo_trailer_entered', 'true');
+        }} />
+      )}
+
+      {/* Interactive mouse follow cursor glow */}
+      {isMouseActive && (
+        <div
+          className="cursor-glow active pointer-events-none fixed z-[9999] hidden lg:block"
+          style={{
+            left: `${mousePosition.x}px`,
+            top: `${mousePosition.y}px`,
+          }}
+        />
+      )}
+
       {/* Dynamic SEO headers mounting */}
       {view === 'home' && (
         <SEOConfig 
-          title="Best Karate Classes in Manajinager Pune | Self Defence Classes" 
-          description="LIONS KARATE CLUB PUNE is Pune's leading martial arts and self defence academy, training at Vasundhara Pre-Primary School, Manajinager. Certified programs for kids & adults."
+          title="Best Karate Classes in Pune | Self Defence Classes" 
+          description="LIONS KARATE CLUB PUNE is Pune's leading martial arts and self defence academy. Certified programs for kids & adults."
           pagePath=""
         />
       )}
       {view === 'admission' && (
         <SEOConfig 
           title="Online Admission Enrollment Portal" 
-          description="Enroll in LIONS KARATE CLUB PUNE. Sign up for Kids Karate Classes in Manajinager Pune near Bhumkar Chowk, select program batches, and secure registrations."
+          description="Enroll in LIONS KARATE CLUB PUNE. Sign up for Kids Karate Classes, select program batches, and secure registrations."
           pagePath="#admission"
         />
       )}
@@ -197,6 +244,9 @@ export default function App() {
 
           {/* Map details, times schedule, and direct contacts */}
           <Contact />
+
+          {/* Floating Action Button for direct WhatsApp inquiries */}
+          <WhatsAppFAB />
         </main>
       )}
 
@@ -240,7 +290,7 @@ export default function App() {
             )}
 
             {!successLoading && successAdmission && (
-              <IDCard admission={successAdmission} showSuccessBanner={true} />
+              <IDCard admission={successAdmission} showSuccessBanner={true} hideDownloadActions={true} />
             )}
 
             {!successLoading && !successAdmission && (
@@ -337,21 +387,12 @@ export default function App() {
 
           {/* Location contact parameter */}
           <div className="space-y-3">
-            <span className="font-heading font-black text-[10px] text-zinc-300 uppercase tracking-widest block">Main Venue</span>
+            <span className="font-heading font-black text-[10px] text-zinc-300 uppercase tracking-widest block">Contact Info</span>
             <p className="text-xs text-zinc-500 leading-relaxed">
-              Vasundhara Pre-Primary School,<br />
-              near Ganesh Temple, Manajinager,<br />
-              Pune, 411041 (Maharashtra)<br />
-              <a 
-                href="https://maps.app.goo.gl/V7t7UCSAWkaVfV4Y9?g_st=aw" 
-                target="_blank" 
-                rel="noreferrer" 
-                className="text-yellow-500 hover:underline mt-1 inline-block"
-              >
-                View Location Map &rarr;
-              </a>
-              <br />
-              Tell Contact: <a href="tel:9049688172" className="text-zinc-300 hover:text-yellow-500">9049688172</a>
+              LIONS KARATE CLUB PUNE<br />
+              Pune, Maharashtra, India<br />
+              Tel: <a href="tel:9049688172" className="text-zinc-300 hover:text-yellow-500">9049688172</a><br />
+              Email: <a href="mailto:lionskaratepune@gmail.com" className="text-zinc-300 hover:text-yellow-500">lionskaratepune@gmail.com</a>
             </p>
           </div>
         </div>

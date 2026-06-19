@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { initializeFirestore } from 'firebase/firestore';
+import { initializeFirestore, doc, getDocFromServer } from 'firebase/firestore';
 
 // Embedded Firebase credentials so the ZIP download & Vercel deployment work instantly
 const metaEnv = (import.meta as any).env || {};
@@ -22,7 +22,19 @@ const app = initializeApp(firebaseConfig);
 export const db = initializeFirestore(app, {
   experimentalForceLongPolling: true
 }, firebaseConfig.firestoreDatabaseId);
+
 export const auth = getAuth();
+
+async function testConnection() {
+  try {
+    await getDocFromServer(doc(db, 'test', 'connection'));
+  } catch (error) {
+    if (error instanceof Error && (error.message.includes('the client is offline') || error.message.includes('unavailable'))) {
+      console.warn("Firestore is currently running in offline-first mode. Will sync automatically when connection re-establishes.");
+    }
+  }
+}
+testConnection();
 
 export enum OperationType {
   CREATE = 'create',

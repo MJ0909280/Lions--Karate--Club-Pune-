@@ -22,21 +22,28 @@ export default function Coaches() {
   ];
 
   return (
-    <section id="coaches" className="py-14 sm:py-20 bg-slate-950 border-t border-zinc-900/60 relative">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="coaches" className="py-20 sm:py-28 bg-[#111010] border-t border-zinc-900/60 relative overflow-hidden">
+      {/* Decorative background kanji */}
+      <div className="absolute top-1/2 left-10 -translate-y-1/2 opacity-[0.03] hidden xl:block select-none pointer-events-none text-left">
+        <div className="font-kanji text-[11rem] leading-none text-red-500 font-extrabold tracking-widest writing-vertical">
+          師範
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
         {/* Section Heading */}
         <div className="text-center max-w-2xl mx-auto mb-10 sm:mb-14">
           <div className="mb-4 inline-flex items-center gap-2 justify-center">
-            <div className="h-[1px] w-8 bg-[#FF3B3F]"></div>
-            <span className="text-[#FF3B3F] uppercase tracking-[0.3em] text-[10px] font-extrabold">COACHING MASTERS</span>
-            <div className="h-[1px] w-8 bg-[#FF3B3F]"></div>
+            <div className="h-[1px] w-8 bg-red-500"></div>
+            <span className="text-red-500 uppercase tracking-[0.3em] text-[10px] font-extrabold font-mono">COACHING MASTERS</span>
+            <div className="h-[1px] w-8 bg-red-500"></div>
           </div>
           <h2 className="font-heading text-3xl sm:text-5xl font-black text-white uppercase tracking-tighter mb-4">
-            LEGENDARY <span className="text-transparent" style={{ WebkitTextStroke: '1px #e5e5e5' }}>SENSEIS</span>
+            LEGENDARY <span className="text-transparent font-kanji" style={{ WebkitTextStroke: '1px #C9A96E', color: 'transparent' }}>SENSEIS</span>
           </h2>
-          <p className="text-zinc-400 text-sm">
-            Learn directly from certified masters who live and breathe traditional karate martial arts and athletic sports science.
+          <p className="text-zinc-400 text-xs sm:text-sm font-sans max-w-xl mx-auto leading-relaxed">
+            Learn directly from certified masters who live and breathe traditional Shotokan karate martial arts and athletic physical science.
           </p>
         </div>
 

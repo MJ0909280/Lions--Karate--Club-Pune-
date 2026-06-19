@@ -64,7 +64,7 @@ export default function Navbar({ currentView, studentPortalTab, onNavigate }: Na
             />
             <div>
               <span className="font-heading text-xl text-white font-black tracking-tighter uppercase block leading-none">
-                LIONS <span className="text-[#FF3B3F]">KARATE</span>
+                LIONS <span className="text-red-500">KARATE</span>
               </span>
               <span className="font-mono text-[8px] text-zinc-500 uppercase tracking-[0.2em] font-bold block leading-none mt-1">
                 LIONS KARATE CLUB PUNE
@@ -135,11 +135,11 @@ export default function Navbar({ currentView, studentPortalTab, onNavigate }: Na
               onClick={() => onNavigate('belt-exam')}
               className={`flex items-center space-x-1 font-heading text-[11px] uppercase tracking-wider px-2.5 py-1.5 rounded border transition-all ${
                 currentView === 'student-portal' && studentPortalTab === 'exam'
-                  ? 'bg-red-500/10 border-[#FF3B3F] text-red-500 font-extrabold'
+                  ? 'bg-red-500/10 border-red-500 text-red-500 font-extrabold'
                   : 'border-zinc-700 text-zinc-400 hover:text-zinc-200'
               }`}
             >
-              <Calendar className="w-3.5 h-3.5 text-[#FF3B3F]" />
+              <Calendar className="w-3.5 h-3.5 text-red-500" />
               <span>Apply For Exam</span>
             </button>
 

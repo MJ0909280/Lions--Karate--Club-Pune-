@@ -91,18 +91,18 @@ export default function Gallery() {
   const selectedItem = selectedIndex !== null ? filteredItems[selectedIndex] : null;
 
   return (
-    <section id="gallery" className="py-14 sm:py-20 bg-zinc-950 border-t border-zinc-900/60 relative">
+    <section id="gallery" className="py-20 sm:py-28 bg-[#111010] border-t border-zinc-900/60 relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Section Heading */}
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 sm:mb-14 gap-6">
           <div className="max-w-xl">
             <div className="mb-4 inline-flex items-center gap-2">
-              <div className="h-[1px] w-8 bg-[#FF3B3F]"></div>
-              <span className="text-[#FF3B3F] uppercase tracking-[0.3em] text-[10px] font-extrabold">GALLERY FEED</span>
+              <div className="h-[1px] w-8 bg-red-500"></div>
+              <span className="text-red-500 uppercase tracking-[0.3em] text-[10px] font-extrabold font-mono">GALLERY FEED</span>
             </div>
             <h2 className="font-heading text-3xl sm:text-5xl font-black text-white uppercase tracking-tighter leading-none">
-              LIFE AT <span className="text-transparent" style={{ WebkitTextStroke: '1px #e5e5e5' }}>THE DOJO</span>
+              LIFE AT <span className="text-transparent font-kanji" style={{ WebkitTextStroke: '1px #C9A96E', color: 'transparent' }}>THE DOJO</span>
             </h2>
           </div>
 

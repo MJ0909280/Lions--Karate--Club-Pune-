@@ -251,45 +251,45 @@ export default function AdmissionForm({ preselectedBatch = "", onSuccess }: Admi
   };
 
   return (
-    <div className="max-w-4xl mx-auto bg-slate-900/40 border border-zinc-900 rounded-2xl p-6 sm:p-10 shadow-2xl relative">
-      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-yellow-500 via-amber-600 to-yellow-500 rounded-t-2xl" />
+    <div className="max-w-4xl mx-auto bg-[#141211]/95 border-2 border-stone-800 rounded-2xl p-5 sm:p-8 md:p-10 shadow-[0_20px_60px_rgba(0,0,0,0.85)] relative">
+      <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-red-600 via-amber-500 to-red-600 rounded-t-2xl" />
 
       {/* Form header */}
-      <div className="flex items-center space-x-3 text-yellow-500 mb-6 border-b border-zinc-900/80 pb-6">
-        <FileText className="w-8 h-8 shrink-0" />
+      <div className="flex items-center space-x-3 text-amber-500 mb-6 border-b border-stone-900 pb-6">
+        <FileText className="w-8 h-8 shrink-0 text-amber-500" />
         <div>
-          <h3 className="font-title text-xl font-bold text-white uppercase tracking-wider">Online Dojo Admission Portal</h3>
-          <p className="text-zinc-500 text-xs mt-0.5">Please submit authentic profile and health details to enroll in LIONS KARATE CLUB PUNE.</p>
+          <h3 className="font-heading text-xl sm:text-2xl font-black text-white uppercase tracking-wider">Online Dojo Admission Portal</h3>
+          <p className="text-stone-400 text-xs mt-0.5">Enroll now in LIONS KARATE CLUB PUNE by submitting active registry and passport profile details.</p>
         </div>
       </div>
 
       {/* Venue Information and Map Preview */}
-      <div className="mb-8 bg-slate-950/60 border border-zinc-900 p-5 rounded-xl grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+      <div className="mb-8 bg-stone-950/60 border border-stone-900 p-5 rounded-xl grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
         <div className="space-y-3">
-          <div className="inline-flex items-center space-x-2 bg-yellow-500/10 text-yellow-500 px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wider font-mono">
+          <div className="inline-flex items-center space-x-2 bg-amber-500/10 text-amber-500 px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wider font-mono">
             Official Training Venue
           </div>
-          <h4 className="text-white font-title text-sm font-bold uppercase tracking-wide">VASUNDHARA PRE-PRIMARY SCHOOL</h4>
-          <p className="text-zinc-400 text-xs leading-relaxed">
+          <h4 className="text-white font-heading text-sm font-black uppercase tracking-wide">VASUNDHARA PRE-PRIMARY SCHOOL</h4>
+          <p className="text-stone-400 text-xs leading-relaxed">
             Near Ganesh Temple, Manajinager,<br />
             Pune, Maharashtra 411041, India<br />
-            <span className="text-yellow-500 font-bold">Landmark: Vasundhara School Dojo</span>
+            <strong className="text-amber-500 font-extrabold font-sans">Landmark: Vasundhara School Dojo</strong>
           </p>
-          <div className="pt-1.5 text-zinc-500 text-[10px] font-mono">
-             Contact Number: 9049688172
+          <div className="pt-1.5 text-stone-500 text-[10px] font-mono">
+             Contact Number: +91 9049688172
           </div>
         </div>
 
-        <div className="bg-zinc-905/60 border border-zinc-900 p-5 rounded-lg flex flex-col justify-center items-center text-center space-y-3 min-h-[140px]">
-          <span className="text-[10px] text-yellow-500/80 uppercase tracking-widest font-mono font-bold">Location Verification</span>
-          <p className="text-zinc-400 text-xs max-w-xs leading-relaxed">
+        <div className="bg-stone-900/40 border border-stone-850 p-5 rounded-lg flex flex-col justify-center items-center text-center space-y-3 min-h-[140px]">
+          <span className="text-[10px] text-amber-500 uppercase tracking-widest font-mono font-bold">Location Verification</span>
+          <p className="text-stone-400 text-xs max-w-xs leading-relaxed">
             Open the official location marker directly in Google Maps for reliable directions.
           </p>
           <a 
             href="https://maps.app.goo.gl/V7t7UCSAWkaVfV4Y9?g_st=aw"
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center space-x-2 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-850 text-zinc-100 font-heading text-[10px] font-extrabold uppercase tracking-widest py-2 px-4 rounded transition-all"
+            className="inline-flex items-center space-x-2 bg-stone-950 border border-stone-800 hover:border-amber-500 text-stone-300 hover:text-white font-heading text-[10px] font-extrabold uppercase tracking-widest py-2.5 px-4 rounded transition-all cursor-pointer shadow-md"
           >
             <span>Open Verified Map Marker ↗</span>
           </a>
@@ -306,19 +306,21 @@ export default function AdmissionForm({ preselectedBatch = "", onSuccess }: Admi
       {/* Actual Form structure */}
       <form onSubmit={handleSubmit} className="space-y-8">
         
-        {/* Step 1: Drag & Drop Photo parameter */}
-        <div>
-          <span className="font-heading font-bold text-zinc-300 uppercase text-xs tracking-wider block mb-3">1. Student Photo Passport (Instant ID Rendering)</span>
+        {/* Step 1: Student Photo Passport */}
+        <div className="space-y-3 bg-[#141211]/50 border border-stone-850 p-5 rounded-xl">
+          <span className="font-heading font-bold text-amber-500 uppercase text-xs tracking-wider block">
+            📸 1. Student Passport Photo (For ID Card Generation)
+          </span>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-center">
             {/* Visual drag-and-drop boundary */}
             <div
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
               onClick={() => fileInputRef.current?.click()}
-              className={`md:col-span-2 h-[160px] border-2 border-dashed rounded-xl flex flex-col justify-center items-center px-4 text-center cursor-pointer transition-all ${
-                isDragOver ? 'border-yellow-500 bg-yellow-500/5' : 'border-zinc-800 bg-slate-950/20 hover:border-zinc-700'
+              className={`md:col-span-3 h-[130px] border-2 border-dashed rounded-xl flex flex-col justify-center items-center px-4 text-center cursor-pointer transition-all ${
+                isDragOver ? 'border-amber-500 bg-amber-500/5' : 'border-stone-800 bg-stone-950/40 hover:border-stone-700'
               }`}
             >
               <input 
@@ -328,30 +330,38 @@ export default function AdmissionForm({ preselectedBatch = "", onSuccess }: Admi
                 accept="image/*"
                 className="hidden"
               />
-              <Upload className="w-8 h-8 text-zinc-500 group-hover:text-zinc-300 mb-2" />
-              <span className="text-zinc-400 text-xs font-heading font-medium">Drag & Drop passport image here or <span className="text-yellow-500 font-semibold cursor-pointer">Browse</span></span>
-              <span className="text-zinc-600 text-[10px] mt-1 block">Supports PNG, JPG, WEBP. Auto-cropped to square badge.</span>
+              <Upload className="w-6 h-6 text-amber-500 mb-2 animate-pulse" />
+              <p className="text-stone-300 text-xs font-semibold">
+                Drag & Drop student photo here or <span className="text-amber-500 font-extrabold underline decoration-amber-500/30">Browse Files</span>
+              </p>
+              <span className="text-stone-500 text-[10px] mt-1 block">
+                Supports PNG, JPG, JPEG, WEBP. Photo will be auto-framed nicely for the pass card.
+              </span>
             </div>
 
-            {/* Photo preview segment */}
-            <div className="flex flex-col items-center justify-center p-4 bg-slate-950/40 border border-zinc-900 rounded-xl h-[160px]">
+            {/* Photo preview segment previewing precisely like a mini ID Card */}
+            <div className="flex flex-col items-center justify-center p-3 bg-stone-950/85 border border-stone-850 rounded-xl h-[130px] relative">
               {photoUrl ? (
-                <div className="relative w-24 h-24 rounded-lg overflow-hidden border border-yellow-500/30">
-                  <img src={photoUrl} alt="Passport preview" className="w-full h-full object-cover" />
+                <div className="relative w-20 h-20 rounded-lg overflow-hidden border border-amber-500">
+                  <img src={photoUrl} alt="Passport preview" className="w-full h-full object-cover filter grayscale" />
                   <button
                     type="button"
-                    onClick={() => setPhotoUrl('')}
-                    className="absolute inset-0 bg-black/60 opacity-0 hover:opacity-100 flex items-center justify-center text-red-500 text-[10px] uppercase font-bold tracking-wide transition-opacity"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setPhotoUrl('');
+                    }}
+                    className="absolute inset-0 bg-black/75 opacity-100 flex items-center justify-center text-red-500 text-[10px] uppercase font-black tracking-wider transition-opacity cursor-pointer"
                   >
-                    Remove
+                    ✕ Clear
                   </button>
                 </div>
               ) : (
-                <div className="flex flex-col items-center text-zinc-600">
-                  <div className="bg-zinc-900 p-3 rounded-full mb-1">
-                    <Camera className="w-5 h-5 text-zinc-500" />
+                <div className="flex flex-col items-center text-stone-600">
+                  <div className="bg-stone-900 border border-stone-800 p-2.5 rounded-full mb-1">
+                    <Camera className="w-4 h-4 text-stone-500" />
                   </div>
-                  <span className="text-[10px] uppercase font-bold tracking-wider">Live Preview</span>
+                  <span className="text-[9px] uppercase font-black text-stone-500 tracking-wider">No Photo Selected</span>
+                  <span className="text-[8px] text-stone-600 mt-0.5 text-center leading-none">Uses a dapper silhouette if blank</span>
                 </div>
               )}
             </div>
@@ -359,51 +369,53 @@ export default function AdmissionForm({ preselectedBatch = "", onSuccess }: Admi
         </div>
 
         {/* Step 2: Student identity details */}
-        <div>
-          <span className="font-heading font-bold text-zinc-300 uppercase text-xs tracking-wider block mb-4">2. Core Student Credentials</span>
+        <div className="space-y-4">
+          <span className="font-heading font-extrabold text-stone-300 uppercase text-xs tracking-wider block border-l-2 border-amber-500 pl-2">
+            2. Core Student Credentials
+          </span>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="text-zinc-500 text-[11px] uppercase tracking-wider block mb-1">Full Student Name *</label>
+              <label className="block text-xs font-semibold text-stone-400 uppercase tracking-wide mb-1">Full Student Name *</label>
               <input 
                 type="text" 
                 placeholder="e.g. Kenji Bradley"
                 required
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                className="w-full bg-slate-950 border border-zinc-800 focus:border-yellow-500 text-zinc-100 text-xs px-4 py-3 rounded-lg focus:outline-none transition-all placeholder:text-zinc-650"
+                className="w-full bg-[#1c1917]/50 border border-stone-850 text-stone-100 rounded-lg px-3.5 py-3 text-xs focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-all font-sans outline-none placeholder:text-stone-600"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-zinc-500 text-[11px] uppercase tracking-wider block mb-1">Date of Birth *</label>
+                <label className="block text-xs font-semibold text-stone-400 uppercase tracking-wide mb-1">Date of Birth *</label>
                 <input 
                   type="date" 
                   required
                   value={dob}
                   onChange={handleDobChange}
-                  className="w-full bg-slate-950 border border-zinc-800 focus:border-yellow-500 text-zinc-100 text-xs px-3 py-3 rounded-lg focus:outline-none transition-all"
+                  className="w-full bg-[#1c1917]/50 border border-stone-850 text-stone-100 rounded-lg px-3 py-3 text-xs focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-all font-sans outline-none"
                 />
               </div>
               <div>
-                <label className="text-zinc-500 text-[11px] uppercase tracking-wider block mb-1">Auto Calculated Age</label>
+                <label className="block text-xs font-semibold text-stone-400 uppercase tracking-wide mb-1 opacity-80">Calculated Age</label>
                 <input 
                   type="text" 
                   disabled
                   value={age !== '' ? `${age} yrs` : 'Select DOB'}
-                  className="w-full bg-slate-950/60 border border-zinc-90s text-zinc-500 text-xs px-3 py-3 rounded-lg font-mono focus:outline-none"
+                  className="w-full bg-[#1c1917]/30 border border-stone-900 text-stone-500 rounded-lg px-3 py-3 text-xs font-mono font-bold focus:outline-none"
                 />
               </div>
             </div>
 
             <div>
-              <label className="text-zinc-500 text-[11px] uppercase tracking-wider block mb-1">Gender *</label>
+              <label className="block text-xs font-semibold text-stone-400 uppercase tracking-wide mb-1">Gender *</label>
               <select
                 required
                 value={gender}
                 onChange={(e: any) => setGender(e.target.value)}
-                className="w-full bg-slate-950 border border-zinc-800 focus:border-yellow-500 text-zinc-150 text-xs px-4 py-3 rounded-lg focus:outline-none transition-all cursor-pointer"
+                className="w-full bg-[#1c1917]/90 border border-stone-850 text-stone-300 rounded-lg px-3.5 py-3 text-xs focus:outline-none focus:border-amber-500 transition-all cursor-pointer"
               >
                 <option value="">Select Gender</option>
                 <option value="male">Male</option>
@@ -413,121 +425,125 @@ export default function AdmissionForm({ preselectedBatch = "", onSuccess }: Admi
             </div>
 
             <div>
-              <label className="text-zinc-500 text-[11px] uppercase tracking-wider block mb-1">Parent or Legal Guardian Name (Leave blank if adult)</label>
+              <label className="block text-xs font-semibold text-stone-400 uppercase tracking-wide mb-1">Parent/Guardian Name (Or leave blank if adult)</label>
               <input 
                 type="text" 
                 placeholder="e.g. Richard Bradley"
                 value={parentName}
                 onChange={(e) => setParentName(e.target.value)}
-                className="w-full bg-slate-950 border border-zinc-800 focus:border-yellow-500 text-zinc-100 text-xs px-4 py-3 rounded-lg focus:outline-none transition-all placeholder:text-zinc-650"
+                className="w-full bg-[#1c1917]/50 border border-stone-850 text-stone-100 rounded-lg px-3.5 py-3 text-xs focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-all font-sans outline-none placeholder:text-stone-600"
               />
             </div>
           </div>
         </div>
 
         {/* Step 3: Contact details */}
-        <div>
-          <span className="font-heading font-bold text-zinc-300 uppercase text-xs tracking-wider block mb-4">3. Contact parameters</span>
+        <div className="space-y-4">
+          <span className="font-heading font-extrabold text-stone-300 uppercase text-xs tracking-wider block border-l-2 border-amber-500 pl-2">
+            3. Contact Parameters & Address
+          </span>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
-              <label className="text-zinc-500 text-[11px] uppercase tracking-wider block mb-1">Student Phone *</label>
+              <label className="block text-xs font-semibold text-stone-400 uppercase tracking-wide mb-1">Student Phone *</label>
               <input 
                 type="tel" 
                 placeholder="e.g. 9049688172"
                 required
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                className="w-full bg-slate-950 border border-zinc-800 focus:border-yellow-500 text-zinc-100 text-xs px-4 py-3 rounded-lg focus:outline-none transition-all placeholder:text-zinc-650"
+                className="w-full bg-[#1c1917]/50 border border-stone-850 text-stone-100 rounded-lg px-3.5 py-3 text-xs focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-all font-sans outline-none placeholder:text-stone-600"
               />
             </div>
 
             <div>
-              <label className="text-zinc-500 text-[11px] uppercase tracking-wider block mb-1">WhatsApp number (If different)</label>
+              <label className="block text-xs font-semibold text-stone-400 uppercase tracking-wide mb-1">WhatsApp phone (If different)</label>
               <input 
                 type="tel" 
                 placeholder="e.g. 9049688172"
                 value={whatsApp}
                 onChange={(e) => setWhatsApp(e.target.value)}
-                className="w-full bg-slate-950 border border-zinc-800 focus:border-yellow-500 text-zinc-100 text-xs px-4 py-3 rounded-lg focus:outline-none transition-all placeholder:text-zinc-650"
+                className="w-full bg-[#1c1917]/50 border border-stone-850 text-stone-100 rounded-lg px-3.5 py-3 text-xs focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-all font-sans outline-none placeholder:text-stone-600"
               />
             </div>
 
             <div>
-              <label className="text-zinc-500 text-[11px] uppercase tracking-wider block mb-1">Active Email Address *</label>
+              <label className="block text-xs font-semibold text-stone-400 uppercase tracking-wide mb-1">Active Email Address *</label>
               <input 
                 type="email" 
-                placeholder="kenji@yahoo.com"
+                placeholder="e.g. student@example.com"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-slate-950 border border-zinc-800 focus:border-yellow-500 text-zinc-100 text-xs px-4 py-3 rounded-lg focus:outline-none transition-all placeholder:text-zinc-650"
+                className="w-full bg-[#1c1917]/50 border border-stone-850 text-stone-100 rounded-lg px-3.5 py-3 text-xs focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-all font-sans outline-none placeholder:text-stone-600"
               />
             </div>
 
             <div className="md:col-span-3">
-              <label className="text-zinc-500 text-[11px] uppercase tracking-wider block mb-1">Physical Address *</label>
+              <label className="block text-xs font-semibold text-stone-400 uppercase tracking-wide mb-1">Physical Dojo Address *</label>
               <input 
                 type="text" 
                 placeholder="e.g. Flat No, Society Name, Manajinager, Pune, MH 411041"
                 required
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
-                className="w-full bg-slate-950 border border-zinc-800 focus:border-yellow-500 text-zinc-100 text-xs px-4 py-3 rounded-lg focus:outline-none transition-all placeholder:text-zinc-650"
+                className="w-full bg-[#1c1917]/50 border border-stone-850 text-stone-100 rounded-lg px-3.5 py-3 text-xs focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-all font-sans outline-none placeholder:text-stone-600"
               />
             </div>
           </div>
         </div>
 
         {/* Step 4: Program selection */}
-        <div>
-          <span className="font-heading font-bold text-zinc-300 uppercase text-xs tracking-wider block mb-4">4. Karate Branch, Batch, Belt & Fees parameters</span>
+        <div className="space-y-4">
+          <span className="font-heading font-extrabold text-stone-300 uppercase text-xs tracking-wider block border-l-2 border-amber-500 pl-2">
+            4. Karate Branch, Batch, Belt & Induction params
+          </span>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="text-zinc-500 text-[11px] uppercase tracking-wider block mb-1">Dojo Branch *</label>
+              <label className="block text-xs font-semibold text-stone-400 uppercase tracking-wide mb-1">Dojo Branch Selection *</label>
               <select
                 required
                 value={selectedBranchId}
                 onChange={(e) => setSelectedBranchId(e.target.value)}
-                className="w-full bg-slate-950 border border-zinc-800 focus:border-yellow-500 text-zinc-150 text-xs px-4 py-3 rounded-lg focus:outline-none transition-all cursor-pointer"
+                className="w-full bg-[#1c1917]/90 border border-stone-850 text-stone-300 rounded-lg px-3.5 py-3 text-xs focus:outline-none focus:border-amber-500 transition-all cursor-pointer"
               >
                 {DOJO_BRANCHES.map((b) => (
                   <option key={b.id} value={b.id}>{b.name}</option>
                 ))}
               </select>
-              <div className="mt-2 bg-slate-950/60 border border-zinc-900/50 px-3.5 py-2 rounded-lg flex flex-col space-y-1">
-                <span className="text-zinc-500 text-[9px] uppercase tracking-wide font-mono">Assigned Instructor Coach:</span>
-                <span className="text-yellow-500 font-sans text-xs font-bold leading-tight">
-                  {DOJO_BRANCHES.find(b => b.id === selectedBranchId)?.coach}
+              <div className="mt-2 bg-stone-950/70 border border-stone-900 px-3.5 py-2.5 rounded-lg flex flex-col space-y-0.5 shadow-inner">
+                <span className="text-stone-500 text-[10px] uppercase tracking-wide font-mono">Assigned Instructor Coach:</span>
+                <span className="text-amber-500 font-sans text-xs font-bold leading-tight">
+                  🥋 {DOJO_BRANCHES.find(b => b.id === selectedBranchId)?.coach}
                 </span>
               </div>
             </div>
 
             <div>
-              <label className="text-zinc-500 text-[11px] uppercase tracking-wider block mb-1">Class timing batch *</label>
+              <label className="block text-xs font-semibold text-stone-400 uppercase tracking-wide mb-1">Class Schedule Batch *</label>
               <select
                 required
                 value={batch}
                 onChange={(e) => setBatch(e.target.value)}
-                className="w-full bg-slate-950 border border-zinc-800 focus:border-yellow-500 text-zinc-150 text-xs px-4 py-3 rounded-lg focus:outline-none transition-all cursor-pointer"
+                className="w-full bg-[#1c1917]/90 border border-stone-850 text-stone-300 rounded-lg px-3.5 py-3 text-xs focus:outline-none focus:border-amber-500 transition-all cursor-pointer"
               >
                 {batches.map((b) => (
                   <option key={b.id} value={b.name}>{b.name} {b.ageGroup ? `(${b.ageGroup})` : ''}</option>
                 ))}
               </select>
-              <div className="mt-2 text-[10px] text-zinc-500 text-left font-sans italic">
-                Schedules vary per cohort program.
+              <div className="mt-2 text-[10px] text-stone-500 text-left font-sans italic">
+                Weekly schedules subject to change per batch size.
               </div>
             </div>
 
             <div>
-              <label className="text-zinc-500 text-[11px] uppercase tracking-wider block mb-1">Starting Belt Level *</label>
+              <label className="block text-xs font-semibold text-stone-400 uppercase tracking-wide mb-1">Starting Belt Level *</label>
               <select
                 required
                 value={beltLevel}
                 onChange={(e) => setBeltLevel(e.target.value)}
-                className="w-full bg-slate-950 border border-zinc-800 focus:border-yellow-500 text-zinc-150 text-xs px-4 py-3 rounded-lg focus:outline-none transition-all cursor-pointer"
+                className="w-full bg-[#1c1917]/90 border border-stone-850 text-stone-300 rounded-lg px-3.5 py-3 text-xs focus:outline-none focus:border-amber-500 transition-all cursor-pointer"
               >
                 {BELT_LEVELS.map((bl) => (
                   <option key={bl.name} value={bl.name}>{bl.name}</option>
@@ -536,29 +552,31 @@ export default function AdmissionForm({ preselectedBatch = "", onSuccess }: Admi
             </div>
 
             <div>
-              <label className="text-zinc-500 text-[11px] uppercase tracking-wider block mb-1">Dojo Induction Fees Status *</label>
+              <label className="block text-xs font-semibold text-stone-400 uppercase tracking-wide mb-1">Dojo Induction Induction Fees *</label>
               <select
                 required
                 value={feesStatus}
                 onChange={(e: any) => setFeesStatus(e.target.value)}
-                className="w-full bg-slate-950 border border-zinc-800 focus:border-yellow-500 text-zinc-150 text-xs px-4 py-3 rounded-lg focus:outline-none transition-all cursor-pointer"
+                className="w-full bg-[#1c1917]/90 border border-stone-850 text-stone-300 rounded-lg px-3.5 py-3 text-xs focus:outline-none focus:border-amber-500 transition-all cursor-pointer"
               >
                 <option value="Unpaid">Unpaid (Will settle during first lesson)</option>
                 <option value="Paid">Paid (Induction fee already cleared)</option>
               </select>
-              <div className="mt-2 text-[10px] text-zinc-500 text-left">
-                Fees can also be toggled anytime from the registry panel by Shihan.
+              <div className="mt-2 text-[10px] text-stone-500 text-left leading-normal">
+                Induction fees cover certification templates and syllabus handbook.
               </div>
             </div>
           </div>
         </div>
 
         {/* Step 5: Terms & Conditions */}
-        <div>
-          <span className="font-heading font-bold text-zinc-300 uppercase text-xs tracking-wider block mb-3">5. Parent/Guardian Declaration</span>
-          <div className="bg-slate-950/60 border border-zinc-900 rounded-xl p-5 space-y-4">
-            <div className="text-zinc-400 text-xs leading-relaxed max-h-48 overflow-y-auto pr-2 space-y-3 font-sans">
-              <p className="font-semibold text-yellow-500 uppercase tracking-widest text-[10px]">LIONS KARATE CLUB PUNE — Parent/Guardian Declaration</p>
+        <div className="space-y-4">
+          <span className="font-heading font-extrabold text-stone-300 uppercase text-xs tracking-wider block border-l-2 border-amber-500 pl-2">
+            5. Parent/Guardian Declaration
+          </span>
+          <div className="bg-[#141211]/80 border border-stone-850 rounded-xl p-5 space-y-4">
+            <div className="text-stone-400 text-xs leading-relaxed max-h-48 overflow-y-auto pr-2 space-y-3 font-sans">
+              <p className="font-semibold text-amber-500 uppercase tracking-widest text-[10px]">LIONS KARATE CLUB PUNE — Parent/Guardian Declaration</p>
               <p>
                 I hereby declare that the information provided in this form is true and accurate to the best of my knowledge.
               </p>
@@ -576,37 +594,37 @@ export default function AdmissionForm({ preselectedBatch = "", onSuccess }: Admi
               </p>
             </div>
             
-            <div className="pt-3.5 border-t border-zinc-900/80 flex items-start space-x-3">
+            <div className="pt-3.5 border-t border-stone-900 flex items-start space-x-3">
               <input 
                 type="checkbox" 
                 id="accept-dojo-terms"
                 required
                 checked={termsAccepted}
                 onChange={(e) => setTermsAccepted(e.target.checked)}
-                className="mt-0.5 text-yellow-500 accent-yellow-500 cursor-pointer h-4 w-4 bg-slate-950 border-zinc-850 rounded"
+                className="mt-0.5 text-amber-500 accent-amber-500 cursor-pointer h-4 w-4 bg-stone-950 border-stone-800 rounded"
               />
-              <label htmlFor="accept-dojo-terms" className="text-zinc-300 text-xs leading-relaxed select-none cursor-pointer font-medium hover:text-white transition-colors">
-                I have read and agree to all the Terms, Conditions and Declarations stated above.
+              <label htmlFor="accept-dojo-terms" className="text-stone-300 text-xs leading-relaxed select-none cursor-pointer font-medium hover:text-white transition-colors">
+                I have read, understood and agree to the entire parent declaration and dojo intent policies.
               </label>
             </div>
           </div>
         </div>
 
         {/* Bottom CTA trigger */}
-        <div className="pt-4 border-t border-zinc-950 flex justify-end">
+        <div className="pt-5 border-t border-stone-900/60 flex justify-end">
           <button
             type="submit"
             disabled={loading}
-            className="w-full sm:w-auto flex items-center justify-center space-x-2 font-heading font-extrabold text-xs uppercase tracking-widest bg-yellow-500 hover:bg-yellow-400 disabled:bg-zinc-850 text-slate-950 px-8 py-4 rounded shadow-xl hover:shadow-yellow-500/25 transition-all duration-300 cursor-pointer"
+            className="w-full sm:w-auto flex items-center justify-center space-x-2 font-heading font-black text-xs uppercase tracking-widest bg-amber-500 hover:bg-amber-400 disabled:bg-stone-900 disabled:text-stone-600 ring-2 ring-amber-500/25 text-slate-950 px-8 py-4 rounded-full shadow-xl hover:shadow-amber-500/10 transition-all duration-300 active:scale-95 cursor-pointer"
           >
             {loading ? (
               <>
                 <RefreshCw className="w-4 h-4 animate-spin" />
-                <span>PROCESSING SUBMISSION...</span>
+                <span>PROCESSING SECURE TRANSACTIONS...</span>
               </>
             ) : (
               <>
-                <span>SUBMIT SECURE ADMISSION</span>
+                <span>SUBMIT OFfICIAL DOJO REGISTRY</span>
                 <ArrowRight className="w-4 h-4" />
               </>
             )}
