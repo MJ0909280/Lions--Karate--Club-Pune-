@@ -92,7 +92,7 @@ export default function Batches({ onSelectBatch }: BatchesProps) {
   const [photoName, setPhotoName] = useState<string>('');
   const [latestAdmission, setLatestAdmission] = useState<Admission | null>(null);
   
-  // Rich form selection state details
+  // [GITHUB UPDATE] Added new state fields to support persistent branch selection, coach, starting belt level, fees status, DOB, and terms acceptance in the Club Batches tab
   const [dob, setDob] = useState('');
   const [age, setAge] = useState<number | ''>('');
   const [selectedBranchId, setSelectedBranchId] = useState(DOJO_BRANCHES[0].id);
@@ -187,6 +187,7 @@ ${customMsg ? `- Additional Request: ${customMsg}` : ''}`;
       // Look up Dojo branches to assign matching Coach
       const branchObj = DOJO_BRANCHES.find(b => b.id === selectedBranchId) || DOJO_BRANCHES[0];
 
+      // [GITHUB UPDATE] Mapped new rich form fields dynamically so that they are saved inside Firestore correctly and visible on the admin panel.
       const admissionPayload = {
         fullName: childName.trim(),
         dob: finalDob,
