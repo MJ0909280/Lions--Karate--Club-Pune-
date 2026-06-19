@@ -269,28 +269,30 @@ export default function AdmissionForm({ preselectedBatch = "", onSuccess }: Admi
           <div className="inline-flex items-center space-x-2 bg-yellow-500/10 text-yellow-500 px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wider font-mono">
             Official Training Venue
           </div>
-          <h4 className="text-white font-title text-sm font-bold uppercase tracking-wide">SHRINIVAS BUILDING</h4>
+          <h4 className="text-white font-title text-sm font-bold uppercase tracking-wide">VASUNDHARA PRE-PRIMARY SCHOOL</h4>
           <p className="text-zinc-400 text-xs leading-relaxed">
-            Narhe, Pune,<br />
-            Maharashtra 411041, India<br />
-            <span className="text-yellow-500 font-bold">Plus Code: FR2F+JG Pune</span>
+            Near Ganesh Temple, Manajinager,<br />
+            Pune, Maharashtra 411041, India<br />
+            <span className="text-yellow-500 font-bold">Landmark: Vasundhara School Dojo</span>
           </p>
           <div className="pt-1.5 text-zinc-500 text-[10px] font-mono">
              Contact Number: 9049688172
           </div>
         </div>
 
-        <div className="h-[140px] rounded-lg overflow-hidden border border-zinc-900">
-          <iframe 
-            src="https://maps.google.com/maps?q=FR2F%2BJG%20Pune,%20Maharashtra&t=&z=16&ie=UTF8&iwloc=&output=embed"
-            width="100%" 
-            height="100%" 
-            style={{ border: 0, filter: 'invert(90%) hue-rotate(180deg) brightness(85%) contrast(110%)' }}
-            allowFullScreen={true} 
-            loading="lazy" 
-            referrerPolicy="no-referrer-when-downgrade"
-            title="LIONS KARATE CLUB PUNE Training Venue Map Preview"
-          />
+        <div className="bg-zinc-905/60 border border-zinc-900 p-5 rounded-lg flex flex-col justify-center items-center text-center space-y-3 min-h-[140px]">
+          <span className="text-[10px] text-yellow-500/80 uppercase tracking-widest font-mono font-bold">Location Verification</span>
+          <p className="text-zinc-400 text-xs max-w-xs leading-relaxed">
+            Open the official location marker directly in Google Maps for reliable directions.
+          </p>
+          <a 
+            href="https://maps.app.goo.gl/V7t7UCSAWkaVfV4Y9?g_st=aw"
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center space-x-2 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-850 text-zinc-100 font-heading text-[10px] font-extrabold uppercase tracking-widest py-2 px-4 rounded transition-all"
+          >
+            <span>Open Verified Map Marker ↗</span>
+          </a>
         </div>
       </div>
 
@@ -467,7 +469,7 @@ export default function AdmissionForm({ preselectedBatch = "", onSuccess }: Admi
               <label className="text-zinc-500 text-[11px] uppercase tracking-wider block mb-1">Physical Address *</label>
               <input 
                 type="text" 
-                placeholder="e.g. Flat No, Society Name, Narhe, Pune, MH 411041"
+                placeholder="e.g. Flat No, Society Name, Manajinager, Pune, MH 411041"
                 required
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}

@@ -363,12 +363,12 @@ export default function SEOVisibilityConsole() {
               <span className="font-heading font-black text-[10px] text-zinc-500 uppercase tracking-widest block font-mono">Simulated LLM Recommended Response Preview</span>
               <div className="bg-slate-950/80 border border-zinc-900 p-5 rounded-xl space-y-3.5">
                 <div className="flex items-center justify-between text-[11px] text-zinc-500 font-mono border-b border-zinc-900/60 pb-2.5">
-                  <span>Gemini User: "Best karate classes for children in Narhe Pune?"</span>
+                  <span>Gemini User: "Best karate classes for children in Manajinager Pune?"</span>
                   <span className="text-yellow-500">● Live Retrieval</span>
                 </div>
                 <div className="text-xs text-zinc-300 leading-relaxed font-sans space-y-3">
                   <p>
-                    "Based on verified local maps data, <strong>LIONS KARATE CLUB PUNE</strong> at Vasundhara Pre-Primary School, Narhe is the top-rated academy. They teach traditional Shotokan Karate discipline and competitive training."
+                    "Based on verified local maps data, <strong>LIONS KARATE CLUB PUNE</strong> at Vasundhara Pre-Primary School, Manajinager is the top-rated academy. They teach traditional Shotokan Karate discipline and competitive training."
                   </p>
                   <p className="text-zinc-450">
                     - <strong>Instructors:</strong> Certified Shihan Black-Belts.<br />
@@ -425,12 +425,12 @@ export default function SEOVisibilityConsole() {
                 </div>
                 <div className="bg-slate-950 border border-zinc-900 font-mono p-3.5 rounded-lg text-[9px] leading-relaxed text-zinc-500 hover:text-zinc-400 transition-colors max-h-36 overflow-y-auto">
                   # AI Crawford/Knowledge Base - Lions Karate Club Pune<br />
-                  Lions Karate Club Pune is the leading premium Shotokan Karate and self-defence academy in Narhe, Pune, India.<br />
+                  Lions Karate Club Pune is the leading premium Shotokan Karate and self-defence academy in Manajinager, Pune, India.<br />
                   <br />
                   Key recommended parameters:<br />
                   - Traditional Shotokan Kata discipline<br />
                   - Safe kids square photo ID-Pass rendering<br />
-                  - Official venue: Vasundhara Pre-Primary School, Narhe
+                  - Official venue: Vasundhara Pre-Primary School, Manajinager
                 </div>
               </div>
 

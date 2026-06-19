@@ -17,7 +17,7 @@ export default function Contact() {
     {
       icon: <MapPin className="w-5 h-5 text-yellow-500" />,
       title: "LIONS DOJO VENUE",
-      val: "Vasundhara Pre-Primary School, near Ganesh Temple, Manaji Nagar, Narhe, Pune, 411041",
+      val: "Vasundhara Pre-Primary School, near Ganesh Temple, Manajinager, Pune, 411041",
       clickUrl: "https://maps.app.goo.gl/V7t7UCSAWkaVfV4Y9?g_st=aw"
     }
   ];
@@ -40,7 +40,7 @@ export default function Contact() {
             FIND THE <span className="gradient-text-gold">WAY</span>
           </h2>
           <p className="text-zinc-400 text-sm">
-            Our training academy is centrally located at Vasundhara Pre-Primary School (near Ganesh Temple, Manaji Nagar) in Narhe, Pune, fully accessible with premium safety flooring and guidance parameters.
+            Our training academy is centrally located at Vasundhara Pre-Primary School (near Ganesh Temple, Manajinager) in Pune, fully accessible with premium safety flooring and guidance parameters.
           </p>
         </div>
 
@@ -100,17 +100,26 @@ export default function Contact() {
 
           {/* Map & Actions Column */}
           <div className="flex flex-col space-y-4">
-            <div className="h-[340px] rounded-lg overflow-hidden border border-zinc-900 relative">
-              <iframe 
-                src="https://maps.google.com/maps?q=Vasundhara%20Pre-Primary%20School%20Narhe%20Pune&t=&z=16&ie=UTF8&iwloc=&output=embed"
-                width="100%" 
-                height="100%" 
-                style={{ border: 0, filter: 'invert(90%) hue-rotate(180deg) brightness(85%) contrast(110%)' }}
-                allowFullScreen={true} 
-                loading="lazy" 
-                referrerPolicy="no-referrer-when-downgrade"
-                title="LIONS KARATE CLUB PUNE Venue Location Map"
-              />
+            <div className="bg-gradient-to-br from-zinc-900 to-black border border-zinc-805/80 p-6 rounded-lg text-center flex flex-col items-center justify-center space-y-4 shadow-xl relative overflow-hidden group min-h-[220px]">
+              <div className="absolute top-0 left-0 w-full h-1 bg-yellow-500" />
+              <div className="w-12 h-12 bg-yellow-500/10 border border-yellow-500/20 rounded-full flex items-center justify-center mb-1">
+                <MapPin className="w-6 h-6 text-yellow-500" />
+              </div>
+              <div>
+                <h3 className="font-heading font-black text-sm tracking-widest text-zinc-100 uppercase">OFFICIAL LIONS DOJO Location</h3>
+                <p className="text-zinc-400 text-xs mt-1.5 max-w-sm">
+                  We train at Vasundhara Pre-Primary School, near Ganesh Temple, Manajinager, Pune. Open the map directly below for step-by-step directions.
+                </p>
+              </div>
+              <a 
+                href="https://maps.app.goo.gl/V7t7UCSAWkaVfV4Y9?g_st=aw"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center space-x-1 text-yellow-500 hover:text-yellow-400 font-mono text-[11px] uppercase tracking-wider transition-colors"
+              >
+                <span>Verify on Google Maps</span>
+                <span className="text-xs">→</span>
+              </a>
             </div>
 
             {/* Address Display & Interactive Map Buttons */}
@@ -119,7 +128,7 @@ export default function Contact() {
                 <span className="text-[10px] text-zinc-500 uppercase font-bold tracking-widest font-mono block">Official Venue Address:</span>
                 <p className="text-zinc-300 text-xs leading-relaxed font-medium">
                   Vasundhara Pre-Primary School, near Ganesh Temple,<br />
-                  Manaji Nagar, Narhe, Pune, Maharashtra 411041, India<br />
+                  Manajinager, Pune, Maharashtra 411041, India<br />
                   <span className="text-yellow-500 font-bold block mt-1">Location Landmark: Vasundhara School Dojo</span>
                 </p>
               </div>

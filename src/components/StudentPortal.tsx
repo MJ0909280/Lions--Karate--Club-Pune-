@@ -298,9 +298,10 @@ function KarateBeltGraphic({ beltName }: { beltName: string }) {
 
 interface StudentPortalProps {
   initialTab?: 'progress' | 'exam' | 'attendance';
+  onNavigate?: (view: 'home' | 'admission' | 'student-portal' | 'admin') => void;
 }
 
-export default function StudentPortal({ initialTab = 'progress' }: StudentPortalProps) {
+export default function StudentPortal({ initialTab = 'progress', onNavigate }: StudentPortalProps) {
   const [activeTab, setActiveTabState] = useState<'progress' | 'exam' | 'attendance'>(initialTab);
 
   useEffect(() => {
@@ -745,6 +746,32 @@ export default function StudentPortal({ initialTab = 'progress' }: StudentPortal
                   <strong>Need help?</strong> Your child's Karate Roll ID starts with <strong>LKCP-</strong> (for example: LKCP-2026-004). You can find this on your admission receipt, or ask their Karate Coach directly on WhatsApp anytime!
                 </span>
               </div>
+
+              <div className="pt-4 border-t border-zinc-900/60 flex flex-col md:flex-row items-start md:items-center gap-4 justify-between">
+                <div className="text-[11px] text-zinc-400 max-w-md">
+                  <span className="font-bold text-zinc-300 block">No Student ID issued yet?</span>
+                  If you train offline or are registering for the first time, fill out the quick digital admission online to instantly generate your verified Roll ID.
+                </div>
+                <div className="flex gap-2 w-full md:w-auto shrink-0 justify-end">
+                  {onNavigate && (
+                    <button
+                      onClick={() => onNavigate('admission')}
+                      type="button"
+                      className="bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/25 hover:border-yellow-500/40 text-yellow-500 font-heading font-black text-[10px] uppercase tracking-wider px-3.5 py-2.5 rounded-lg transition-all cursor-pointer text-center"
+                    >
+                      Apply Online
+                    </button>
+                  )}
+                  <a
+                    href="https://wa.me/919049688172?text=Hello%20Sensei,%20I'm%20trying%2520to%20register%20for%20the%2520upcoming%20Karate%20Belt%20Exam%20and%20need%20my%20child's%20Student%2520ID.%20Please%20help!"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="bg-zinc-900 hover:bg-zinc-850 border border-zinc-800 text-zinc-200 font-heading font-black text-[10px] uppercase tracking-wider px-3.5 py-2.5 rounded-lg transition-all text-center inline-flex items-center justify-center cursor-pointer"
+                  >
+                    Get Help on WhatsApp
+                  </a>
+                </div>
+              </div>
             </form>
           </div>
         )}
@@ -777,7 +804,7 @@ export default function StudentPortal({ initialTab = 'progress' }: StudentPortal
                     </span>
                     <span className="h-1 w-1 rounded-full bg-zinc-700" />
                     <span className="text-[10px] uppercase font-bold text-zinc-500 font-serif">
-                      {activeStudent.branch || "Narhe Branch"}
+                      {activeStudent.branch || "Manajinager Branch"}
                     </span>
                   </div>
                   <h3 className="font-title text-xl font-extrabold text-white uppercase tracking-tight mt-1">
@@ -1348,7 +1375,7 @@ export default function StudentPortal({ initialTab = 'progress' }: StudentPortal
                           </div>
                           <div>
                             <span className="text-zinc-500 mr-1">Karate Center:</span>
-                            <span className="text-zinc-200 font-bold">{exam.branch || "Narhe"}</span>
+                            <span className="text-zinc-200 font-bold">{exam.branch || "Manajinager"}</span>
                           </div>
                           <div>
                             <span className="text-zinc-500 mr-1">Exam Fees:</span>
