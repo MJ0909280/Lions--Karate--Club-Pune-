@@ -73,13 +73,13 @@ export default function Navbar({ currentView, studentPortalTab, onNavigate }: Na
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
+          <div className="hidden xl:flex items-center space-x-3 2xl:space-x-6">
             {currentView === 'home' &&
               menuItems.map((item) => (
                 <button
                   key={item.name}
                   onClick={() => handleItemClick(item.href, item.view)}
-                  className="font-heading text-sm text-zinc-300 hover:text-yellow-500 hover:scale-105 active:scale-95 transition-all uppercase tracking-wide cursor-pointer py-1"
+                  className="font-heading text-xs 2xl:text-sm text-zinc-300 hover:text-yellow-500 hover:scale-105 active:scale-95 transition-all uppercase tracking-wider cursor-pointer py-1 font-semibold"
                 >
                   {item.name}
                 </button>
@@ -88,7 +88,7 @@ export default function Navbar({ currentView, studentPortalTab, onNavigate }: Na
             {currentView !== 'home' && (
               <button
                 onClick={() => onNavigate('home')}
-                className="font-heading text-sm text-zinc-300 hover:text-yellow-500 hover:scale-105 transition-all uppercase tracking-wide cursor-pointer"
+                className="font-heading text-xs 2xl:text-sm text-zinc-300 hover:text-yellow-500 hover:scale-105 transition-all uppercase tracking-wider cursor-pointer font-semibold"
               >
                 Back to Website
               </button>
@@ -96,47 +96,47 @@ export default function Navbar({ currentView, studentPortalTab, onNavigate }: Na
 
             <button
               onClick={() => onNavigate('attendance')}
-              className={`flex items-center space-x-1.5 font-heading text-xs uppercase tracking-wider px-3 py-1.5 rounded border transition-all ${
+              className={`flex items-center space-x-1 font-heading text-[10px] 2xl:text-xs uppercase tracking-wider px-2 2xl:px-3 py-1.5 rounded border transition-all ${
                 currentView === 'student-portal' && studentPortalTab === 'attendance'
                   ? 'bg-yellow-500/10 border-yellow-500 text-yellow-500 font-extrabold'
-                  : 'border-zinc-700 text-zinc-400 hover:text-yellow-500 hover:border-zinc-500'
+                  : 'border-zinc-800 text-zinc-400 hover:text-yellow-500 hover:border-zinc-500'
               }`}
               title="Quick Attendance Tracker"
             >
-              <Calendar className="w-3.5 h-3.5 text-yellow-500 animate-pulse" />
+              <Calendar className="w-3 h-3 2xl:w-3.5 2xl:h-3.5 text-yellow-500 animate-pulse" />
               <span>Attendance</span>
             </button>
 
             <button
               onClick={() => onNavigate('admin')}
-              className={`flex items-center space-x-1.5 font-heading text-xs uppercase tracking-wider px-3 py-1.5 rounded border transition-all ${
+              className={`flex items-center space-x-1 font-heading text-[10px] 2xl:text-xs uppercase tracking-wider px-2 2xl:px-3 py-1.5 rounded border transition-all ${
                 currentView === 'admin'
                   ? 'bg-yellow-500/10 border-yellow-500 text-yellow-500 font-extrabold'
-                  : 'border-zinc-700 text-zinc-400 hover:text-zinc-200 hover:border-zinc-550'
+                  : 'border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:border-zinc-500'
               }`}
             >
-              <ShieldCheck className="w-3.5 h-3.5" />
+              <ShieldCheck className="w-3 text-zinc-400 group-hover:text-yellow-500 h-3 2xl:w-3.5 2xl:h-3.5" />
               <span>Admin Portal</span>
             </button>
 
             <button
               onClick={() => onNavigate('student-portal')}
-              className={`flex items-center space-x-1 font-heading text-[11px] uppercase tracking-wider px-2.5 py-1.5 rounded border transition-all ${
+              className={`flex items-center space-x-1 font-heading text-[10px] 2xl:text-xs uppercase tracking-wider px-2 2xl:px-2.5 py-1.5 rounded border transition-all ${
                 currentView === 'student-portal' && studentPortalTab === 'progress'
                   ? 'bg-yellow-500/10 border-yellow-500 text-yellow-500 font-extrabold'
-                  : 'border-zinc-700 text-zinc-400 hover:text-zinc-200'
+                  : 'border-zinc-800 text-zinc-400 hover:text-zinc-200'
               }`}
             >
-              <Award className="w-3.5 h-3.5 text-yellow-500" />
+              <Award className="w-3 h-3 2xl:w-3.5 2xl:h-3.5 text-yellow-500" />
               <span>Check Results</span>
             </button>
 
             <button
               onClick={() => onNavigate('belt-exam')}
-              className={`flex items-center space-x-1 font-heading text-[11px] uppercase tracking-wider px-2.5 py-1.5 rounded border transition-all ${
+              className={`flex items-center space-x-1 font-heading text-[10px] 2xl:text-xs uppercase tracking-wider px-2 2xl:px-2.5 py-1.5 rounded border transition-all ${
                 currentView === 'student-portal' && studentPortalTab === 'exam'
                   ? 'bg-red-500/10 border-red-500 text-red-500 font-extrabold'
-                  : 'border-zinc-700 text-zinc-400 hover:text-zinc-200'
+                  : 'border-zinc-800 text-zinc-400 hover:text-zinc-200'
               }`}
             >
               <Calendar className="w-3.5 h-3.5 text-red-500" />
@@ -145,14 +145,14 @@ export default function Navbar({ currentView, studentPortalTab, onNavigate }: Na
 
             <button
               onClick={() => onNavigate('admission')}
-              className="font-heading font-bold text-xs uppercase tracking-widest bg-yellow-500 hover:bg-yellow-400 text-slate-950 px-5 py-2.5 rounded shadow-lg shadow-yellow-500/15 cursor-pointer transform hover:-translate-y-0.5 transition-all text-center"
+              className="font-heading font-black text-[10px] 2xl:text-xs uppercase tracking-widest bg-yellow-500 hover:bg-yellow-400 text-slate-950 px-3.5 2xl:px-5 py-2.5 rounded shadow-lg shadow-yellow-500/15 cursor-pointer transform hover:-translate-y-0.5 transition-all text-center"
             >
               ONLINE ADMISSION
             </button>
           </div>
 
           {/* Mobile hamburger menu toggle with increased accessibility & custom morph indicator */}
-          <div className="flex md:hidden items-center space-x-3">
+          <div className="flex xl:hidden items-center space-x-3">
             <button
               onClick={() => onNavigate('attendance')}
               aria-label="Attendance Portal"
@@ -213,7 +213,7 @@ export default function Navbar({ currentView, studentPortalTab, onNavigate }: Na
               animate={{ opacity: 0.6 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="fixed inset-0 z-40 bg-black/75 backdrop-blur-xs md:hidden"
+              className="fixed inset-0 z-40 bg-black/75 backdrop-blur-xs xl:hidden"
               onClick={() => setIsOpen(false)}
             />
 
@@ -227,7 +227,7 @@ export default function Navbar({ currentView, studentPortalTab, onNavigate }: Na
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 26, stiffness: 220 }}
-              className="fixed right-0 top-0 bottom-0 z-45 w-[300px] sm:w-[340px] bg-slate-950 border-l border-zinc-900/80 p-6 pt-24 shadow-2xl flex flex-col md:hidden"
+              className="fixed right-0 top-0 bottom-0 z-45 w-[300px] sm:w-[340px] bg-slate-950 border-l border-zinc-900/80 p-6 pt-24 shadow-2xl flex flex-col xl:hidden"
             >
               {/* Decorative brand design bar */}
               <div className="absolute top-0 right-0 w-[3px] h-full bg-[#FF3B3F]" />

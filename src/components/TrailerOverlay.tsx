@@ -122,11 +122,11 @@ export default function TrailerOverlay({ onEnter }: TrailerOverlayProps) {
               loop
               muted
               playsInline
-              className="w-full h-full object-cover opacity-50"
+              className="w-full h-full object-cover opacity-80"
             />
             {/* Cinematic Vignettes for high contrast and extreme legibility */}
-            <div className="absolute inset-0 bg-gradient-to-b from-black/85 via-black/45 to-black/95 mix-blend-multiply" />
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(0,0,0,0.1)_0%,#000000_85%)]" />
+            <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/20 to-black/90 mix-blend-multiply" />
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(0,0,0,0)_0%,#000000_80%)]" />
           </div>
 
           {/* Golden ember particles drifting over the background video */}
