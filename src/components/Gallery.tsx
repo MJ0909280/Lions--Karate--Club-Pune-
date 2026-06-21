@@ -102,7 +102,7 @@ export default function Gallery() {
               <span className="text-red-500 uppercase tracking-[0.3em] text-[10px] font-extrabold font-mono">GALLERY FEED</span>
             </div>
             <h2 className="font-heading text-3xl sm:text-5xl font-black text-white uppercase tracking-tighter leading-none">
-              LIFE AT <span className="text-transparent font-kanji" style={{ WebkitTextStroke: '1px #C9A96E', color: 'transparent' }}>THE DOJO</span>
+              LIFE AT <span className="text-transparent font-kanji" style={{ WebkitTextStroke: '1.5px #FF2A35', color: 'transparent' }}>THE DOJO</span>
             </h2>
           </div>
 
@@ -159,6 +159,7 @@ export default function Gallery() {
                   alt={item.alt}
                   className={`w-full h-full object-cover filter grayscale contrast-110 group-hover:grayscale-0 group-hover:scale-105 transition-all duration-500 ${item.objectPosition || 'object-center'}`}
                   referrerPolicy="no-referrer"
+                  loading="lazy"
                 />
               )}
               {/* Play symbol badge overlay for video content */}

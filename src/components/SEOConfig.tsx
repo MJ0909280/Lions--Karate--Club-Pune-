@@ -49,17 +49,28 @@ export default function SEOConfig({ title, description, pagePath = "" }: SEOConf
     const structuredData = {
       "@context": "https://schema.org",
       "@type": "SportsActivityLocation",
-      "additionalType": "http://www.productontology.org/doc/Karate",
+      "additionalType": [
+        "http://www.productontology.org/doc/Karate",
+        "http://www.productontology.org/doc/Martial_arts",
+        "http://www.productontology.org/doc/Kickboxing",
+        "http://www.productontology.org/doc/Self-defense"
+      ],
       "name": "LIONS KARATE CLUB PUNE",
-      "alternateName": "Lions Karate Pune",
-      "description": "LIONS KARATE CLUB PUNE delivers top-notch Karate Classes in Manajinager Pune, Karate Classes Near Bhumkar Chowk, Karate Classes Near Silver Birch Hospital, and Self Defence Classes for kids, youth, and adults.",
+      "alternateName": [
+        "Lions Karate Pune", 
+        "Lions Karate Club Duttanagar", 
+        "Lions Karate Narhe", 
+        "Lions Martial Arts Academy Pune",
+        "Lions Kickboxing Academy Pune"
+      ],
+      "description": "LIONS KARATE CLUB PUNE delivers top-notch traditional Shotokan Karate classes, professional kickboxing, martial arts training, and children's self-defense courses. Serving Katraj, Narhe, Duttanagar, Jambhulwadi, Hadapsar, Kothrud, Baner, Hinjewadi, and Camp with offline dojos and flexible online classes.",
       "image": "https://images.unsplash.com/photo-1555597673-b21d5c935865?q=80&w=600&auto=format&fit=crop",
       "priceRange": "INR",
       "telephone": "9049688172",
-      "email": "lionskaratepune@gmail.com",
+      "email": "LIONSKARATECLUBPUNE09@gmail.com",
       "address": {
         "@type": "PostalAddress",
-        "streetAddress": "VASUNDHARA PRE-PRIMARY SCHOOL, Near Bhumkar Chowk, Beside Silver Birch Hospital, Manajinager",
+        "streetAddress": "VASUNDHARA PRE-PRIMARY SCHOOL, Near Bhumkar Chowk, Beside Silver Birch Hospital, Manaji Nagar, Narhe",
         "addressLocality": "Pune",
         "addressRegion": "Maharashtra",
         "postalCode": "411041",
@@ -70,6 +81,44 @@ export default function SEOConfig({ title, description, pagePath = "" }: SEOConf
         "latitude": 18.4452,
         "longitude": 73.8179
       },
+      "areaServed": [
+        "Pune", "Katraj", "Narhe", "Manaji Nagar", "Duttanagar", "Jambhulwadi", "Hadapsar", "Kothrud", "Baner", "Hinjewadi", "Wakad", "Kharadi", "Viman Nagar", "Camp", "Kalyani Nagar"
+      ],
+      "subOrganization": [
+        {
+          "@type": "SportsActivityLocation",
+          "name": "Lions Karate Club — Narhe & Manaji Nagar Branch",
+          "address": {
+            "@type": "PostalAddress",
+            "streetAddress": "Vasundhara Pre-Primary School, Beside Silver Birch Hospital, Manaji Nagar, Narhe",
+            "addressLocality": "Pune",
+            "addressRegion": "Maharashtra",
+            "postalCode": "411041"
+          }
+        },
+        {
+          "@type": "SportsActivityLocation",
+          "name": "Lions Karate Club — Katraj & Duttanagar Branch",
+          "address": {
+            "@type": "PostalAddress",
+            "streetAddress": "Primary Sports Complex Arena, Duttanagar-Katraj Road",
+            "addressLocality": "Pune",
+            "addressRegion": "Maharashtra",
+            "postalCode": "411046"
+          }
+        },
+        {
+          "@type": "SportsActivityLocation",
+          "name": "Lions Karate Club — Jambulwadi Lake View Branch",
+          "address": {
+            "@type": "PostalAddress",
+            "streetAddress": "Ambegaon-Narhe Bypass Road, Jambulwadi Lakeview",
+            "addressLocality": "Pune",
+            "addressRegion": "Maharashtra",
+            "postalCode": "411041"
+          }
+        }
+      ],
       "url": window.location.origin,
       "openingHoursSpecification": [
         {

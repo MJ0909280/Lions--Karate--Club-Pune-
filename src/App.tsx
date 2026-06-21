@@ -32,29 +32,6 @@ export default function App() {
   // Trailer state persistent per session
   const [trailerCompleted, setTrailerCompleted] = useState(() => !!sessionStorage.getItem('dojo_trailer_entered'));
 
-  // Mouse position cursor tracking
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const [isMouseActive, setIsMouseActive] = useState(false);
-
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      setMousePosition({ x: e.clientX, y: e.clientY });
-      setIsMouseActive(true);
-    };
-    const handleMouseLeave = () => setIsMouseActive(false);
-    const handleMouseEnter = () => setIsMouseActive(true);
-
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseleave', handleMouseLeave);
-    document.addEventListener('mouseenter', handleMouseEnter);
-
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseleave', handleMouseLeave);
-      document.removeEventListener('mouseenter', handleMouseEnter);
-    };
-  }, []);
-
   // Success states
   const [successDocId, setSuccessDocId] = useState('');
   const [successAdmission, setSuccessAdmission] = useState<Admission | null>(null);
@@ -171,21 +148,13 @@ export default function App() {
       )}
 
       {/* Interactive mouse follow cursor glow */}
-      {isMouseActive && (
-        <div
-          className="cursor-glow active pointer-events-none fixed z-[9999] hidden lg:block"
-          style={{
-            left: `${mousePosition.x}px`,
-            top: `${mousePosition.y}px`,
-          }}
-        />
-      )}
+      <CustomCursor />
 
       {/* Dynamic SEO headers mounting */}
       {view === 'home' && (
         <SEOConfig 
-          title="Best Karate Classes in Pune | Self Defence Classes" 
-          description="LIONS KARATE CLUB PUNE is Pune's leading martial arts and self defence academy. Certified programs for kids & adults."
+          title="Best Karate, Martial Arts & Kickboxing Classes in Pune | Self Defence" 
+          description="LIONS KARATE CLUB PUNE is Pune's leading academy for Shotokan Karate, Kickboxing, Martial Arts & Self Defence. Serving families in Katraj, Narhe, Hadapsar, Kothrud, Baner, Hinjewadi, and Camp. Flexible online live training is also available."
           pagePath=""
         />
       )}
@@ -392,7 +361,7 @@ export default function App() {
               LIONS KARATE CLUB PUNE<br />
               Pune, Maharashtra, India<br />
               Tel: <a href="tel:9049688172" className="text-zinc-300 hover:text-yellow-500">9049688172</a><br />
-              Email: <a href="mailto:lionskaratepune@gmail.com" className="text-zinc-300 hover:text-yellow-500">lionskaratepune@gmail.com</a>
+              Email: <a href="mailto:LIONSKARATECLUBPUNE09@gmail.com" className="text-zinc-300 hover:text-yellow-500 break-all">LIONSKARATECLUBPUNE09@gmail.com</a>
             </p>
           </div>
         </div>
@@ -408,5 +377,53 @@ export default function App() {
       </footer>
 
     </div>
+  );
+}
+
+function CustomCursor() {
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [isMouseActive, setIsMouseActive] = useState(false);
+
+  useEffect(() => {
+    let frameId: number;
+    let currentX = 0;
+    let currentY = 0;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      currentX = e.clientX;
+      currentY = e.clientY;
+      if (!isMouseActive) setIsMouseActive(true);
+
+      cancelAnimationFrame(frameId);
+      frameId = requestAnimationFrame(() => {
+        setMousePosition({ x: currentX, y: currentY });
+      });
+    };
+    
+    const handleMouseLeave = () => setIsMouseActive(false);
+    const handleMouseEnter = () => setIsMouseActive(true);
+
+    window.addEventListener('mousemove', handleMouseMove, { passive: true });
+    document.addEventListener('mouseleave', handleMouseLeave);
+    document.addEventListener('mouseenter', handleMouseEnter);
+
+    return () => {
+      cancelAnimationFrame(frameId);
+      window.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseleave', handleMouseLeave);
+      document.removeEventListener('mouseenter', handleMouseEnter);
+    };
+  }, [isMouseActive]);
+
+  if (!isMouseActive) return null;
+
+  return (
+    <div
+      className="cursor-glow active pointer-events-none fixed z-[9999] hidden lg:block"
+      style={{
+        left: `${mousePosition.x}px`,
+        top: `${mousePosition.y}px`,
+      }}
+    />
   );
 }

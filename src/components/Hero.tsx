@@ -116,9 +116,9 @@ export default function Hero({ onNavigate }: HeroProps) {
       {/* Background Video with modern aspect ratio scaling and cropping prevention */}
       <div className="absolute inset-0 z-0 select-none pointer-events-none">
         {/* Layered dark gradients to maximize typography contrast and readability on all screen sizes */}
-        <div className="absolute inset-0 bg-slate-950/75 sm:bg-slate-950/65 z-10" />
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-slate-950/80 z-10" />
-        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/40 via-transparent to-slate-950/40 z-10" />
+        <div className="absolute inset-0 bg-slate-950/45 sm:bg-slate-950/35 z-10" />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-slate-950/60 z-10" />
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/20 via-transparent to-slate-950/20 z-10" />
         
         {videoMounted && (
           <video
@@ -129,7 +129,7 @@ export default function Hero({ onNavigate }: HeroProps) {
             preload="auto"
             webkit-playsinline="true"
             key={heroVideoUrl} // Re-bind node on link adjustments
-            className="w-full h-full object-cover object-center absolute inset-0 transition-opacity duration-700 opacity-65"
+            className="w-full h-full object-cover object-center absolute inset-0 transition-opacity duration-700 opacity-85"
           >
             {heroVideoUrl && <source src={heroVideoUrl} type="video/mp4" />}
             {/* Primary cloud hosted direct video source supplied by user */}
@@ -180,17 +180,17 @@ export default function Hero({ onNavigate }: HeroProps) {
             <div className="space-y-4">
               <h1 className="font-heading text-4xl sm:text-6xl xl:text-[76px] font-black uppercase text-white tracking-tighter leading-[0.9] select-none">
                 UNLOCK <br className="hidden sm:block" />
-                <span className="text-yellow-500 font-kanji text-transparent pr-1" style={{ WebkitTextStroke: '1px #C9A96E', color: 'transparent' }}>UNSTOPPABLE</span> <br />
+                <span className="text-red-500 font-kanji text-transparent pr-1" style={{ WebkitTextStroke: '1.5px #FF2A35', color: 'transparent' }}>UNSTOPPABLE</span> <br />
                 FOCUS & DISCIPLINE
               </h1>
               
-              <div className="flex items-center space-x-2 text-yellow-500">
+              <div className="flex items-center space-x-2 text-red-500">
                 <div className="flex">
                   {[...Array(5)].map((_, i) => (
                     <span key={i} className="text-sm">⭐</span>
                   ))}
                 </div>
-                <span className="text-xs sm:text-sm font-heading font-extrabold tracking-wider text-[#e0c78a]">
+                <span className="text-xs sm:text-sm font-heading font-extrabold tracking-wider text-red-500">
                   5.0 Rated by 250+ Parents in Pune
                 </span>
               </div>
@@ -199,7 +199,7 @@ export default function Hero({ onNavigate }: HeroProps) {
             {/* Structured Subtitle with parent benefit drivers */}
             <p className="text-zinc-300 text-sm sm:text-base md:text-lg font-body font-light tracking-wide leading-relaxed max-w-2xl">
               Tired of screens and low focus? Help your child build steel-clad resilience, active confidence, and practical self-protection under internationally certified Black-Belt Senseis. 
-              <span className="text-[#C9A96E] font-medium"> Simple schedules. Perfect safety. Life-changing results.</span>
+              <span className="text-red-500 font-medium"> Simple schedules. Perfect safety. Life-changing results.</span>
             </p>
 
             {/* Association & Affiliation Mini-Row */}
@@ -389,7 +389,7 @@ export default function Hero({ onNavigate }: HeroProps) {
         <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center md:text-left">
             <div>
-              <div className="font-heading text-lg sm:text-2xl font-black text-yellow-500">5 YEARS</div>
+              <div className="font-heading text-lg sm:text-2xl font-black text-red-500">5 YEARS</div>
               <div className="text-[10px] font-sans text-zinc-500 uppercase tracking-widest leading-none mt-1">DOJO FLAGSHIP LINEAGE</div>
             </div>
             <div>
@@ -397,7 +397,7 @@ export default function Hero({ onNavigate }: HeroProps) {
               <div className="text-[10px] font-sans text-zinc-500 uppercase tracking-widest leading-none mt-1">CERTIFIED KIDS TRAINING</div>
             </div>
             <div>
-              <div className="font-heading text-lg sm:text-2xl font-black text-[#e0c78a]">1000+ KIDS</div>
+              <div className="font-heading text-lg sm:text-2xl font-black text-red-500">1000+ KIDS</div>
               <div className="text-[10px] font-sans text-zinc-500 uppercase tracking-widest leading-none mt-1">TRAINED IN PUNE AREA</div>
             </div>
             <div>
@@ -417,7 +417,7 @@ export default function Hero({ onNavigate }: HeroProps) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ duration: 0.4, ease: "easeOut" }}
-            className="fixed bottom-6 right-6 z-50 max-w-sm w-full bg-slate-900 border border-yellow-500/30 p-4 rounded-2xl shadow-2xl backdrop-blur-md"
+            className="fixed bottom-6 right-6 z-50 max-w-sm w-full bg-slate-900 border border-red-500/30 p-4 rounded-xl shadow-2xl backdrop-blur-md"
             id="parent-welcome-video-toast"
           >
             <button

@@ -11,8 +11,8 @@ export default function Contact() {
     {
       icon: <Mail className="w-5 h-5 text-yellow-500" />,
       title: "Write An Email",
-      val: "lionskaratepune@gmail.com",
-      clickUrl: "mailto:lionskaratepune@gmail.com"
+      val: "LIONSKARATECLUBPUNE09@gmail.com",
+      clickUrl: "mailto:LIONSKARATECLUBPUNE09@gmail.com"
     }
   ];
 
@@ -63,11 +63,11 @@ export default function Contact() {
                   <div className="bg-slate-900 p-2.5 rounded-lg border border-zinc-800 group-hover:text-yellow-400 transition-colors shrink-0">
                     {item.icon}
                   </div>
-                  <div>
+                  <div className="min-w-0 flex-1">
                     <h4 className="font-heading font-black text-[10px] uppercase text-zinc-500 tracking-wider">
                       {item.title}
                     </h4>
-                    <span className="text-zinc-200 text-sm font-semibold mt-0.5 block group-hover:text-yellow-500 transition-colors">
+                    <span className="text-zinc-200 text-xs sm:text-sm font-semibold mt-0.5 block group-hover:text-yellow-500 transition-colors break-all">
                       {item.val === "+91 90496 88172_admissions" ? "9049688172" : item.val}
                     </span>
                   </div>
@@ -100,6 +100,7 @@ export default function Contact() {
           </div>
 
         </div>
+
       </div>
     </section>
   );

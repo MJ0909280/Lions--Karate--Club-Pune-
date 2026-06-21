@@ -40,7 +40,7 @@ export default function Coaches() {
             <div className="h-[1px] w-8 bg-red-500"></div>
           </div>
           <h2 className="font-heading text-3xl sm:text-5xl font-black text-white uppercase tracking-tighter mb-4">
-            LEGENDARY <span className="text-transparent font-kanji" style={{ WebkitTextStroke: '1px #C9A96E', color: 'transparent' }}>SENSEIS</span>
+            LEGENDARY <span className="text-transparent font-kanji" style={{ WebkitTextStroke: '1.5px #FF2A35', color: 'transparent' }}>SENSEIS</span>
           </h2>
           <p className="text-zinc-400 text-xs sm:text-sm font-sans max-w-xl mx-auto leading-relaxed">
             Learn directly from certified masters who live and breathe traditional Shotokan karate martial arts and athletic physical science.
@@ -52,7 +52,7 @@ export default function Coaches() {
           {coaches.map((c, idx) => (
             <div 
               key={idx} 
-              className="group bg-slate-900/25 border border-zinc-900 rounded-xl overflow-hidden transition-all duration-500 hover:border-yellow-500/20 hover:shadow-2xl hover:shadow-black/70"
+              className="group bg-slate-900/25 border border-zinc-900 rounded-xl overflow-hidden transition-all duration-500 hover:border-red-500/20 hover:shadow-2xl hover:shadow-black/70"
             >
               <div className="h-[280px] overflow-hidden relative grayscale group-hover:grayscale-0 transition-all duration-500">
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent z-10" />
@@ -61,6 +61,7 @@ export default function Coaches() {
                   alt={c.name}
                   className="w-full h-full object-cover object-top transition duration-500 group-hover:scale-105"
                   referrerPolicy="no-referrer"
+                  loading="lazy"
                 />
                 
                 {/* Martial Rank Card */}

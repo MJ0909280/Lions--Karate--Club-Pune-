@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { collection, onSnapshot, addDoc, getDocs, query, where } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { BATCH_TIMINGS, BatchInfo, Admission, BELT_LEVELS, DOJO_BRANCHES } from '../types';
-import { Calendar, Users, Target, Clock, Sparkles, Send, Laptop, ShieldCheck, Check, Heart, Smile, HelpCircle, Volume2, VolumeX } from 'lucide-react';
+import { Calendar, Users, Target, Clock, Sparkles, Send, Laptop, ShieldCheck, Check, Heart, Smile, HelpCircle, Volume2, VolumeX, ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import IDCard from './IDCard';
 
@@ -81,6 +81,7 @@ export default function Batches({ onSelectBatch }: BatchesProps) {
   // --- NEW INTEGRATED PREMIER DOJO CARD STATE ---
   const [soundOn, setSoundOn] = useState(true);
   const [innerActiveAge, setInnerActiveAge] = useState<'tigers' | 'warriors' | 'elite'>('tigers');
+  const [selectedBatchForForm, setSelectedBatchForForm] = useState<'tigers' | 'warriors' | 'elite' | null>(null);
   const [cardSelectedTime, setCardSelectedTime] = useState<string | null>(null);
   
   // Custom quick form values
@@ -276,19 +277,19 @@ ${customMsg ? `- Additional Request: ${customMsg}` : ''}`;
 
   return (
     <section id="batches" className="py-14 sm:py-20 bg-zinc-950 border-t border-zinc-900/60 relative">
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-yellow-500/20 to-transparent" />
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-red-500/20 to-transparent" />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Section Title */}
         <div className="text-center max-w-2xl mx-auto mb-8 sm:mb-12">
           <div className="mb-4 inline-flex items-center gap-2 justify-center">
-            <div className="h-[1px] w-8 bg-yellow-500"></div>
-            <span className="text-yellow-500 uppercase tracking-[0.3em] text-[10px] font-extrabold">TRAINING ATELIER</span>
-            <div className="h-[1px] w-8 bg-yellow-500"></div>
+            <div className="h-[1px] w-8 bg-red-500"></div>
+            <span className="text-red-500 uppercase tracking-[0.3em] text-[10px] font-extrabold">TRAINING ATELIER</span>
+            <div className="h-[1px] w-8 bg-red-500"></div>
           </div>
           <h2 className="font-heading text-3xl sm:text-5xl font-black text-white uppercase tracking-tighter mb-4">
-            CHOOSE YOUR <span className="text-transparent font-kanji" style={{ WebkitTextStroke: '1px #C9A96E', color: 'transparent' }}>BATCH</span>
+            CHOOSE YOUR <span className="text-transparent font-kanji" style={{ WebkitTextStroke: '1.5px #FF2A35', color: 'transparent' }}>BATCH</span>
           </h2>
           <p className="text-zinc-400 text-xs sm:text-sm max-w-xl mx-auto leading-relaxed">
             Simple training times, high safety, and flexible hours designed with parents' daily busy lives in mind. Starting from Age 4 up to mature adults.
@@ -333,6 +334,8 @@ ${customMsg ? `- Additional Request: ${customMsg}` : ''}`;
                 onClick={() => {
                   setAgeFilter('all');
                   setInnerActiveAge('tigers');
+                  setSelectedBatchForForm(null);
+                  setCardSelectedTime(null);
                   playMelodicChime();
                 }}
                 className={`py-2 px-3 text-xs rounded-lg font-semibold transition-all duration-200 cursor-pointer ${
@@ -347,6 +350,8 @@ ${customMsg ? `- Additional Request: ${customMsg}` : ''}`;
                 onClick={() => {
                   setAgeFilter('kids');
                   setInnerActiveAge('tigers');
+                  setSelectedBatchForForm('tigers');
+                  setCardSelectedTime('5:00 - 6:00 PM');
                   playMelodicChime();
                 }}
                 className={`py-2 px-3 text-xs rounded-lg font-semibold transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 ${
@@ -362,6 +367,8 @@ ${customMsg ? `- Additional Request: ${customMsg}` : ''}`;
                 onClick={() => {
                   setAgeFilter('youth');
                   setInnerActiveAge('warriors');
+                  setSelectedBatchForForm('warriors');
+                  setCardSelectedTime('5:00 - 6:00 PM');
                   playMelodicChime();
                 }}
                 className={`py-2 px-3 text-xs rounded-lg font-semibold transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 ${
@@ -377,6 +384,8 @@ ${customMsg ? `- Additional Request: ${customMsg}` : ''}`;
                 onClick={() => {
                   setAgeFilter('teens-adults');
                   setInnerActiveAge('elite');
+                  setSelectedBatchForForm('elite');
+                  setCardSelectedTime('6:00 - 7:00 PM');
                   playMelodicChime();
                 }}
                 className={`py-2 px-3 text-xs rounded-lg font-semibold transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 ${
@@ -401,7 +410,7 @@ ${customMsg ? `- Additional Request: ${customMsg}` : ''}`;
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -15 }}
               transition={{ duration: 0.3 }}
-              className="w-full max-w-[480px] mx-auto px-1"
+              className={`w-full ${selectedBatchForForm ? 'max-w-[480px]' : 'max-w-5xl'} mx-auto px-1 transition-all duration-300`}
             >
               <style>{`
                 @keyframes fall {
@@ -444,8 +453,150 @@ ${customMsg ? `- Additional Request: ${customMsg}` : ''}`;
                 </button>
               </div>
 
-              {/* Real Interactive Dojo Card */}
-              <div className="bg-[#141211] rounded-[18px] overflow-hidden border border-stone-800/80 shadow-[0_15px_45px_rgba(0,0,0,0.7)]">
+              {!selectedBatchForForm ? (
+                /* Compact Batches Grid - Reduces vertical scroll drastically! */
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-2">
+                  {/* Tigers */}
+                  <div className="bg-[#111010]/95 border border-stone-850 hover:border-amber-500/50 rounded-[18px] overflow-hidden p-6 hover:shadow-[0_10px_25px_rgba(0,0,0,0.6)] transition-all duration-300 flex flex-col justify-between relative group">
+                    <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-amber-500 to-red-600 opacity-40 group-hover:opacity-100 transition-opacity" />
+                    <div>
+                      <div className="text-4xl mb-3 select-none">{classesData.tigers.emoji}</div>
+                      <h4 className="font-heading text-lg font-black text-white uppercase tracking-tight mb-1">
+                        {classesData.tigers.title}
+                      </h4>
+                      <div className="text-amber-500 font-bold text-xs uppercase tracking-wide font-mono mb-3">
+                        {classesData.tigers.ages}
+                      </div>
+                      <p className="text-zinc-400 text-xs font-sans italic mb-4 leading-relaxed line-clamp-2">
+                        "{classesData.tigers.tagline}"
+                      </p>
+                      
+                      <ul className="space-y-2 mb-6">
+                        {classesData.tigers.benefits.slice(0, 2).map((b, idx) => (
+                          <li key={idx} className="flex items-start gap-2 text-stone-300 text-[11.5px] font-sans leading-relaxed">
+                            <span className="text-[#9B1B20] text-sm shrink-0 -mt-0.5">{b.icon}</span>
+                            <span>{b.text}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        setSelectedBatchForForm('tigers');
+                        setInnerActiveAge('tigers');
+                        setCardSelectedTime('5:00 - 6:00 PM');
+                        setAgeFilter('kids');
+                        playMelodicChime();
+                      }}
+                      className="w-full py-3 px-4 font-heading font-black text-white text-xs tracking-widest rounded-xl bg-[#9B1B20] hover:bg-red-600 shadow-[0_3px_0_#7f1d1d] active:translate-y-1 active:shadow-none hover:scale-[1.01] transition-all cursor-pointer uppercase text-center"
+                    >
+                      🥋 Show Batch
+                    </button>
+                  </div>
+
+                  {/* Warriors */}
+                  <div className="bg-[#111010]/95 border border-stone-850 hover:border-amber-500/50 rounded-[18px] overflow-hidden p-6 hover:shadow-[0_10px_25px_rgba(0,0,0,0.6)] transition-all duration-300 flex flex-col justify-between relative group">
+                    <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-amber-500 to-red-600 opacity-40 group-hover:opacity-100 transition-opacity" />
+                    <div>
+                      <div className="text-4xl mb-3 select-none">{classesData.warriors.emoji}</div>
+                      <h4 className="font-heading text-lg font-black text-white uppercase tracking-tight mb-1">
+                        {classesData.warriors.title}
+                      </h4>
+                      <div className="text-amber-500 font-bold text-xs uppercase tracking-wide font-mono mb-3">
+                        {classesData.warriors.ages}
+                      </div>
+                      <p className="text-zinc-400 text-xs font-sans italic mb-4 leading-relaxed line-clamp-2">
+                        "{classesData.warriors.tagline}"
+                      </p>
+                      
+                      <ul className="space-y-2 mb-6">
+                        {classesData.warriors.benefits.slice(0, 2).map((b, idx) => (
+                          <li key={idx} className="flex items-start gap-2 text-stone-300 text-[11.5px] font-sans leading-relaxed">
+                            <span className="text-[#9B1B20] text-sm shrink-0 -mt-0.5">{b.icon}</span>
+                            <span>{b.text}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        setSelectedBatchForForm('warriors');
+                        setInnerActiveAge('warriors');
+                        setCardSelectedTime('5:00 - 6:00 PM');
+                        setAgeFilter('youth');
+                        playMelodicChime();
+                      }}
+                      className="w-full py-3 px-4 font-heading font-black text-white text-xs tracking-widest rounded-xl bg-[#9B1B20] hover:bg-red-600 shadow-[0_3px_0_#7f1d1d] active:translate-y-1 active:shadow-none hover:scale-[1.01] transition-all cursor-pointer uppercase text-center"
+                    >
+                      🥋 Show Batch
+                    </button>
+                  </div>
+
+                  {/* Elite */}
+                  <div className="bg-[#111010]/95 border border-stone-850 hover:border-amber-500/50 rounded-[18px] overflow-hidden p-6 hover:shadow-[0_10px_25px_rgba(0,0,0,0.6)] transition-all duration-300 flex flex-col justify-between relative group">
+                    <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-amber-500 to-red-600 opacity-40 group-hover:opacity-100 transition-opacity" />
+                    <div>
+                      <div className="text-4xl mb-3 select-none">{classesData.elite.emoji}</div>
+                      <h4 className="font-heading text-lg font-black text-white uppercase tracking-tight mb-1">
+                        {classesData.elite.title}
+                      </h4>
+                      <div className="text-amber-500 font-bold text-xs uppercase tracking-wide font-mono mb-3">
+                        {classesData.elite.ages}
+                      </div>
+                      <p className="text-zinc-400 text-xs font-sans italic mb-4 leading-relaxed line-clamp-2">
+                        "{classesData.elite.tagline}"
+                      </p>
+                      
+                      <ul className="space-y-2 mb-6">
+                        {classesData.elite.benefits.slice(0, 2).map((b, idx) => (
+                          <li key={idx} className="flex items-start gap-2 text-stone-300 text-[11.5px] font-sans leading-relaxed">
+                            <span className="text-[#9B1B20] text-sm shrink-0 -mt-0.5">{b.icon}</span>
+                            <span>{b.text}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        setSelectedBatchForForm('elite');
+                        setInnerActiveAge('elite');
+                        setCardSelectedTime('6:00 - 7:00 PM');
+                        setAgeFilter('teens-adults');
+                        playMelodicChime();
+                      }}
+                      className="w-full py-3 px-4 font-heading font-black text-white text-xs tracking-widest rounded-xl bg-[#9B1B20] hover:bg-red-600 shadow-[0_3px_0_#7f1d1d] active:translate-y-1 active:shadow-none hover:scale-[1.01] transition-all cursor-pointer uppercase text-center"
+                    >
+                      🥋 Show Batch
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {/* Elegant Back Navigation and selection switcher bar */}
+                  <div className="flex justify-between items-center mb-4">
+                    <button
+                      onClick={() => {
+                        setSelectedBatchForForm(null);
+                        setAgeFilter('all');
+                        setCardSelectedTime(null);
+                        playMelodicChime();
+                      }}
+                      className="group flex items-center gap-2 text-[10.5px] font-heading font-black text-amber-500 hover:text-amber-400 uppercase tracking-wider bg-stone-900/60 border border-stone-850 hover:bg-stone-850 px-4 py-2.5 rounded-xl cursor-pointer transition active:scale-95 shadow"
+                    >
+                      <ArrowLeft className="w-3.5 h-3.5 text-red-500 group-hover:-translate-x-1 transition-transform" />
+                      <span>Back to Batches List</span>
+                    </button>
+
+                    <span className="text-[10px] text-zinc-500 font-bold tracking-wider font-mono">
+                      STEP 2 OF 3: REGISTER
+                    </span>
+                  </div>
+
+                  {/* Real Interactive Dojo Card */}
+                  <div className="bg-[#141211] rounded-[18px] overflow-hidden border border-stone-800/80 shadow-[0_15px_45px_rgba(0,0,0,0.7)]">
                 {/* Gold/Red belted linear header stripe */}
                 <div className="h-2 bg-gradient-to-r from-amber-500 via-red-600 to-amber-500" />
                 
@@ -555,273 +706,305 @@ ${customMsg ? `- Additional Request: ${customMsg}` : ''}`;
                     <span>{classesData[innerActiveAge].safety}</span>
                   </div>
 
-                  {/* Integrated fast form */}
-                  <form onSubmit={handleQuickRegisterSubmit} className="pt-5 border-t border-stone-900 space-y-4">
-                    <div className="space-y-1">
-                      <label className="block text-xs font-semibold text-stone-300 uppercase tracking-wide">
-                        Child's Full Name <span className="text-[#9B1B20]">*</span>
-                      </label>
-                      <input 
-                        type="text" 
-                        value={childName}
-                        onChange={(e) => setChildName(e.target.value)}
-                        placeholder="Enter child's full name" 
-                        required
-                        className="w-full bg-[#1c1917]/50 border border-stone-800 rounded-lg px-3 py-2.5 text-stone-100 text-xs focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-all font-sans outline-none"
-                      />
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="block text-xs font-semibold text-stone-300 uppercase tracking-wide">
-                        Parent/Guardian Name
-                      </label>
-                      <input 
-                        type="text" 
-                        value={parentName}
-                        onChange={(e) => setParentName(e.target.value)}
-                        placeholder="Enter parent/guardian name" 
-                        className="w-full bg-[#1c1917]/50 border border-stone-800 rounded-lg px-3 py-2.5 text-stone-100 text-xs focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-all font-sans outline-none"
-                      />
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="block text-xs font-semibold text-stone-300 uppercase tracking-wide">
-                        Phone Number <span className="text-[#9B1B20]">*</span>
-                      </label>
-                      <input 
-                        type="tel" 
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        placeholder="Enter mobile for reminders" 
-                        required
-                        className="w-full bg-[#1c1917]/50 border border-stone-800 rounded-lg px-3 py-2.5 text-stone-100 text-xs focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-all font-sans outline-none"
-                      />
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="block text-xs font-semibold text-stone-300 uppercase tracking-wide">
-                        Email Address (Optional)
-                      </label>
-                      <input 
-                        type="email" 
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="email@example.com" 
-                        className="w-full bg-[#1c1917]/50 border border-stone-800 rounded-lg px-3 py-2.5 text-stone-100 text-xs focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-all font-sans outline-none"
-                      />
-                    </div>
-
-                    {/* Date of Birth & Automated Age calculation */}
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <label className="block text-xs font-semibold text-stone-300 uppercase tracking-wide">
-                          Date of Birth <span className="text-[#9B1B20]">*</span>
-                        </label>
-                        <input 
-                          type="date" 
-                          value={dob}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            setDob(val);
-                            if (!val) {
-                              setAge('');
-                              return;
-                            }
-                            const birthDate = new Date(val);
-                            const today = new Date();
-                            let calculatedAge = today.getFullYear() - birthDate.getFullYear();
-                            const m = today.getMonth() - birthDate.getMonth();
-                            if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-                              calculatedAge--;
-                            }
-                            setAge(calculatedAge >= 0 ? calculatedAge : 0);
-                          }}
-                          required
-                          className="w-full bg-[#1c1917]/50 border border-stone-800 rounded-lg px-3 py-2.5 text-stone-100 text-xs focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-all font-sans outline-none"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="block text-xs font-semibold text-stone-300 uppercase tracking-wide">
-                          Calculated Age
-                        </label>
-                        <input 
-                          type="text" 
-                          value={age !== '' ? `${age} Years Old` : 'Select DOB'}
-                          disabled
-                          className="w-full bg-[#1c1917]/20 border border-stone-850/80 rounded-lg px-3 py-2.5 text-stone-400 text-xs font-sans outline-none cursor-not-allowed"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Dojo Branch & Dedicated Coach Display */}
-                    <div className="space-y-1">
-                      <label className="block text-xs font-semibold text-stone-300 uppercase tracking-wide">
-                        Dojo Karate Branch <span className="text-[#9B1B20]">*</span>
-                      </label>
-                      <select 
-                        value={selectedBranchId}
-                        onChange={(e) => setSelectedBranchId(e.target.value)}
-                        required
-                        className="w-full bg-[#1c1917]/50 border border-stone-800 rounded-lg px-3 py-2.5 text-stone-100 text-xs focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-all font-sans outline-none"
+                  {/* Integrated fast form - only visible when a slot time has been actively chosen */}
+                  <AnimatePresence mode="wait">
+                    {!cardSelectedTime ? (
+                      <motion.div
+                        key="time-select-prompt"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        transition={{ duration: 0.3 }}
+                        className="bg-[#0e0e10] border border-dashed border-red-500/20 p-5 rounded-xl text-center space-y-2 shadow-inner"
                       >
-                        {DOJO_BRANCHES.map((b) => (
-                          <option key={b.id} value={b.id} className="bg-stone-900 text-stone-100">
-                            {b.name}
-                          </option>
-                        ))}
-                      </select>
-                      <p className="text-[10px] text-amber-500 pl-1 font-mono">
-                        👤 Dedicated Instructor: {DOJO_BRANCHES.find(b => b.id === selectedBranchId)?.coach || 'Maruti Sir'}
-                      </p>
-                    </div>
+                        <span className="text-xl inline-block animate-bounce mt-1">🥋</span>
+                        <h4 className="font-heading font-black text-[#F0E6D3] text-[13px] uppercase tracking-wider">
+                          Ready for Enrollment?
+                        </h4>
+                        <p className="text-zinc-400 text-xs font-sans leading-relaxed max-w-sm mx-auto">
+                          Please <span className="text-red-500 font-bold">Choose Daily Class Time</span> above. The admission enrollment form will instantly slide open here!
+                        </p>
+                      </motion.div>
+                    ) : (
+                      <motion.div
+                        key="active-form-segment"
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.4, ease: "easeOut" }}
+                        className="overflow-hidden"
+                      >
+                        <form onSubmit={handleQuickRegisterSubmit} className="pt-5 border-t border-stone-900 space-y-4">
+                          <div className="space-y-1">
+                            <label className="block text-xs font-semibold text-stone-300 uppercase tracking-wide">
+                              Child's Full Name <span className="text-[#9B1B20]">*</span>
+                            </label>
+                            <input 
+                              type="text" 
+                              value={childName}
+                              onChange={(e) => setChildName(e.target.value)}
+                              placeholder="Enter child's full name" 
+                              required
+                              className="w-full bg-[#1c1917]/50 border border-stone-800 rounded-lg px-3 py-2.5 text-stone-100 text-xs focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-all font-sans outline-none"
+                            />
+                          </div>
 
-                    {/* Belt Selection & Fees Status */}
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <label className="block text-xs font-semibold text-stone-300 uppercase tracking-wide">
-                          Starting Belt <span className="text-[#9B1B20]">*</span>
-                        </label>
-                        <select 
-                          value={beltLevel}
-                          onChange={(e) => setBeltLevel(e.target.value)}
-                          required
-                          className="w-full bg-[#1c1917]/50 border border-stone-800 rounded-lg px-3 py-2.5 text-stone-100 text-xs focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-all font-sans outline-none"
-                        >
-                          {BELT_LEVELS.map((belt) => (
-                            <option key={belt.name} value={belt.name} className="bg-stone-900 text-stone-100">
-                              {belt.name}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      <div className="space-y-1">
-                        <label className="block text-xs font-semibold text-stone-300 uppercase tracking-wide">
-                          Fees Status <span className="text-[#9B1B20]">*</span>
-                        </label>
-                        <select 
-                          value={feesStatus}
-                          onChange={(e) => setFeesStatus(e.target.value as 'Paid' | 'Unpaid')}
-                          required
-                          className="w-full bg-[#1c1917]/50 border border-stone-800 rounded-lg px-3 py-2.5 text-stone-100 text-xs focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-all font-sans outline-none"
-                        >
-                          <option value="Unpaid" className="bg-stone-900 text-stone-100">Unpaid</option>
-                          <option value="Paid" className="bg-stone-900 text-stone-100">Paid</option>
-                        </select>
-                      </div>
-                    </div>
+                          <div className="space-y-1">
+                            <label className="block text-xs font-semibold text-stone-300 uppercase tracking-wide">
+                              Parent/Guardian Name
+                            </label>
+                            <input 
+                              type="text" 
+                              value={parentName}
+                              onChange={(e) => setParentName(e.target.value)}
+                              placeholder="Enter parent/guardian name" 
+                              className="w-full bg-[#1c1917]/50 border border-stone-800 rounded-lg px-3 py-2.5 text-stone-100 text-xs focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-all font-sans outline-none"
+                            />
+                          </div>
 
-                    {/* Parent/Guardian Declaration section */}
-                    <div className="space-y-2.5">
-                      <label className="block text-xs font-semibold text-stone-300 uppercase tracking-wide">
-                        5. Parent/Guardian Declaration <span className="text-[#9B1B20]">*</span>
-                      </label>
-                      <div className="bg-[#141211]/80 border border-stone-850 rounded-xl p-4 space-y-3">
-                        <div className="text-stone-400 text-[11px] leading-relaxed max-h-32 overflow-y-auto pr-2 space-y-2 font-sans select-none">
-                          <p className="font-semibold text-amber-500 uppercase tracking-wider text-[9px]">LIONS KARATE CLUB PUNE — Parent/Guardian Declaration</p>
-                          <p>
-                            I hereby declare that the information provided in this form is true and accurate to the best of my knowledge.
-                          </p>
-                          <p>
-                            I voluntarily enroll myself/my child in the training programs conducted by LIONS KARATE CLUB PUNE and understand that martial arts training involves physical activity and inherent risks.
-                          </p>
-                          <p>
-                            I confirm that I/my child is medically fit to participate in training activities. Any medical condition, injury, or health concern has been disclosed to the club.
-                          </p>
-                          <p>
-                            I consent to the use of photographs, videos, and personal details for student identification, certificates, competitions, club records, website content, and promotional activities.
-                          </p>
-                          <p>
-                            I agree to abide by all rules, regulations, safety guidelines, and fee policies of LIONS KARATE CLUB PUNE.
-                          </p>
-                        </div>
-                        
-                        <label className="flex items-start gap-2.5 cursor-pointer pt-2 border-t border-stone-850 select-none">
-                          <input 
-                            type="checkbox" 
-                            checked={termsAccepted}
-                            onChange={(e) => setTermsAccepted(e.target.checked)}
-                            required
-                            className="w-4 h-4 rounded border-stone-700 bg-stone-900 text-amber-500 focus:ring-amber-500 mt-0.5 accent-amber-500"
-                          />
-                          <span className="text-stone-300 text-[11px] leading-tight font-medium">
-                            I accept the Parent/Guardian Declaration and agree to abide by all club policies. <span className="text-[#9B1B20]">*</span>
-                          </span>
-                        </label>
-                      </div>
-                    </div>
+                          <div className="space-y-1">
+                            <label className="block text-xs font-semibold text-stone-300 uppercase tracking-wide">
+                              Phone Number <span className="text-[#9B1B20]">*</span>
+                            </label>
+                            <input 
+                              type="tel" 
+                              value={phone}
+                              onChange={(e) => setPhone(e.target.value)}
+                              placeholder="Enter mobile for reminders" 
+                              required
+                              className="w-full bg-[#1c1917]/50 border border-stone-800 rounded-lg px-3 py-2.5 text-stone-100 text-xs focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-all font-sans outline-none"
+                            />
+                          </div>
 
-                    {/* Integrated custom student photo uploader */}
-                    <div className="space-y-1">
-                      <label className="block text-xs font-semibold text-stone-300 uppercase tracking-wide">
-                        Upload Student Photo (For ID Card Generation)
-                      </label>
-                      <div className="flex items-center space-x-3 bg-[#1c1917]/50 border border-stone-800 rounded-lg p-3 transition-all">
-                        {photoBase64 ? (
-                          <div className="relative w-12 h-12 rounded-lg overflow-hidden border border-amber-500/50 shrink-0">
-                            <img src={photoBase64} alt="Uploaded student" className="w-full h-full object-cover" />
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setPhotoBase64(null);
-                                setPhotoName('');
-                              }}
-                              className="absolute inset-0 bg-black/60 flex items-center justify-center text-[10px] text-red-500 font-bold hover:bg-black/85"
+                          <div className="space-y-1">
+                            <label className="block text-xs font-semibold text-stone-300 uppercase tracking-wide">
+                              Email Address (Optional)
+                            </label>
+                            <input 
+                              type="email" 
+                              value={email}
+                              onChange={(e) => setEmail(e.target.value)}
+                              placeholder="email@example.com" 
+                              className="w-full bg-[#1c1917]/50 border border-stone-800 rounded-lg px-3 py-2.5 text-stone-100 text-xs focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-all font-sans outline-none"
+                            />
+                          </div>
+
+                          {/* Date of Birth & Automated Age calculation */}
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1">
+                              <label className="block text-xs font-semibold text-stone-300 uppercase tracking-wide">
+                                Date of Birth <span className="text-[#9B1B20]">*</span>
+                              </label>
+                              <input 
+                                type="date" 
+                                value={dob}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  setDob(val);
+                                  if (!val) {
+                                    setAge('');
+                                    return;
+                                  }
+                                  const birthDate = new Date(val);
+                                  const today = new Date();
+                                  let calculatedAge = today.getFullYear() - birthDate.getFullYear();
+                                  const m = today.getMonth() - birthDate.getMonth();
+                                  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+                                    calculatedAge--;
+                                  }
+                                  setAge(calculatedAge >= 0 ? calculatedAge : 0);
+                                }}
+                                required
+                                className="w-full bg-[#1c1917]/50 border border-stone-800 rounded-lg px-3 py-2.5 text-stone-100 text-xs focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-all font-sans outline-none"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="block text-xs font-semibold text-stone-300 uppercase tracking-wide">
+                                Calculated Age
+                              </label>
+                              <input 
+                                type="text" 
+                                value={age !== '' ? `${age} Years Old` : 'Select DOB'}
+                                disabled
+                                className="w-full bg-[#1c1917]/20 border border-stone-850/80 rounded-lg px-3 py-2.5 text-stone-400 text-xs font-sans outline-none cursor-not-allowed"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Dojo Branch & Dedicated Coach Display */}
+                          <div className="space-y-1">
+                            <label className="block text-xs font-semibold text-stone-300 uppercase tracking-wide">
+                              Dojo Karate Branch <span className="text-[#9B1B20]">*</span>
+                            </label>
+                            <select 
+                              value={selectedBranchId}
+                              onChange={(e) => setSelectedBranchId(e.target.value)}
+                              required
+                              className="w-full bg-[#1c1917]/50 border border-stone-800 rounded-lg px-3 py-2.5 text-stone-100 text-xs focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-all font-sans outline-none"
                             >
-                              ✕
-                            </button>
+                              {DOJO_BRANCHES.map((b) => (
+                                <option key={b.id} value={b.id} className="bg-stone-900 text-stone-100">
+                                  {b.name}
+                                </option>
+                              ))}
+                            </select>
+                            <p className="text-[10px] text-amber-500 pl-1 font-mono">
+                              👤 Dedicated Instructor: {DOJO_BRANCHES.find(b => b.id === selectedBranchId)?.coach || 'Maruti Sir'}
+                            </p>
                           </div>
-                        ) : (
-                          <div className="w-12 h-12 rounded-lg bg-stone-900 border border-stone-800 flex items-center justify-center text-stone-500 select-none font-bold text-lg shrink-0">
-                            📷
-                          </div>
-                        )}
-                        <div className="flex-1">
-                          <input
-                            type="file"
-                            accept="image/*"
-                            id="quick-card-photo-picker"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0];
-                              if (file) {
-                                setPhotoName(file.name);
-                                const reader = new FileReader();
-                                reader.onloadend = () => {
-                                  setPhotoBase64(reader.result as string);
-                                };
-                                reader.readAsDataURL(file);
-                              }
-                            }}
-                            className="hidden"
-                          />
-                          <label
-                            htmlFor="quick-card-photo-picker"
-                            className="inline-block bg-stone-900 hover:bg-stone-850 border border-stone-800 px-3 py-1.5 rounded text-[11px] font-bold text-amber-500 cursor-pointer text-center"
-                          >
-                            {photoName ? '📸 Change Photo' : '📂 Choose Photo'}
-                          </label>
-                          <p className="text-[10px] text-stone-500 mt-1 truncate max-w-[200px]">
-                            {photoName || "Using dynamic silhouette if empty"}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
 
-                     {/* Interactive Register submission */}
-                    <button 
-                      type="submit"
-                      disabled={submitting || !childName.trim() || !cardSelectedTime || !phone.trim() || !dob || !termsAccepted}
-                      className={`w-full py-3.5 px-4 font-heading font-black text-white text-base tracking-widest rounded-full uppercase transition-all duration-200 cursor-pointer ${
-                        childName.trim() && cardSelectedTime && phone.trim() && dob && termsAccepted
-                          ? 'bg-[#9B1B20] hover:bg-red-650 hover:scale-[1.01] shadow-[0_5px_0_#7f1d1d] active:translate-y-1 active:shadow-[0_2px_0_#7f1d1d]'
-                          : 'bg-stone-800 border border-stone-700 text-stone-500 opacity-60 cursor-not-allowed'
-                      }`}
-                    >
-                      {submitting ? 'Registering with Dojo...' : 'REGISTER'}
-                    </button>
-                  </form>
+                          {/* Belt Selection & Fees Status */}
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1">
+                              <label className="block text-xs font-semibold text-stone-300 uppercase tracking-wide">
+                                Starting Belt <span className="text-[#9B1B20]">*</span>
+                              </label>
+                              <select 
+                                value={beltLevel}
+                                onChange={(e) => setBeltLevel(e.target.value)}
+                                required
+                                className="w-full bg-[#1c1917]/50 border border-stone-800 rounded-lg px-3 py-2.5 text-stone-100 text-xs focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-all font-sans outline-none"
+                              >
+                                {BELT_LEVELS.map((belt) => (
+                                  <option key={belt.name} value={belt.name} className="bg-stone-900 text-stone-100">
+                                    {belt.name}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            <div className="space-y-1">
+                              <label className="block text-xs font-semibold text-stone-300 uppercase tracking-wide">
+                                Fees Status <span className="text-[#9B1B20]">*</span>
+                              </label>
+                              <select 
+                                value={feesStatus}
+                                onChange={(e) => setFeesStatus(e.target.value as 'Paid' | 'Unpaid')}
+                                required
+                                className="w-full bg-[#1c1917]/50 border border-stone-800 rounded-lg px-3 py-2.5 text-stone-100 text-xs focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-all font-sans outline-none"
+                              >
+                                <option value="Unpaid" className="bg-stone-900 text-stone-100">Unpaid</option>
+                                <option value="Paid" className="bg-stone-900 text-stone-100">Paid</option>
+                              </select>
+                            </div>
+                          </div>
+
+                          {/* Parent/Guardian Declaration section */}
+                          <div className="space-y-2.5">
+                            <label className="block text-xs font-semibold text-stone-300 uppercase tracking-wide">
+                              5. Parent/Guardian Declaration <span className="text-[#9B1B20]">*</span>
+                            </label>
+                            <div className="bg-[#141211]/80 border border-stone-850 rounded-xl p-4 space-y-3">
+                              <div className="text-stone-400 text-[11px] leading-relaxed max-h-32 overflow-y-auto pr-2 space-y-2 font-sans select-none">
+                                <p className="font-semibold text-amber-500 uppercase tracking-wider text-[9px]">LIONS KARATE CLUB PUNE — Parent/Guardian Declaration</p>
+                                <p>
+                                  I hereby declare that the information provided in this form is true and accurate to the best of my knowledge.
+                                </p>
+                                <p>
+                                  I voluntarily enroll myself/my child in the training programs conducted by LIONS KARATE CLUB PUNE and understand that martial arts training involves physical activity and inherent risks.
+                                </p>
+                                <p>
+                                  I confirm that I/my child is medically fit to participate in training activities. Any medical condition, injury, or health concern has been disclosed to the club.
+                                </p>
+                                <p>
+                                  I consent to the use of photographs, videos, and personal details for student identification, certificates, competitions, club records, website content, and promotional activities.
+                                </p>
+                                <p>
+                                  I agree to abide by all rules, regulations, safety guidelines, and fee policies of LIONS KARATE CLUB PUNE.
+                                </p>
+                              </div>
+                              
+                              <label className="flex items-start gap-2.5 cursor-pointer pt-2 border-t border-stone-850 select-none">
+                                <input 
+                                  type="checkbox" 
+                                  checked={termsAccepted}
+                                  onChange={(e) => setTermsAccepted(e.target.checked)}
+                                  required
+                                  className="w-4 h-4 rounded border-stone-700 bg-stone-900 text-amber-500 focus:ring-amber-500 mt-0.5 accent-amber-500"
+                                />
+                                <span className="text-stone-300 text-[11px] leading-tight font-medium">
+                                  I accept the Parent/Guardian Declaration and agree to abide by all club policies. <span className="text-[#9B1B20]">*</span>
+                                </span>
+                              </label>
+                            </div>
+                          </div>
+
+                          {/* Integrated custom student photo uploader */}
+                          <div className="space-y-1">
+                            <label className="block text-xs font-semibold text-stone-300 uppercase tracking-wide">
+                              Upload Student Photo (For ID Card Generation)
+                            </label>
+                            <div className="flex items-center space-x-3 bg-[#1c1917]/50 border border-stone-800 rounded-lg p-3 transition-all">
+                              {photoBase64 ? (
+                                <div className="relative w-12 h-12 rounded-lg overflow-hidden border border-amber-500/50 shrink-0">
+                                  <img src={photoBase64} alt="Uploaded student" className="w-full h-full object-cover" />
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setPhotoBase64(null);
+                                      setPhotoName('');
+                                    }}
+                                    className="absolute inset-0 bg-black/60 flex items-center justify-center text-[10px] text-red-500 font-bold hover:bg-black/85"
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
+                              ) : (
+                                <div className="w-12 h-12 rounded-lg bg-stone-900 border border-stone-800 flex items-center justify-center text-stone-500 select-none font-bold text-lg shrink-0">
+                                  📷
+                                </div>
+                              )}
+                              <div className="flex-1">
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  id="quick-card-photo-picker"
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                      setPhotoName(file.name);
+                                      const reader = new FileReader();
+                                      reader.onloadend = () => {
+                                        setPhotoBase64(reader.result as string);
+                                      };
+                                      reader.readAsDataURL(file);
+                                    }
+                                  }}
+                                  className="hidden"
+                                />
+                                <label
+                                  htmlFor="quick-card-photo-picker"
+                                  className="inline-block bg-stone-900 hover:bg-stone-850 border border-stone-800 px-3 py-1.5 rounded text-[11px] font-bold text-amber-500 cursor-pointer text-center"
+                                >
+                                  {photoName ? '📸 Change Photo' : '📂 Choose Photo'}
+                                </label>
+                                <p className="text-[10px] text-stone-500 mt-1 truncate max-w-[200px]">
+                                  {photoName || "Using dynamic silhouette if empty"}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+
+                           {/* Interactive Register submission */}
+                          <button 
+                            type="submit"
+                            disabled={submitting || !childName.trim() || !cardSelectedTime || !phone.trim() || !dob || !termsAccepted}
+                            className={`w-full py-3.5 px-4 font-heading font-black text-white text-base tracking-widest rounded-full uppercase transition-all duration-200 cursor-pointer ${
+                              childName.trim() && cardSelectedTime && phone.trim() && dob && termsAccepted
+                                ? 'bg-[#9B1B20] hover:bg-red-650 hover:scale-[1.01] shadow-[0_5px_0_#7f1d1d] active:translate-y-1 active:shadow-[0_2px_0_#7f1d1d]'
+                                : 'bg-stone-800 border border-stone-700 text-stone-500 opacity-60 cursor-not-allowed'
+                            }`}
+                          >
+                            {submitting ? 'Registering with Dojo...' : 'REGISTER'}
+                          </button>
+                        </form>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               </div>
-            </motion.div>
+            </>
+          )}
+        </motion.div>
           ) : (
             <motion.div
               key="online-mentor"
