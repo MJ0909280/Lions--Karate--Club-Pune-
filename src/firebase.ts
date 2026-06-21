@@ -18,18 +18,20 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 
-// Initialize Firestore with Database ID from configuration and long polling for iframe compatibility
+// Initialize Firestore with Database ID from configuration, long polling and disabled fetch streams for iframe compatibility
 export const db = initializeFirestore(app, {
-  experimentalForceLongPolling: true
-}, firebaseConfig.firestoreDatabaseId);
+  experimentalForceLongPolling: true,
+  useFetchStreams: false
+} as any, firebaseConfig.firestoreDatabaseId);
 
 export const auth = getAuth();
 
 async function testConnection() {
   try {
-    await getDocFromServer(doc(db, 'test', 'connection'));
+    // Attempting to read a public document path (settings/config) so we don't trigger PERMISSION_DENIED console logs
+    await getDocFromServer(doc(db, 'settings', 'config'));
   } catch (error) {
-    if (error instanceof Error && (error.message.includes('the client is offline') || error.message.includes('unavailable'))) {
+    if (error instanceof Error && (error.message.includes('the client is offline') || error.message.includes('unavailable') || error.message.includes('Could not reach Cloud Firestore backend'))) {
       console.warn("Firestore is currently running in offline-first mode. Will sync automatically when connection re-establishes.");
     }
   }

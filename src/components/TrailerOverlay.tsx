@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { Play, X, Shield, Award } from 'lucide-react';
 
 interface TrailerOverlayProps {
   onEnter: () => void;
@@ -7,6 +8,7 @@ interface TrailerOverlayProps {
 
 export default function TrailerOverlay({ onEnter }: TrailerOverlayProps) {
   const [isDismissed, setIsDismissed] = useState(false);
+  const [showVideo, setShowVideo] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   // Particles animation inside the canvas
@@ -158,32 +160,115 @@ export default function TrailerOverlay({ onEnter }: TrailerOverlayProps) {
               — 精神一到 • COURAGE & HONOR —
             </motion.div>
 
-            {/* Main Interactive Action CTA Button */}
-            <motion.button 
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 1.8, duration: 1 }}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={(e) => {
-                e.stopPropagation();
-                handleDismiss();
-              }}
-              className="mt-6 font-heading font-normal text-xs sm:text-sm tracking-[0.3em] uppercase bg-transparent hover:bg-[#C9A96E]/10 border border-[#C9A96E] hover:border-[#e0c78a] hover:shadow-[0_0_30px_rgba(201,169,110,0.4)] text-[#C9A96E] hover:text-[#e0c78a] py-3.5 px-10 rounded-none transition-all cursor-pointer relative overflow-hidden group"
-            >
-              <span className="relative z-10">ENTER THE DOJO</span>
-              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-[2px] bg-[#9B1B20] transition-all group-hover:width-[80%]" />
-            </motion.button>
+            {/* Main Interactive Action CTA Buttons */}
+            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4 w-full px-4">
+              {/* Watch Practice Video Button */}
+              <motion.button 
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 1.6, duration: 1 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowVideo(true);
+                }}
+                className="w-full sm:w-auto font-heading font-medium text-xs sm:text-xs tracking-[0.25em] uppercase bg-[#9B1B20]/15 hover:bg-[#9B1B20]/30 border border-[#9B1B20] hover:border-red-500 hover:shadow-[0_0_25px_rgba(155,27,32,0.5)] text-red-250 hover:text-white py-4 px-8 rounded-none transition-all cursor-pointer flex items-center justify-center gap-2 group"
+              >
+                <div className="relative flex items-center justify-center">
+                  <Play className="w-3.5 h-3.5 fill-current animate-pulse text-red-400 group-hover:text-white" />
+                </div>
+                <span>WATCH PRACTICE TRAILER</span>
+              </motion.button>
+
+              {/* Enter Dojo Button */}
+              <motion.button 
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 1.8, duration: 1 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDismiss();
+                }}
+                className="w-full sm:w-auto font-heading font-normal text-xs sm:text-xs tracking-[0.25em] uppercase bg-transparent hover:bg-[#C9A96E]/10 border border-[#C9A96E] hover:border-[#e0c78a] hover:shadow-[0_0_35px_rgba(201,169,110,0.4)] text-[#C9A96E] hover:text-[#e0c78a] py-4 px-10 rounded-none transition-all cursor-pointer relative overflow-hidden group"
+              >
+                <span className="relative z-10 font-bold">ENTER THE DOJO</span>
+                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-[2px] bg-[#C9A96E] transition-all group-hover:w-[80%]" />
+              </motion.button>
+            </div>
           </div>
+
+          {/* Interactive Cinematic Video Player Modal Backdrop */}
+          <AnimatePresence>
+            {showVideo && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-[20000] bg-black/95 backdrop-blur-md flex flex-col items-center justify-center p-4 sm:p-8"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowVideo(false);
+                }}
+              >
+                <div 
+                  className="relative w-full max-w-4xl aspect-video bg-[#141211]/90 rounded-none border border-stone-850 shadow-[0_0_60px_rgba(155,27,32,0.3)] flex flex-col overflow-hidden"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {/* Top Bar controls */}
+                  <div className="absolute top-0 inset-x-0 h-14 bg-gradient-to-b from-black/80 to-transparent flex items-center justify-between px-6 z-20 pointer-events-auto">
+                    <div className="flex items-center gap-2">
+                      <Shield className="w-4 h-4 text-[#9B1B20]" />
+                      <span className="font-heading text-[10px] sm:text-xs font-black tracking-[0.2em] text-[#F0E6D3] uppercase">
+                        DOJO COMPILATION • PRACTICE SESSION
+                      </span>
+                    </div>
+                    
+                    <button 
+                      onClick={() => setShowVideo(false)}
+                      className="p-1 px-3 text-stone-400 hover:text-white bg-stone-900/60 border border-stone-800 hover:border-stone-700 transition-all font-mono text-[10px] tracking-widest uppercase flex items-center gap-1 cursor-pointer"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                      <span>CLOSE</span>
+                    </button>
+                  </div>
+
+                  {/* HD Practice Video Player Frame using Cloudinary Direct URL */}
+                  <div className="w-full h-full pt-14 flex items-center justify-center relative bg-black">
+                    <video 
+                      className="w-full h-full object-contain"
+                      src="https://res.cloudinary.com/dlzdagymx/video/upload/q_auto/f_auto/v1781891366/WhatsApp_Video_2026-06-19_at_9.51.10_PM_pog0dc.mp4"
+                      controls
+                      autoPlay
+                      preload="auto"
+                      playsInline
+                    />
+                  </div>
+                </div>
+
+                {/* Info Text */}
+                <motion.p 
+                  initial={{ y: 15, opacity: 0 }}
+                  animate={{ y: 0, opacity: 0.7 }}
+                  transition={{ delay: 0.4 }}
+                  className="mt-4 text-center font-mono text-[10px] uppercase tracking-[0.25em] text-[#C9A96E]"
+                >
+                  🥋 Lions Karate Club Pune — Real Practice Reels
+                </motion.p>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Hints indicator */}
           <motion.div 
             initial={{ opacity: 0 }}
-            animate={{ opacity: 0.6 }}
+            animate={{ opacity: 0.5 }}
             transition={{ delay: 2.2, duration: 1 }}
             className="absolute bottom-10 z-10 font-mono text-[9px] uppercase tracking-[0.3em] text-[#8a7040]"
           >
-            Click or tap anywhere
+            Click "Enter the Dojo" to explore training schedules
           </motion.div>
         </motion.div>
       )}
