@@ -30,11 +30,11 @@ export default function SEOConfig({ title, description, pagePath = "" }: SEOConf
     updateMetaTag('og:title', `${title} | LIONS KARATE CLUB PUNE`, true);
     updateMetaTag('og:description', description, true);
     updateMetaTag('og:type', 'website', true);
-    updateMetaTag('og:image', 'https://images.unsplash.com/photo-1555597673-b21d5c935865?q=80&w=600&auto=format&fit=crop', true);
+    updateMetaTag('og:image', 'https://res.cloudinary.com/dlzdagymx/image/upload/q_auto,f_auto/v1781350157/WhatsApp_Image_2026-06-13_at_4.57.58_PM_mvcjyf.jpg', true);
     updateMetaTag('twitter:card', 'summary_large_image');
     updateMetaTag('twitter:title', `${title} | LIONS KARATE CLUB PUNE`);
     updateMetaTag('twitter:description', description);
-    updateMetaTag('twitter:image', 'https://images.unsplash.com/photo-1555597673-b21d5c935865?q=80&w=600&auto=format&fit=crop');
+    updateMetaTag('twitter:image', 'https://res.cloudinary.com/dlzdagymx/image/upload/q_auto,f_auto/v1781350157/WhatsApp_Image_2026-06-13_at_4.57.58_PM_mvcjyf.jpg');
 
     // 3. Inject structured LocalBusiness JSON-LD markup
     const schemaId = 'json-ld-karate-dojo';
@@ -64,7 +64,12 @@ export default function SEOConfig({ title, description, pagePath = "" }: SEOConf
         "Lions Kickboxing Academy Pune"
       ],
       "description": "LIONS KARATE CLUB PUNE delivers top-notch traditional Shotokan Karate classes, professional kickboxing, martial arts training, and children's self-defense courses. Serving Katraj, Narhe, Duttanagar, Jambhulwadi, Hadapsar, Kothrud, Baner, Hinjewadi, and Camp with offline dojos and flexible online classes.",
-      "image": "https://images.unsplash.com/photo-1555597673-b21d5c935865?q=80&w=600&auto=format&fit=crop",
+      "image": [
+        "https://res.cloudinary.com/dlzdagymx/image/upload/q_auto,f_auto/v1781350157/WhatsApp_Image_2026-06-13_at_4.57.58_PM_mvcjyf.jpg",
+        "https://res.cloudinary.com/dlzdagymx/image/upload/q_auto,f_auto/v1781350158/WhatsApp_Image_2026-06-13_at_4.58.00_PM_xp52ff.jpg",
+        "https://res.cloudinary.com/dlzdagymx/image/upload/q_auto,f_auto/v1781350156/WhatsApp_Image_2026-06-13_at_4.57.59_PM_cwcle3.jpg",
+        "https://res.cloudinary.com/dlzdagymx/image/upload/q_auto,f_auto/v1781348302/shoury_image_unjx3u.jpg"
+      ],
       "priceRange": "INR",
       "telephone": "9049688172",
       "email": "LIONSKARATECLUBPUNE09@gmail.com",
