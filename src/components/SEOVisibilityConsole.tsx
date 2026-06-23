@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { collection, onSnapshot, addDoc, query, orderBy, limit } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db, handleFirestoreError, OperationType } from '../firebase';
 import { 
   ShieldCheck, 
   HelpCircle, 
@@ -71,6 +71,7 @@ export default function SEOVisibilityConsole() {
     }, (err) => {
       console.error("Failed to load SEO index logs:", err);
       setLogsLoading(false);
+      handleFirestoreError(err, OperationType.GET, 'seo_indexing_logs');
     });
 
     return () => unsubscribe();
@@ -138,6 +139,7 @@ export default function SEOVisibilityConsole() {
       setPingSuccess(true);
     } catch (err) {
       console.error(err);
+      handleFirestoreError(err, OperationType.WRITE, 'seo_indexing_logs');
     } finally {
       setPinging(false);
     }

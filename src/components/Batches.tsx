@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { collection, onSnapshot, addDoc, getDocs, query, where } from 'firebase/firestore';
-import { db, handleFirestoreError, OperationType } from '../firebase';
+import { db, handleFirestoreError, OperationType, triggerWhatsAppNotification } from '../firebase';
 import { BATCH_TIMINGS, BatchInfo, Admission, BELT_LEVELS, DOJO_BRANCHES } from '../types';
 import { Calendar, Users, Target, Clock, Sparkles, Send, Laptop, ShieldCheck, Check, Heart, Smile, HelpCircle, Volume2, VolumeX, ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -213,6 +213,18 @@ ${customMsg ? `- Additional Request: ${customMsg}` : ''}`;
 
       // Add direct to admissions database
       const docRef = await addDoc(collection(db, 'admissions'), admissionPayload);
+
+      // Trigger automatic background WhatsApp alert to the Shihan admin
+      try {
+        await triggerWhatsAppNotification('inquiry', {
+          fullName: childName.trim(),
+          phone: phone.trim(),
+          batch: `${data.title} (${cardSelectedTime})`,
+          branch: branchObj.name
+        });
+      } catch (waErr) {
+        console.warn("Non-blocking background WhatsApp inquiry alert delivery failed:", waErr);
+      }
       setCelebrationDocId(docRef.id);
       setCelebrationName(childName.trim());
       setLatestAdmission({

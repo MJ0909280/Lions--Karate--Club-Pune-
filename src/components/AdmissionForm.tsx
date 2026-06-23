@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, DragEvent, ChangeEvent } from 'react';
 import { collection, addDoc, getDocs, query, where } from 'firebase/firestore';
-import { db, handleFirestoreError, OperationType } from '../firebase';
+import { db, handleFirestoreError, OperationType, triggerWhatsAppNotification } from '../firebase';
 import { BELT_LEVELS, BATCH_TIMINGS, BatchInfo, DOJO_BRANCHES } from '../types';
 import { Upload, Camera, FileText, CheckCircle2, ShieldAlert, ArrowRight, RefreshCw, AlertCircle } from 'lucide-react';
 
@@ -219,6 +219,19 @@ export default function AdmissionForm({ preselectedBatch = "", onSuccess }: Admi
 
       // Add to firestore collection 'admissions'
       const docRef = await addDoc(collection(db, 'admissions'), admissionPayload);
+
+      // Trigger automatic background WhatsApp alert to the Shihan admin
+      try {
+        await triggerWhatsAppNotification('admission', {
+          fullName: fullName.trim(),
+          phone: phone.trim(),
+          batch: batch,
+          branch: selectedBranch.name,
+          parentName: parentName.trim() || 'Parent / Legal Guardian'
+        });
+      } catch (waErr) {
+        console.warn("Non-blocking background WhatsApp alert delivery failed:", waErr);
+      }
 
       // Securely log an auto-indexing trigger in Firestore to notify GSC & AI crawlers
       try {

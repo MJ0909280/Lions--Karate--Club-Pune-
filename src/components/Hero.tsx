@@ -3,6 +3,7 @@ import { Award, Zap, Users, ArrowRight, Play, X, Sparkles, Flame, Check } from '
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 import { motion, AnimatePresence } from 'motion/react';
+import MartialButton from './MartialButton';
 
 interface HeroProps {
   onNavigate: (view: string) => void;
@@ -237,29 +238,40 @@ export default function Hero({ onNavigate }: HeroProps) {
 
             {/* CTA action cluster designed for direct rapid conversion */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 pt-4">
-              <button
+              <MartialButton
+                id="btn-claim-trials"
                 onClick={() => onNavigate('admission')}
-                className="group flex items-center justify-center space-x-3 font-heading font-black text-xs sm:text-sm tracking-[0.25em] uppercase bg-[#9B1B20] hover:bg-red-500 hover:shadow-[0_0_30px_rgba(155,27,32,0.4)] text-white py-4.5 px-8 rounded-none transition-all duration-300 transform hover:-translate-y-0.5 cursor-pointer"
+                type="primary"
+                className="group"
               >
                 <span>CLAIM 2 FREE TRIALS</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1.5 transition-transform" />
-              </button>
+              </MartialButton>
               
-              <button
+              <MartialButton
+                id="btn-student-drills"
                 onClick={openVideoModal}
-                className="flex items-center justify-center space-x-2.5 font-heading font-black text-xs uppercase tracking-widest bg-yellow-500 hover:bg-yellow-400 text-slate-950 py-4.5 px-8 rounded-none shadow-xl hover:shadow-yellow-500/20 transition-all duration-300 transform hover:-translate-y-0.5 cursor-pointer"
+                type="secondary"
               >
                 <Play className="w-3.5 h-3.5 fill-slate-950" />
                 <span>STUDENT DRILLS</span>
                 <span className="text-[8px] bg-red-600 text-white font-mono px-1.5 py-0.5 rounded font-black tracking-normal">LIVE</span>
-              </button>
+              </MartialButton>
 
-              <a
-                href="#batches"
-                className="flex items-center justify-center space-x-2 font-heading font-bold text-xs uppercase tracking-widest bg-transparent hover:bg-zinc-900 border border-zinc-700 hover:border-zinc-500 text-zinc-300 py-4.5 px-8 rounded-none transition-all duration-300 text-center"
+              <MartialButton
+                id="btn-explore-batches"
+                onClick={() => {
+                  const element = document.getElementById('batches');
+                  if (element) {
+                    element.scrollIntoView({ behavior: 'smooth' });
+                  } else {
+                    window.location.hash = 'batches';
+                  }
+                }}
+                type="accent"
               >
                 <span>EXPLORE BATCHES</span>
-              </a>
+              </MartialButton>
             </div>
 
             {/* Instant Trust Guarantee notice list */}

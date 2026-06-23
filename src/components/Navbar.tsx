@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Menu, X, ShieldAlert, Award, Calendar, Users, Phone, ShieldCheck, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { checkFirestoreConnection } from '../firebase';
+import MartialButton from './MartialButton';
 
 interface NavbarProps {
   currentView: string;
@@ -183,12 +184,14 @@ export default function Navbar({ currentView, studentPortalTab, onNavigate }: Na
               </AnimatePresence>
             </div>
 
-            <button
+            <MartialButton
+              id="nav-btn-admission"
               onClick={() => onNavigate('admission')}
-              className="font-heading font-black text-xs uppercase tracking-widest bg-yellow-500 hover:bg-yellow-400 text-slate-950 px-4 py-2.5 rounded shadow-lg shadow-yellow-500/15 cursor-pointer transform hover:-translate-y-0.5 transition-all text-center whitespace-nowrap"
+              type="secondary"
+              className="py-2.5 px-5 text-xs whitespace-nowrap"
             >
               ONLINE ADMISSION
-            </button>
+            </MartialButton>
           </div>
 
           {/* Mobile hamburger menu toggle with increased accessibility & custom morph indicator */}
