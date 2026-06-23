@@ -263,39 +263,6 @@ export default function AdmissionForm({ preselectedBatch = "", onSuccess }: Admi
         </div>
       </div>
 
-      {/* Venue Information and Map Preview */}
-      <div className="mb-8 bg-stone-950/60 border border-stone-900 p-5 rounded-xl grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-        <div className="space-y-3">
-          <div className="inline-flex items-center space-x-2 bg-amber-500/10 text-amber-500 px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wider font-mono">
-            Official Training Venue
-          </div>
-          <h4 className="text-white font-heading text-sm font-black uppercase tracking-wide">VASUNDHARA PRE-PRIMARY SCHOOL</h4>
-          <p className="text-stone-400 text-xs leading-relaxed">
-            Near Ganesh Temple, Manajinager,<br />
-            Pune, Maharashtra 411041, India<br />
-            <strong className="text-amber-500 font-extrabold font-sans">Landmark: Vasundhara School Dojo</strong>
-          </p>
-          <div className="pt-1.5 text-stone-500 text-[10px] font-mono">
-             Contact Number: +91 9049688172
-          </div>
-        </div>
-
-        <div className="bg-stone-900/40 border border-stone-850 p-5 rounded-lg flex flex-col justify-center items-center text-center space-y-3 min-h-[140px]">
-          <span className="text-[10px] text-amber-500 uppercase tracking-widest font-mono font-bold">Location Verification</span>
-          <p className="text-stone-400 text-xs max-w-xs leading-relaxed">
-            Open the official location marker directly in Google Maps for reliable directions.
-          </p>
-          <a 
-            href="https://maps.app.goo.gl/V7t7UCSAWkaVfV4Y9?g_st=aw"
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center space-x-2 bg-stone-950 border border-stone-800 hover:border-amber-500 text-stone-300 hover:text-white font-heading text-[10px] font-extrabold uppercase tracking-widest py-2.5 px-4 rounded transition-all cursor-pointer shadow-md"
-          >
-            <span>Open Verified Map Marker ↗</span>
-          </a>
-        </div>
-      </div>
-
       {errorMess && (
         <div className="mb-6 bg-red-950/40 border border-red-500/20 text-red-400 p-4 rounded-lg flex items-start space-x-2.5 text-xs">
           <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />

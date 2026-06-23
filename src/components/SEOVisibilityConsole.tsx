@@ -467,7 +467,7 @@ export default function SEOVisibilityConsole() {
               </div>
               <div className="space-y-1">
                 <span className="font-bold text-zinc-300 block text-[11px] uppercase tracking-wide">2. Build Backlinks with Maps</span>
-                <p className="text-[10px]">Link this official website (<code className="text-zinc-350 font-mono text-[9px]">lions-karate-club-pune.vercel.app</code>) inside your Instagram, YouTube and WhatsApp bio blocks. Backlinks heavily drive AI model citation frequencies.</p>
+                <p className="text-[10px]">Link your current website (<code className="text-zinc-350 font-mono text-[9px]">lions-karate-club-pune.vercel.app</code>) or your registered custom domain (<code className="text-zinc-350 font-mono text-[9px]">lionskarate.in</code>) inside your Instagram, YouTube, and WhatsApp bio blocks. Backlinks heavily drive crawler visibility and search rankings.</p>
               </div>
             </div>
           </div>

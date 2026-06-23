@@ -26,14 +26,30 @@ export const db = initializeFirestore(app, {
 
 export const auth = getAuth();
 
+export async function checkFirestoreConnection(): Promise<boolean> {
+  try {
+    // Attempting to read a public document path. 
+    await getDocFromServer(doc(db, 'settings', 'connection_ping_test'));
+    return true;
+  } catch (error: any) {
+    // If we get permission-denied or similar, the client successfully reached Firestore!
+    const errStr = error instanceof Error ? error.message : String(error);
+    if (
+      errStr.includes('permission-denied') || 
+      errStr.includes('PERMISSION_DENIED') || 
+      (error && error.code === 'permission-denied')
+    ) {
+      return true;
+    }
+    return false;
+  }
+}
+
 async function testConnection() {
   try {
-    // Attempting to read a public document path (settings/config) so we don't trigger PERMISSION_DENIED console logs
-    await getDocFromServer(doc(db, 'settings', 'config'));
+    await checkFirestoreConnection();
   } catch (error) {
-    if (error instanceof Error && (error.message.includes('the client is offline') || error.message.includes('unavailable') || error.message.includes('Could not reach Cloud Firestore backend'))) {
-      console.warn("Firestore is currently running in offline-first mode. Will sync automatically when connection re-establishes.");
-    }
+    console.warn("Firestore initialization status check warning:", error);
   }
 }
 testConnection();

@@ -18,7 +18,7 @@ import {
   onAuthStateChanged,
   User
 } from 'firebase/auth';
-import { db, auth, handleFirestoreError, OperationType } from '../firebase';
+import { db, auth, handleFirestoreError, OperationType, checkFirestoreConnection } from '../firebase';
 import { Admission, BatchInfo, BATCH_TIMINGS, DOJO_BRANCHES, BELT_LEVELS } from '../types';
 import IDCard from './IDCard';
 import SEOVisibilityConsole from './SEOVisibilityConsole';
@@ -65,6 +65,28 @@ export default function AdminPanel() {
   const [authLoading, setAuthLoading] = useState(true);
   const [admissions, setAdmissions] = useState<Admission[]>([]);
   const [dataLoading, setDataLoading] = useState(false);
+
+  // Database live diagnostics state
+  const [dbConnected, setDbConnected] = useState<boolean | null>(null);
+  const [checkingDb, setCheckingDb] = useState(false);
+
+  const verifyDbConn = async () => {
+    setCheckingDb(true);
+    try {
+      const res = await checkFirestoreConnection();
+      setDbConnected(res);
+    } catch {
+      setDbConnected(false);
+    } finally {
+      setCheckingDb(false);
+    }
+  };
+
+  useEffect(() => {
+    verifyDbConn();
+    const interval = setInterval(verifyDbConn, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Tab navigation console state
   const [adminTab, setAdminTab] = useState<'admissions' | 'batches' | 'site_settings' | 'exams' | 'seo_ai'>('admissions');
@@ -1029,22 +1051,50 @@ export default function AdminPanel() {
             </h1>
           </div>
 
-          {/* Connected admin account details */}
-          <div className="flex items-center space-x-4 bg-slate-900/60 border border-zinc-900 rounded-xl px-4 py-2.5 self-start">
-            <div className="w-8 h-8 rounded-full overflow-hidden border border-yellow-500/30">
-              <img src={user.photoURL || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=80&auto=format&fit=crop"} alt="Admin Profile" />
-            </div>
-            <div className="leading-none flex flex-col">
-              <span className="font-heading font-black text-[10px] text-zinc-100 uppercase tracking-wider truncate max-w-[150px]">{user.displayName}</span>
-              <span className="text-[8px] font-mono text-zinc-500 uppercase tracking-widest mt-1">SHIHAN ADMINISTRATOR</span>
-            </div>
-            <button
-              onClick={handleLogout}
-              className="p-1.5 rounded-md hover:bg-zinc-850 text-zinc-400 hover:text-red-500 transition-colors tooltip cursor-pointer"
-              title="Disconnect Panel"
+          {/* Connected admin account details with dynamic DB indicators */}
+          <div className="flex flex-wrap items-center gap-4">
+            {/* Live Database status diagnostics check */}
+            <div 
+              onClick={verifyDbConn}
+              title="Click to manually reverify connection to the live Firestore Database"
+              className="flex items-center space-x-2 bg-slate-900/60 border border-zinc-900 rounded-xl px-4 py-2.5 cursor-pointer hover:bg-zinc-900/80 transition-all text-left"
             >
-              <LogOut className="w-4 h-4" />
-            </button>
+              <div className={`w-2 h-2 rounded-full ${
+                dbConnected === true ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.7)]' : 
+                dbConnected === false ? 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.7)] animate-pulse' :
+                'bg-amber-500 animate-pulse'
+              }`} />
+              <div className="flex flex-col select-none">
+                <span className="font-heading font-black text-[9px] text-zinc-100 uppercase tracking-widest leading-none">
+                  {dbConnected === true ? 'DATABASE ONLINE' : 
+                   dbConnected === false ? 'DATABASE OFFLINE' : 
+                   'PINGING DATABASE...'}
+                </span>
+                <span className="text-[7px] font-mono text-zinc-500 uppercase tracking-wider block mt-1">
+                  {dbConnected === true ? 'FIREBASE CLOUD CONNECTED' : 
+                   dbConnected === false ? 'CONNECTION LOST (RETRYING...)' : 
+                   'VERIFYING RESPONSIVENESS'}
+                </span>
+              </div>
+              <RefreshCw className={`w-3 h-3 text-zinc-500 hover:text-white transition-colors ml-1 ${checkingDb ? 'animate-spin' : ''}`} />
+            </div>
+
+            <div className="flex items-center space-x-4 bg-slate-900/60 border border-zinc-900 rounded-xl px-4 py-2.5">
+              <div className="w-8 h-8 rounded-full overflow-hidden border border-yellow-500/30">
+                <img src={user.photoURL || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=80&auto=format&fit=crop"} alt="Admin Profile" />
+              </div>
+              <div className="leading-none flex flex-col">
+                <span className="font-heading font-black text-[10px] text-zinc-100 uppercase tracking-wider truncate max-w-[150px]">{user.displayName}</span>
+                <span className="text-[8px] font-mono text-zinc-500 uppercase tracking-widest mt-1">SHIHAN ADMINISTRATOR</span>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="p-1.5 rounded-md hover:bg-zinc-850 text-zinc-400 hover:text-red-500 transition-colors tooltip cursor-pointer"
+                title="Disconnect Panel"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
 

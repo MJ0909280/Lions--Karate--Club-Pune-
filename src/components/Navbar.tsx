@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Menu, X, ShieldAlert, Award, Calendar, Users, Phone, ShieldCheck, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { checkFirestoreConnection } from '../firebase';
 
 interface NavbarProps {
   currentView: string;
@@ -12,6 +13,7 @@ export default function Navbar({ currentView, studentPortalTab, onNavigate }: Na
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [isPortalsOpen, setIsPortalsOpen] = useState(false);
+  const [dbStatus, setDbStatus] = useState<boolean | null>(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -19,6 +21,20 @@ export default function Navbar({ currentView, studentPortalTab, onNavigate }: Na
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  useEffect(() => {
+    const verifyDatabase = async () => {
+      try {
+        const connected = await checkFirestoreConnection();
+        setDbStatus(connected);
+      } catch {
+        setDbStatus(false);
+      }
+    };
+    verifyDatabase();
+    const interval = setInterval(verifyDatabase, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const menuItems = [
@@ -64,9 +80,24 @@ export default function Navbar({ currentView, studentPortalTab, onNavigate }: Na
               referrerPolicy="no-referrer"
             />
             <div>
-              <span className="font-heading text-xl text-white font-black tracking-tighter uppercase block leading-none">
-                LIONS <span className="text-red-500">KARATE</span>
-              </span>
+              <div className="flex items-center space-x-1.5">
+                <span className="font-heading text-xl text-white font-black tracking-tighter uppercase block leading-none">
+                  LIONS <span className="text-red-500">KARATE</span>
+                </span>
+                {/* Tiny database status dot */}
+                <div 
+                  className={`w-1.5 h-1.5 rounded-full ${
+                    dbStatus === true ? 'bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.8)]' : 
+                    dbStatus === false ? 'bg-rose-500 shadow-[0_0_6px_rgba(244,63,94,0.8)] animate-pulse' : 
+                    'bg-amber-500 animate-pulse'
+                  }`}
+                  title={
+                    dbStatus === true ? "Secured Cloud Database Connected" : 
+                    dbStatus === false ? "Cloud Database offline" : 
+                    "Verifying Cloud Connection..."
+                  }
+                />
+              </div>
               <span className="font-mono text-[8px] text-zinc-500 uppercase tracking-[0.2em] font-bold block leading-none mt-1">
                 LIONS KARATE CLUB PUNE
               </span>
