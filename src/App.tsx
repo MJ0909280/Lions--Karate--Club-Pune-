@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from './firebase';
 import { Admission } from './types';
+import { motion } from 'motion/react';
 
 // Importing Custom Reusable UI Components
 import Navbar from './components/Navbar';
@@ -197,22 +198,64 @@ export default function App() {
           <Hero onNavigate={(v) => navigateTo(v as ViewType)} />
           
           {/* Lineage principles information */}
-          <About />
+          <motion.div
+            initial={{ opacity: 0, y: 35 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-120px" }}
+            transition={{ duration: 0.75, ease: [0.19, 1, 0.22, 1] }}
+          >
+            <About />
+          </motion.div>
 
           {/* Training batches with selected batch apply triggers */}
-          <Batches onSelectBatch={(bName) => navigateTo('admission', { batchName: bName })} />
+          <motion.div
+            initial={{ opacity: 0, y: 35 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-120px" }}
+            transition={{ duration: 0.75, ease: [0.19, 1, 0.22, 1] }}
+          >
+            <Batches onSelectBatch={(bName) => navigateTo('admission', { batchName: bName })} />
+          </motion.div>
 
           {/* Profile Senseis showcase */}
-          <Coaches />
+          <motion.div
+            initial={{ opacity: 0, y: 35 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-120px" }}
+            transition={{ duration: 0.75, ease: [0.19, 1, 0.22, 1] }}
+          >
+            <Coaches />
+          </motion.div>
 
           {/* Interactive photo grids */}
-          <Gallery />
+          <motion.div
+            initial={{ opacity: 0, y: 35 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-120px" }}
+            transition={{ duration: 0.75, ease: [0.19, 1, 0.22, 1] }}
+          >
+            <Gallery />
+          </motion.div>
 
           {/* Parent transformations testimonials */}
-          <Testimonials />
+          <motion.div
+            initial={{ opacity: 0, y: 35 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-120px" }}
+            transition={{ duration: 0.75, ease: [0.19, 1, 0.22, 1] }}
+          >
+            <Testimonials />
+          </motion.div>
 
           {/* Map details, times schedule, and direct contacts */}
-          <Contact />
+          <motion.div
+            initial={{ opacity: 0, y: 35 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-120px" }}
+            transition={{ duration: 0.75, ease: [0.19, 1, 0.22, 1] }}
+          >
+            <Contact />
+          </motion.div>
 
           {/* Floating Action Button for direct WhatsApp inquiries */}
           <WhatsAppFAB />
