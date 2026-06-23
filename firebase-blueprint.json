@@ -108,6 +108,21 @@
         "updatedAt": { "type": "number", "description": "Timestamp updated" }
       },
       "required": ["studentId", "studentName", "date", "status"]
+    },
+    "seoIndexingLog": {
+      "title": "SEOLog",
+      "description": "Represents dynamic SEO sitemap and crawling engine update notifications.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "studentId": { "type": "string" },
+        "studentName": { "type": "string" },
+        "createdAt": { "type": "number" },
+        "eventType": { "type": "string" },
+        "sitemapUrl": { "type": "string" },
+        "status": { "type": "string" }
+      },
+      "required": ["studentName", "createdAt", "status"]
     }
   },
   "firestore": {
@@ -134,6 +149,10 @@
     "/attendance/{attendanceId}": {
       "schema": "attendance",
       "description": "Store daily attendance records keyed by studentId_date or auto-id."
+    },
+    "/seo_indexing_logs/{logId}": {
+      "schema": "seoIndexingLog",
+      "description": "Store Search Console, AI Bot, and engine indexing feedback metrics."
     }
   }
 }

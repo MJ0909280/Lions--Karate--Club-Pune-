@@ -68,5 +68,11 @@ service cloud.firestore {
       // Allow read and write for coaches (managed via PIN client-side) and administrator
       allow read, write: if true;
     }
+
+    // SEO Indexing logs collection rules
+    match /seo_indexing_logs/{logId} {
+      allow create: if true;
+      allow read, write: if isAdmin();
+    }
   }
 }
