@@ -34,7 +34,8 @@ import {
   Printer,
   X,
   CheckSquare,
-  Bell
+  Bell,
+  Info
 } from 'lucide-react';
 
 const playKarateBell = () => {
@@ -817,37 +818,69 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
         {!activeStudent && activeTab !== 'attendance' && (
           <div className="space-y-6">
             {activeTab === 'exam' && (
-              <div className="flex bg-slate-900/40 p-1.5 rounded-xl max-w-sm mx-auto border border-zinc-900 w-full mb-4 gap-1">
-                <button
-                  type="button"
-                  onClick={() => setExamMode('verify')}
-                  className={`flex-1 py-2 text-center rounded-lg font-heading font-black text-[10px] uppercase tracking-wider transition-all cursor-pointer ${
-                    examMode === 'verify'
-                      ? 'bg-[#FF3B3F] text-white shadow-md font-bold'
-                      : 'text-zinc-400 hover:text-white'
-                  }`}
-                >
-                  Existing Student (Has ID)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setExamMode('new');
-                    // Set defaults for direct registration
-                    setParentName('');
-                    setParentPhone('');
-                    setBranch(DOJO_BRANCHES[0].name);
-                    setTargetBelt(BELT_LEVELS[1].name); // Yellow Belt
-                    setCoachName('');
-                  }}
-                  className={`flex-1 py-2 text-center rounded-lg font-heading font-black text-[10px] uppercase tracking-wider transition-all cursor-pointer ${
-                    examMode === 'new'
-                      ? 'bg-[#FF3B3F] text-white shadow-md font-bold'
-                      : 'text-zinc-400 hover:text-white'
-                  }`}
-                >
-                  School Student (No ID yet)
-                </button>
+              <div className="space-y-4 mb-5 max-w-md mx-auto">
+                <div className="flex bg-slate-900/40 p-1.5 rounded-xl border border-zinc-900 w-full gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setExamMode('verify')}
+                    className={`flex-1 py-2.5 px-2 text-center rounded-lg font-heading transition-all cursor-pointer flex flex-col items-center justify-center ${
+                      examMode === 'verify'
+                        ? 'bg-[#FF3B3F] text-white shadow-md font-bold'
+                        : 'text-zinc-400 hover:text-white'
+                    }`}
+                  >
+                    <span className="font-black text-[10.5px] uppercase tracking-wider">Existing Student</span>
+                    <span className="text-[9px] opacity-85 font-medium mt-0.5 font-sans">पहले से छात्र हैं (ID है)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setExamMode('new');
+                      // Set defaults for direct registration
+                      setParentName('');
+                      setParentPhone('');
+                      setBranch(DOJO_BRANCHES[0].name);
+                      setTargetBelt(BELT_LEVELS[1].name); // Yellow Belt
+                      setCoachName('');
+                    }}
+                    className={`flex-1 py-2.5 px-2 text-center rounded-lg font-heading transition-all cursor-pointer flex flex-col items-center justify-center ${
+                      examMode === 'new'
+                        ? 'bg-[#FF3B3F] text-white shadow-md font-bold'
+                        : 'text-zinc-400 hover:text-white'
+                    }`}
+                  >
+                    <span className="font-black text-[10.5px] uppercase tracking-wider">School Student</span>
+                    <span className="text-[9px] opacity-85 font-medium mt-0.5 font-sans">स्कूल के छात्र (ID नहीं है)</span>
+                  </button>
+                </div>
+
+                {/* Elegant Bilingual Explainer Alert Box */}
+                <div className="bg-slate-950/80 border border-zinc-900 rounded-xl p-4 text-left space-y-3 shadow-inner">
+                  <div className="flex items-start space-x-3">
+                    <Info className="w-4 h-4 text-[#FF3B3F] mt-0.5 shrink-0" />
+                    <div className="space-y-2 text-[11px] leading-relaxed">
+                      {examMode === 'verify' ? (
+                        <>
+                          <div className="text-zinc-300 font-sans">
+                            <span className="text-[#FF3B3F] font-bold">English:</span> Use this if your child is already registered with us and has a Karate Roll ID (e.g. <strong className="text-white font-mono">LKCP-2026-004</strong>).
+                          </div>
+                          <div className="text-zinc-400 border-t border-zinc-900/60 pt-2 font-sans">
+                            <span className="text-[#FF3B3F] font-bold">हिंदी में:</span> इस विकल्प को तब चुनें जब आपके बच्चे के पास पहले से ही कराटे रोल ID (<strong className="text-zinc-200 font-mono">LKCP-</strong> से शुरू होने वाला) मौजूद हो।
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="text-zinc-300 font-sans">
+                            <span className="text-[#FF3B3F] font-bold">English:</span> Use this for school students who do not have an ID yet. Fill out the form, and a unique Roll ID will be created and activated instantly.
+                          </div>
+                          <div className="text-zinc-400 border-t border-zinc-900/60 pt-2 font-sans">
+                            <span className="text-[#FF3B3F] font-bold">हिंदी में:</span> नए स्कूली छात्रों के लिए इस विकल्प को चुनें जिनके पास अभी कराटे रोल ID नहीं है। फॉर्म भरें, और सबमिट करते ही एक नया रोल ID तुरंत बन जाएगा।
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -946,12 +979,16 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
                 className="bg-slate-900/60 border border-zinc-850 p-6 sm:p-8 rounded-2xl relative shadow-xl space-y-5"
               >
                 <div className="border-b border-zinc-850 pb-4 text-left">
-                  <h4 className="font-title text-base font-extrabold text-white uppercase flex items-center gap-2">
-                    <GraduationCap className="w-5 h-5 text-red-500" />
-                    School Student Exam Registration (No ID)
+                  <h4 className="font-title text-base font-extrabold text-white uppercase flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                    <span className="flex items-center gap-2">
+                      <GraduationCap className="w-5 h-5 text-red-500" />
+                      School Student Registration
+                    </span>
+                    <span className="text-xs text-red-400 font-sans font-medium">/ स्कूल छात्र परीक्षा पंजीकरण (बिना ID)</span>
                   </h4>
-                  <p className="text-[11px] text-zinc-500 mt-1 leading-relaxed">
-                    Fill out the fields below to register your school child for the upcoming Karate belt test. A unique student Roll ID will be automatically generated and linked upon submission!
+                  <p className="text-[11px] text-zinc-500 mt-1 leading-relaxed font-sans">
+                    Fill out the fields below to register. A unique student Roll ID will be automatically generated! <br/>
+                    <span className="text-zinc-400">नीचे विवरण भरें। सबमिट करने पर एक नया छात्र रोल ID अपने आप बन जाएगा!</span>
                   </p>
                 </div>
 
@@ -964,7 +1001,9 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 text-left">
                   <div className="sm:col-span-2">
-                    <label className="text-zinc-400 text-[9px] uppercase tracking-wider font-bold mb-1.5 block">Select Exam Date & Location (Optional)</label>
+                    <label className="text-zinc-400 text-[10px] uppercase tracking-wider font-bold mb-1.5 block">
+                      Select Exam Date & Location <span className="text-zinc-500 font-normal">/ परीक्षा की तारीख और स्थान चुनें (Optional)</span>
+                    </label>
                     <select
                       value={selectedScheduleId}
                       onChange={(e) => {
@@ -989,7 +1028,9 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
                   </div>
 
                   <div>
-                    <label className="text-zinc-400 text-[9px] uppercase tracking-wider font-bold mb-1.5 block">Student Full Name *</label>
+                    <label className="text-zinc-400 text-[10px] uppercase tracking-wider font-bold mb-1.5 block">
+                      Student Full Name * <span className="text-zinc-500 font-normal">/ विद्यार्थी का पूरा नाम *</span>
+                    </label>
                     <input 
                       type="text" 
                       required 
@@ -1001,7 +1042,9 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
                   </div>
 
                   <div>
-                    <label className="text-zinc-400 text-[9px] uppercase tracking-wider font-bold mb-1.5 block">Current Belt Rank *</label>
+                    <label className="text-zinc-400 text-[10px] uppercase tracking-wider font-bold mb-1.5 block">
+                      Current Belt Rank * <span className="text-zinc-500 font-normal">/ वर्तमान बेल्ट का स्तर *</span>
+                    </label>
                     <select
                       required
                       value={newStudentCurrentBelt}
@@ -1015,7 +1058,9 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
                   </div>
 
                   <div>
-                    <label className="text-zinc-400 text-[9px] uppercase tracking-wider font-bold mb-1.5 block">Next Belt Rank Testing For *</label>
+                    <label className="text-zinc-400 text-[10px] uppercase tracking-wider font-bold mb-1.5 block">
+                      Next Belt Rank Testing For * <span className="text-zinc-500 font-normal">/ किस बेल्ट के लिए परीक्षा दे रहे हैं *</span>
+                    </label>
                     <select
                       required
                       value={targetBelt}
@@ -1036,7 +1081,9 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
                   </div>
 
                   <div>
-                    <label className="text-zinc-400 text-[9px] uppercase tracking-wider font-bold mb-1.5 block">Karate Coach / Instructor *</label>
+                    <label className="text-zinc-400 text-[10px] uppercase tracking-wider font-bold mb-1.5 block">
+                      Karate Coach / Instructor * <span className="text-zinc-500 font-normal">/ कराटे कोच का नाम *</span>
+                    </label>
                     <input 
                       type="text" 
                       required 
@@ -1048,7 +1095,9 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
                   </div>
 
                   <div>
-                    <label className="text-zinc-400 text-[9px] uppercase tracking-wider font-bold mb-1.5 block">Karate Center / Branch *</label>
+                    <label className="text-zinc-400 text-[10px] uppercase tracking-wider font-bold mb-1.5 block">
+                      Karate Center / Branch * <span className="text-zinc-500 font-normal">/ कराटे सेंटर या ब्रांच *</span>
+                    </label>
                     <select
                       required
                       value={branch}
@@ -1062,20 +1111,24 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
                   </div>
 
                   <div>
-                    <label className="text-zinc-400 text-[9px] uppercase tracking-wider font-bold mb-1.5 block">Belt Exam Fee Paid? *</label>
+                    <label className="text-zinc-400 text-[10px] uppercase tracking-wider font-bold mb-1.5 block">
+                      Belt Exam Fee Paid? * <span className="text-zinc-500 font-normal">/ बेल्ट परीक्षा शुल्क जमा किया? *</span>
+                    </label>
                     <select
                       required
                       value={feesStatus}
                       onChange={(e: any) => setFeesStatus(e.target.value)}
                       className="w-full bg-slate-950 border border-zinc-850 text-zinc-300 text-xs px-3.5 py-2.5 rounded-lg focus:outline-none focus:border-red-500"
                     >
-                      <option value="Pending">Not Paid Yet (Will pay at center later)</option>
-                      <option value="Paid">Paid (Already handed over to Coach)</option>
+                      <option value="Pending">Not Paid Yet / अभी जमा नहीं किया (Will pay later)</option>
+                      <option value="Paid">Paid / जमा कर दिया (Handed over to Coach)</option>
                     </select>
                   </div>
 
                   <div>
-                    <label className="text-zinc-400 text-[9px] uppercase tracking-wider font-bold mb-1.5 block">Parent / Guardian Name *</label>
+                    <label className="text-zinc-400 text-[10px] uppercase tracking-wider font-bold mb-1.5 block">
+                      Parent / Guardian Name * <span className="text-zinc-500 font-normal">/ माता-पिता या अभिभावक का नाम *</span>
+                    </label>
                     <input 
                       type="text" 
                       required 
@@ -1087,7 +1140,9 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
                   </div>
 
                   <div>
-                    <label className="text-zinc-400 text-[9px] uppercase tracking-wider font-bold mb-1.5 block">Parent Phone Number *</label>
+                    <label className="text-zinc-400 text-[10px] uppercase tracking-wider font-bold mb-1.5 block">
+                      Parent Phone Number * <span className="text-zinc-500 font-normal">/ माता-पिता का मोबाइल नंबर *</span>
+                    </label>
                     <input 
                       type="tel" 
                       required 
@@ -1100,8 +1155,12 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
                 </div>
 
                 <div className="bg-slate-950/80 p-4 border border-zinc-900 rounded-xl space-y-3 text-left">
-                  <p className="text-[10px] text-zinc-550 leading-relaxed font-sans">
+                  <p className="text-[10.5px] text-zinc-500 leading-relaxed font-sans">
                     * NOTE: A custom Karate Roll ID (e.g. LKCP-2026-105) will be automatically created on the backend and linked to this child's record. This ID will let you track their belt promotions, grades, and attendance!
+                    <br/>
+                    <span className="text-zinc-600 block mt-1">
+                      * ध्यान दें: आपके बच्चे के रिकॉर्ड के लिए एक कराटे रोल ID (जैसे LKCP-2026-105) अपने आप बन जाएगी। इस ID से आप उनके बेल्ट प्रमोशन, ग्रेड और हाजिरी ट्रैक कर सकेंगे!
+                    </span>
                   </p>
                   <div className="flex justify-end space-x-3 pt-2">
                     <button
