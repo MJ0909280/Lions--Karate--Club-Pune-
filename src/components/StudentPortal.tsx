@@ -335,6 +335,11 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
   const [formSuccess, setFormSuccess] = useState(false);
   const [formError, setFormError] = useState('');
 
+  // New School Student registration states (No pre-existing ID)
+  const [examMode, setExamMode] = useState<'verify' | 'new'>('verify');
+  const [newStudentName, setNewStudentName] = useState('');
+  const [newStudentCurrentBelt, setNewStudentCurrentBelt] = useState(BELT_LEVELS[0].name);
+
   // Automated Progress Status & Alert states
   const [attendanceCount, setAttendanceCount] = useState<number>(0);
   const [attendanceLoading, setAttendanceLoading] = useState<boolean>(false);
@@ -515,9 +520,56 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
     localStorage.removeItem('lkcp_portal_student_id');
   };
 
+  // Generate customized Year Sequence ID: LKCP-YYYY-XXX safely without breaking sequences
+  const generateUniqueStudentId = async (): Promise<string> => {
+    const currentYear = new Date().getFullYear();
+    try {
+      const admissionsRef = collection(db, 'admissions');
+      // Query admissions from this year to calculate next serial
+      const q = query(admissionsRef, where('createdAt', '>=', new Date(`${currentYear}-01-01`).getTime()));
+      const snap = await getDocs(q);
+      
+      let count = snap.size + 100;
+      let uniqueId = `LKCP-${currentYear}-${String(count).padStart(3, '0')}`;
+      
+      // Secondary check to ensure ID sequence is strictly unbroken and collision-free
+      let isDuplicate = true;
+      while (isDuplicate) {
+        const checkQ = query(admissionsRef, where('studentId', '==', uniqueId));
+        const checkSnap = await getDocs(checkQ);
+        if (checkSnap.empty) {
+          isDuplicate = false;
+        } else {
+          count++;
+          uniqueId = `LKCP-${currentYear}-${String(count).padStart(3, '0')}`;
+        }
+      }
+      return uniqueId;
+    } catch (err) {
+      console.error("Fallback generating direct ID:", err);
+      const randomId = Math.floor(100 + Math.random() * 900);
+      return `LKCP-${currentYear}-${randomId}`;
+    }
+  };
+
   const handleRegisterExam = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!activeStudent) return;
+    
+    const isNew = activeTab === 'exam' && !activeStudent && examMode === 'new';
+    
+    if (!isNew && !activeStudent) return;
+
+    if (isNew) {
+      if (!newStudentName.trim()) {
+        setFormError("Please enter your child's full name.");
+        return;
+      }
+      if (!newStudentCurrentBelt) {
+        setFormError("Please select your child's current belt level.");
+        return;
+      }
+    }
+
     if (!targetBelt) {
       setFormError('Please select a target Belt Level.');
       return;
@@ -530,6 +582,14 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
       setFormError('Please select your Dojo training Branch.');
       return;
     }
+    if (!parentName.trim()) {
+      setFormError('Please enter Parent / Guardian Name.');
+      return;
+    }
+    if (!parentPhone.trim()) {
+      setFormError('Please enter Parent Phone Number.');
+      return;
+    }
 
     setFormLoading(true);
     setFormError('');
@@ -538,14 +598,53 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
     try {
       const selectedSched = examSchedules.find(s => s.id === selectedScheduleId);
 
+      let studentId = '';
+      let studentName = '';
+      let currentBeltVal = '';
+
+      if (isNew) {
+        studentId = await generateUniqueStudentId();
+        studentName = newStudentName.trim();
+        currentBeltVal = newStudentCurrentBelt;
+
+        // Automatically create an approved student admission record in the backend
+        const admissionPayload = {
+          studentId: studentId,
+          fullName: studentName,
+          dob: '',
+          gender: 'other',
+          parentName: parentName.trim(),
+          phone: parentPhone.trim(),
+          whatsApp: parentPhone.trim(),
+          email: '',
+          address: '',
+          batch: 'School Student Batch',
+          beltLevel: currentBeltVal,
+          photoUrl: '', // standard avatar / blank
+          termsAccepted: true,
+          status: 'approved',
+          createdAt: Date.now(),
+          approvedAt: Date.now(),
+          isDirectExamRegistration: true,
+          branch: branch
+        };
+
+        await addDoc(collection(db, 'admissions'), admissionPayload);
+      } else {
+        if (!activeStudent) throw new Error('Active student context missing');
+        studentId = activeStudent.studentId;
+        studentName = activeStudent.fullName;
+        currentBeltVal = activeStudent.beltLevel;
+      }
+
       const examData = {
-        studentId: activeStudent.studentId,
-        studentName: activeStudent.fullName,
+        studentId: studentId,
+        studentName: studentName,
         parentName: parentName.trim(),
         parentPhone: parentPhone.trim(),
         branch: branch,
         coachName: coachName.trim(),
-        currentBelt: activeStudent.beltLevel,
+        currentBelt: currentBeltVal,
         targetBelt: targetBelt,
         status: 'pending', // Starts as pending until validated/paid
         feesStatus: feesStatus,
@@ -557,9 +656,38 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
       };
 
       await addDoc(collection(db, 'exams'), examData);
+
+      // Save/Switch to the active student session so parents can see results instantly
+      const newStudentData: Admission = {
+        id: studentId,
+        studentId: studentId,
+        fullName: studentName,
+        parentName: parentName.trim(),
+        phone: parentPhone.trim(),
+        beltLevel: currentBeltVal,
+        branch: branch,
+        status: 'approved',
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        dob: '',
+        gender: 'other',
+        whatsApp: parentPhone.trim(),
+        email: '',
+        address: '',
+        batch: 'School Student Batch',
+        photoUrl: '',
+        age: 10
+      };
+
+      localStorage.setItem('lkcp_portal_student_id', studentId);
+      setActiveStudent(newStudentData);
+      setStudentIdInput(studentId);
+
       setFormSuccess(true);
       setShowExamForm(false);
+      
       // Clear selections
+      setNewStudentName('');
       setSelectedScheduleId('');
       setCoachName('');
       setFeesStatus('Pending');
@@ -685,94 +813,315 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
           )}
         </div>
 
-        {/* LOOKUP FORM: Only visible if no active student session and not on attendance tab */}
+        {/* LOOKUP FORM & DIRECT NEW EXAM REGISTRATION SWITCH */}
         {!activeStudent && activeTab !== 'attendance' && (
-          <div className="bg-slate-900/40 border border-zinc-900 p-6 sm:p-8 rounded-2xl relative shadow-2xl">
-            <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-yellow-500/30 to-transparent" />
-            
-            <form onSubmit={handleSearchSubmit} className="space-y-5">
-              <div>
-                <label htmlFor="student-portal-id" className="text-zinc-400 text-xs font-heading font-black uppercase tracking-wider block mb-2 text-left">
-                  {activeTab === 'exam' ? "Enter your child's Karate Roll ID to start" : "Enter your child's Karate Roll ID"}
-                </label>
-                <div className="flex gap-2 sm:gap-3 items-stretch">
-                  <div className="relative flex-grow">
-                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-650">
-                      <Award className={`w-5 h-5 ${activeTab === 'exam' ? 'text-red-500/60' : 'text-zinc-550'}`} />
+          <div className="space-y-6">
+            {activeTab === 'exam' && (
+              <div className="flex bg-slate-900/40 p-1.5 rounded-xl max-w-sm mx-auto border border-zinc-900 w-full mb-4 gap-1">
+                <button
+                  type="button"
+                  onClick={() => setExamMode('verify')}
+                  className={`flex-1 py-2 text-center rounded-lg font-heading font-black text-[10px] uppercase tracking-wider transition-all cursor-pointer ${
+                    examMode === 'verify'
+                      ? 'bg-[#FF3B3F] text-white shadow-md font-bold'
+                      : 'text-zinc-400 hover:text-white'
+                  }`}
+                >
+                  Existing Student (Has ID)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setExamMode('new');
+                    // Set defaults for direct registration
+                    setParentName('');
+                    setParentPhone('');
+                    setBranch(DOJO_BRANCHES[0].name);
+                    setTargetBelt(BELT_LEVELS[1].name); // Yellow Belt
+                    setCoachName('');
+                  }}
+                  className={`flex-1 py-2 text-center rounded-lg font-heading font-black text-[10px] uppercase tracking-wider transition-all cursor-pointer ${
+                    examMode === 'new'
+                      ? 'bg-[#FF3B3F] text-white shadow-md font-bold'
+                      : 'text-zinc-400 hover:text-white'
+                  }`}
+                >
+                  School Student (No ID yet)
+                </button>
+              </div>
+            )}
+
+            {(activeTab === 'progress' || examMode === 'verify') ? (
+              <div className="bg-slate-900/40 border border-zinc-900 p-6 sm:p-8 rounded-2xl relative shadow-2xl">
+                <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-yellow-500/30 to-transparent" />
+                
+                <form onSubmit={handleSearchSubmit} className="space-y-5">
+                  <div>
+                    <label htmlFor="student-portal-id" className="text-zinc-400 text-xs font-heading font-black uppercase tracking-wider block mb-2 text-left">
+                      {activeTab === 'exam' ? "Enter your child's Karate Roll ID to start" : "Enter your child's Karate Roll ID"}
+                    </label>
+                    <div className="flex gap-2 sm:gap-3 items-stretch">
+                      <div className="relative flex-grow">
+                        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-650">
+                          <Award className={`w-5 h-5 ${activeTab === 'exam' ? 'text-red-500/60' : 'text-zinc-550'}`} />
+                        </div>
+                        <input
+                          id="student-portal-id"
+                          type="text"
+                          required
+                          value={studentIdInput}
+                          onChange={(e) => setStudentIdInput(e.target.value)}
+                          placeholder="e.g. LKCP-2026-004"
+                          className={`w-full bg-slate-950 border pl-11 pr-4 py-3.5 text-sm font-mono tracking-widest text-white rounded-xl focus:outline-none transition-colors uppercase placeholder:text-zinc-700 ${
+                            activeTab === 'exam' ? 'border-zinc-850 focus:border-red-500/60' : 'border-zinc-850 focus:border-yellow-500/60'
+                          }`}
+                        />
+                      </div>
+                      <button
+                        type="submit"
+                        disabled={searching || !studentIdInput.trim()}
+                        className={`font-heading font-black text-xs uppercase tracking-widest px-5 sm:px-7 rounded-xl flex items-center justify-center space-x-2 transition-all disabled:opacity-55 cursor-pointer shadow-md shrink-0 ${
+                          activeTab === 'exam' 
+                            ? 'bg-[#FF3B3F] hover:bg-red-500 text-white shadow-red-500/5' 
+                            : 'bg-yellow-500 hover:bg-yellow-400 text-slate-950 shadow-yellow-500/5'
+                        }`}
+                      >
+                        {searching ? (
+                          <RefreshCw className={`w-4 h-4 animate-spin ${activeTab === 'exam' ? 'text-white' : 'text-slate-950'}`} />
+                        ) : (
+                          <>
+                            <Search className={`w-4 h-4 ${activeTab === 'exam' ? 'text-white' : 'text-slate-950'}`} />
+                            <span className="font-extrabold">{activeTab === 'exam' ? 'Verify ID' : 'Search'}</span>
+                          </>
+                        )}
+                      </button>
                     </div>
-                    <input
-                      id="student-portal-id"
-                      type="text"
-                      required
-                      value={studentIdInput}
-                      onChange={(e) => setStudentIdInput(e.target.value)}
-                      placeholder="e.g. LKCP-2026-004"
-                      className={`w-full bg-slate-950 border pl-11 pr-4 py-3.5 text-sm font-mono tracking-widest text-white rounded-xl focus:outline-none transition-colors uppercase placeholder:text-zinc-700 ${
-                        activeTab === 'exam' ? 'border-zinc-850 focus:border-red-500/60' : 'border-zinc-850 focus:border-yellow-500/60'
-                      }`}
+                  </div>
+
+                  {searchError && (
+                    <div className="bg-red-500/5 border border-red-500/10 p-4 rounded-xl flex items-start space-x-3 text-red-400 text-xs shadow-inner">
+                      <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-500" />
+                      <span className="leading-relaxed">{searchError}</span>
+                    </div>
+                  )}
+
+                  <div className="bg-slate-950/60 ring-1 ring-zinc-900 rounded-xl p-4 text-[11px] text-zinc-500 leading-relaxed font-sans flex items-center space-x-3">
+                    <ShieldCheck className="w-4 h-4 text-emerald-500 shrink-0" />
+                    <span>
+                      <strong>Need help?</strong> Your child's Karate Roll ID starts with <strong>LKCP-</strong> (for example: LKCP-2026-004). You can find this on your admission receipt, or ask their Karate Coach directly on WhatsApp anytime!
+                    </span>
+                  </div>
+
+                  <div className="pt-4 border-t border-zinc-900/60 flex flex-col md:flex-row items-start md:items-center gap-4 justify-between">
+                    <div className="text-[11px] text-zinc-400 max-w-md">
+                      <span className="font-bold text-zinc-300 block">No Student ID issued yet?</span>
+                      If you train offline or are registering for the first time, fill out the quick digital admission online to instantly generate your verified Roll ID.
+                    </div>
+                    <div className="flex gap-2 w-full md:w-auto shrink-0 justify-end">
+                      {onNavigate && (
+                        <button
+                          onClick={() => onNavigate('admission')}
+                          type="button"
+                          className="bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/25 hover:border-yellow-500/40 text-yellow-500 font-heading font-black text-[10px] uppercase tracking-wider px-3.5 py-2.5 rounded-lg transition-all cursor-pointer text-center"
+                        >
+                          Apply Online
+                        </button>
+                      )}
+                      <a
+                        href="https://wa.me/919049688172?text=Hello%20Sensei,%20I'm%20trying%2520to%20register%20for%20the%2520upcoming%20Karate%20Belt%20Exam%20and%20need%20my%20child's%20Student%2520ID.%20Please%20help!"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="bg-zinc-900 hover:bg-zinc-850 border border-zinc-800 text-zinc-200 font-heading font-black text-[10px] uppercase tracking-wider px-3.5 py-2.5 rounded-lg transition-all text-center inline-flex items-center justify-center cursor-pointer"
+                      >
+                        Get Help on WhatsApp
+                      </a>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            ) : (
+              /* DIRECT EXAM FORM FOR NEW SCHOOL STUDENT */
+              <form 
+                onSubmit={handleRegisterExam}
+                className="bg-slate-900/60 border border-zinc-850 p-6 sm:p-8 rounded-2xl relative shadow-xl space-y-5"
+              >
+                <div className="border-b border-zinc-850 pb-4 text-left">
+                  <h4 className="font-title text-base font-extrabold text-white uppercase flex items-center gap-2">
+                    <GraduationCap className="w-5 h-5 text-red-500" />
+                    School Student Exam Registration (No ID)
+                  </h4>
+                  <p className="text-[11px] text-zinc-500 mt-1 leading-relaxed">
+                    Fill out the fields below to register your school child for the upcoming Karate belt test. A unique student Roll ID will be automatically generated and linked upon submission!
+                  </p>
+                </div>
+
+                {formError && (
+                  <div className="bg-red-500/5 border border-red-500/10 p-3 rounded-lg flex items-start space-x-2 text-red-400 text-xs">
+                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-500" />
+                    <span>{formError}</span>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 text-left">
+                  <div className="sm:col-span-2">
+                    <label className="text-zinc-400 text-[9px] uppercase tracking-wider font-bold mb-1.5 block">Select Exam Date & Location (Optional)</label>
+                    <select
+                      value={selectedScheduleId}
+                      onChange={(e) => {
+                        const schedId = e.target.value;
+                        setSelectedScheduleId(schedId);
+                        const matched = examSchedules.find(s => s.id === schedId);
+                        if (matched) {
+                          if (BELT_LEVELS.some(b => b.name === matched.beltLevel)) {
+                            setTargetBelt(matched.beltLevel);
+                          }
+                        }
+                      }}
+                      className="w-full bg-slate-950 border border-zinc-850 text-zinc-300 text-xs px-3.5 py-2.5 rounded-lg focus:outline-none focus:border-red-550"
+                    >
+                      <option value="">-- Choose an upcoming Exam Date / Venue (Optional) --</option>
+                      {examSchedules.map((sched) => (
+                         <option key={sched.id} value={sched.id}>
+                          {sched.examDate} - Target: {sched.beltLevel} ({sched.venueDetails})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-zinc-400 text-[9px] uppercase tracking-wider font-bold mb-1.5 block">Student Full Name *</label>
+                    <input 
+                      type="text" 
+                      required 
+                      value={newStudentName}
+                      onChange={(e) => setNewStudentName(e.target.value)}
+                      placeholder="Enter Child's Name"
+                      className="w-full bg-slate-950 border border-zinc-850 text-zinc-300 text-xs px-3.5 py-2.5 rounded-lg focus:outline-none focus:border-red-500"
                     />
                   </div>
-                  <button
-                    type="submit"
-                    disabled={searching || !studentIdInput.trim()}
-                    className={`font-heading font-black text-xs uppercase tracking-widest px-5 sm:px-7 rounded-xl flex items-center justify-center space-x-2 transition-all disabled:opacity-55 cursor-pointer shadow-md shrink-0 ${
-                      activeTab === 'exam' 
-                        ? 'bg-[#FF3B3F] hover:bg-red-500 text-white shadow-red-500/5' 
-                        : 'bg-yellow-500 hover:bg-yellow-400 text-slate-950 shadow-yellow-500/5'
-                    }`}
-                  >
-                    {searching ? (
-                      <RefreshCw className={`w-4 h-4 animate-spin ${activeTab === 'exam' ? 'text-white' : 'text-slate-950'}`} />
-                    ) : (
-                      <>
-                        <Search className={`w-4 h-4 ${activeTab === 'exam' ? 'text-white' : 'text-slate-950'}`} />
-                        <span className="font-extrabold">{activeTab === 'exam' ? 'Verify ID' : 'Search'}</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
 
-              {searchError && (
-                <div className="bg-red-500/5 border border-red-500/10 p-4 rounded-xl flex items-start space-x-3 text-red-400 text-xs shadow-inner">
-                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-500" />
-                  <span className="leading-relaxed">{searchError}</span>
-                </div>
-              )}
-
-              <div className="bg-slate-950/60 ring-1 ring-zinc-900 rounded-xl p-4 text-[11px] text-zinc-500 leading-relaxed font-sans flex items-center space-x-3">
-                <ShieldCheck className="w-4 h-4 text-emerald-500 shrink-0" />
-                <span>
-                  <strong>Need help?</strong> Your child's Karate Roll ID starts with <strong>LKCP-</strong> (for example: LKCP-2026-004). You can find this on your admission receipt, or ask their Karate Coach directly on WhatsApp anytime!
-                </span>
-              </div>
-
-              <div className="pt-4 border-t border-zinc-900/60 flex flex-col md:flex-row items-start md:items-center gap-4 justify-between">
-                <div className="text-[11px] text-zinc-400 max-w-md">
-                  <span className="font-bold text-zinc-300 block">No Student ID issued yet?</span>
-                  If you train offline or are registering for the first time, fill out the quick digital admission online to instantly generate your verified Roll ID.
-                </div>
-                <div className="flex gap-2 w-full md:w-auto shrink-0 justify-end">
-                  {onNavigate && (
-                    <button
-                      onClick={() => onNavigate('admission')}
-                      type="button"
-                      className="bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/25 hover:border-yellow-500/40 text-yellow-500 font-heading font-black text-[10px] uppercase tracking-wider px-3.5 py-2.5 rounded-lg transition-all cursor-pointer text-center"
+                  <div>
+                    <label className="text-zinc-400 text-[9px] uppercase tracking-wider font-bold mb-1.5 block">Current Belt Rank *</label>
+                    <select
+                      required
+                      value={newStudentCurrentBelt}
+                      onChange={(e) => setNewStudentCurrentBelt(e.target.value)}
+                      className="w-full bg-slate-950 border border-zinc-850 text-zinc-300 text-xs px-3.5 py-2.5 rounded-lg focus:outline-none focus:border-red-500"
                     >
-                      Apply Online
-                    </button>
-                  )}
-                  <a
-                    href="https://wa.me/919049688172?text=Hello%20Sensei,%20I'm%20trying%2520to%20register%20for%20the%2520upcoming%20Karate%20Belt%20Exam%20and%20need%20my%20child's%20Student%2520ID.%20Please%20help!"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="bg-zinc-900 hover:bg-zinc-850 border border-zinc-800 text-zinc-200 font-heading font-black text-[10px] uppercase tracking-wider px-3.5 py-2.5 rounded-lg transition-all text-center inline-flex items-center justify-center cursor-pointer"
-                  >
-                    Get Help on WhatsApp
-                  </a>
+                      {BELT_LEVELS.map(belt => (
+                        <option key={belt.name} value={belt.name}>{belt.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-zinc-400 text-[9px] uppercase tracking-wider font-bold mb-1.5 block">Next Belt Rank Testing For *</label>
+                    <select
+                      required
+                      value={targetBelt}
+                      onChange={(e) => setTargetBelt(e.target.value)}
+                      className="w-full bg-slate-950 border border-zinc-850 text-zinc-300 text-xs px-3.5 py-2.5 rounded-lg focus:outline-none focus:border-red-500"
+                    >
+                      <option value="">Select Target Belt</option>
+                      {BELT_LEVELS.map(belt => (
+                        <option 
+                          key={belt.name} 
+                          value={belt.name}
+                          disabled={belt.name === newStudentCurrentBelt}
+                        >
+                          {belt.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-zinc-400 text-[9px] uppercase tracking-wider font-bold mb-1.5 block">Karate Coach / Instructor *</label>
+                    <input 
+                      type="text" 
+                      required 
+                      value={coachName}
+                      onChange={(e) => setCoachName(e.target.value)}
+                      placeholder="e.g. Sensei Maruti Jadhav"
+                      className="w-full bg-slate-950 border border-zinc-850 text-zinc-350 text-xs px-3.5 py-2.5 rounded-lg focus:outline-none focus:border-red-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-zinc-400 text-[9px] uppercase tracking-wider font-bold mb-1.5 block">Karate Center / Branch *</label>
+                    <select
+                      required
+                      value={branch}
+                      onChange={(e) => setBranch(e.target.value)}
+                      className="w-full bg-slate-950 border border-zinc-850 text-zinc-300 text-xs px-3.5 py-2.5 rounded-lg focus:outline-none focus:border-red-500"
+                    >
+                      {DOJO_BRANCHES.map(b => (
+                        <option key={b.id} value={b.name}>{b.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-zinc-400 text-[9px] uppercase tracking-wider font-bold mb-1.5 block">Belt Exam Fee Paid? *</label>
+                    <select
+                      required
+                      value={feesStatus}
+                      onChange={(e: any) => setFeesStatus(e.target.value)}
+                      className="w-full bg-slate-950 border border-zinc-850 text-zinc-300 text-xs px-3.5 py-2.5 rounded-lg focus:outline-none focus:border-red-500"
+                    >
+                      <option value="Pending">Not Paid Yet (Will pay at center later)</option>
+                      <option value="Paid">Paid (Already handed over to Coach)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-zinc-400 text-[9px] uppercase tracking-wider font-bold mb-1.5 block">Parent / Guardian Name *</label>
+                    <input 
+                      type="text" 
+                      required 
+                      value={parentName}
+                      onChange={(e) => setParentName(e.target.value)}
+                      placeholder="Parent Name"
+                      className="w-full bg-slate-950 border border-zinc-850 text-zinc-300 text-xs px-3.5 py-2.5 rounded-lg focus:outline-none focus:border-red-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-zinc-400 text-[9px] uppercase tracking-wider font-bold mb-1.5 block">Parent Phone Number *</label>
+                    <input 
+                      type="tel" 
+                      required 
+                      value={parentPhone}
+                      onChange={(e) => setParentPhone(e.target.value)}
+                      placeholder="Phone Number"
+                      className="w-full bg-slate-950 border border-zinc-850 text-zinc-300 text-xs px-3.5 py-2.5 rounded-lg focus:outline-none focus:border-red-500"
+                    />
+                  </div>
                 </div>
-              </div>
-            </form>
+
+                <div className="bg-slate-950/80 p-4 border border-zinc-900 rounded-xl space-y-3 text-left">
+                  <p className="text-[10px] text-zinc-550 leading-relaxed font-sans">
+                    * NOTE: A custom Karate Roll ID (e.g. LKCP-2026-105) will be automatically created on the backend and linked to this child's record. This ID will let you track their belt promotions, grades, and attendance!
+                  </p>
+                  <div className="flex justify-end space-x-3 pt-2">
+                    <button
+                      type="submit"
+                      disabled={formLoading}
+                      className="px-5 py-2 text-[10px] bg-red-500 hover:bg-red-400 text-white font-heading font-black uppercase tracking-wider rounded-lg transition-all flex items-center space-x-1.5 cursor-pointer shadow-md shadow-red-500/5"
+                    >
+                      {formLoading ? (
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <>
+                          <FileCheck className="w-3.5 h-3.5" />
+                          <span>Submit & Create ID</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </form>
+            )}
           </div>
         )}
 
