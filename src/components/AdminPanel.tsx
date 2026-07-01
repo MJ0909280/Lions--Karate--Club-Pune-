@@ -58,6 +58,197 @@ import {
 // Required Admin check email literal configuration
 const AUTHORIZED_ADMIN_EMAIL = "writingandreserching18@gmail.com";
 
+function AdmissionsTableSkeleton() {
+  return (
+    <div className="animate-pulse w-full">
+      <div className="overflow-x-auto">
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="bg-slate-950 border-b border-zinc-900 text-zinc-500 uppercase font-heading font-black text-[9px] tracking-widest">
+              <th className="py-4.5 px-6">ID Pass</th>
+              <th className="py-4.5 px-6">Student Bio</th>
+              <th className="py-4.5 px-6">Branch & Coach</th>
+              <th className="py-4.5 px-6">Batch Timings</th>
+              <th className="py-4.5 px-6">Rank Belt</th>
+              <th className="py-4.5 px-6">Review Status</th>
+              <th className="py-4.5 px-6">Fees Status</th>
+              <th className="py-4.5 px-6 text-right">Interactive Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-zinc-900/40 text-xs">
+            {[1, 2, 3, 4, 5].map((idx) => (
+              <tr key={idx} className="border-b border-zinc-900/20">
+                <td className="py-4 px-6">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 rounded bg-zinc-850" />
+                    <div className="w-20 h-4 bg-zinc-900 rounded" />
+                  </div>
+                </td>
+                <td className="py-4 px-6">
+                  <div className="space-y-1.5">
+                    <div className="w-28 h-4.5 bg-zinc-800 rounded" />
+                    <div className="w-24 h-3 bg-zinc-900 rounded" />
+                  </div>
+                </td>
+                <td className="py-4 px-6">
+                  <div className="space-y-1.5">
+                    <div className="w-32 h-4 bg-zinc-800 rounded" />
+                    <div className="w-20 h-3 bg-zinc-900 rounded" />
+                  </div>
+                </td>
+                <td className="py-4 px-6">
+                  <div className="w-24 h-4 bg-zinc-850 rounded" />
+                </td>
+                <td className="py-4 px-6">
+                  <div className="w-24 h-5 bg-zinc-850 rounded" />
+                </td>
+                <td className="py-4 px-6">
+                  <div className="w-16 h-5 bg-zinc-900 rounded" />
+                </td>
+                <td className="py-4 px-6">
+                  <div className="w-14 h-5 bg-zinc-900 rounded" />
+                </td>
+                <td className="py-4 px-6 text-right">
+                  <div className="flex justify-end space-x-2">
+                    <div className="w-16 h-7 bg-zinc-850 rounded" />
+                    <div className="w-8 h-7 bg-zinc-900 rounded" />
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function ExamsTableSkeleton() {
+  return (
+    <div className="animate-pulse w-full">
+      <div className="overflow-x-auto">
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="bg-slate-950 text-zinc-450 text-[10px] uppercase font-bold tracking-wider font-mono border-b border-zinc-900">
+              <th className="py-4 px-6">Student details</th>
+              <th className="py-4 px-6">Dojo training Branch</th>
+              <th className="py-4 px-6">Current & Target Belt</th>
+              <th className="py-4 px-6">Registry state</th>
+              <th className="py-4 px-6">Score & Comments</th>
+              <th className="py-4 px-6 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-zinc-900/40 text-xs">
+            {[1, 2, 3, 4, 5].map((idx) => (
+              <tr key={idx} className="border-b border-zinc-900/20">
+                <td className="py-4 px-6">
+                  <div className="space-y-1.5">
+                    <div className="w-20 h-3 bg-zinc-900 rounded" />
+                    <div className="w-32 h-4 bg-zinc-800 rounded" />
+                  </div>
+                </td>
+                <td className="py-4 px-6">
+                  <div className="w-28 h-4 bg-zinc-850 rounded" />
+                </td>
+                <td className="py-4 px-6">
+                  <div className="space-y-1.5">
+                    <div className="w-24 h-4 bg-zinc-800 rounded" />
+                    <div className="w-24 h-3 bg-zinc-900 rounded" />
+                  </div>
+                </td>
+                <td className="py-4 px-6">
+                  <div className="w-16 h-5 bg-zinc-900 rounded" />
+                </td>
+                <td className="py-4 px-6">
+                  <div className="space-y-1">
+                    <div className="w-32 h-4.5 bg-zinc-850 rounded" />
+                    <div className="w-24 h-3.5 bg-zinc-900 rounded" />
+                  </div>
+                </td>
+                <td className="py-4 px-6 text-right">
+                  <div className="flex justify-end space-x-2">
+                    <div className="w-20 h-7 bg-zinc-850 rounded" />
+                    <div className="w-8 h-7 bg-zinc-900 rounded" />
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function BatchesGridSkeleton() {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-pulse text-left">
+      {[1, 2, 3].map((idx) => (
+        <div key={idx} className="flex flex-col bg-slate-900/20 border border-zinc-900 overflow-hidden rounded-xl p-6 space-y-4">
+          <div className="w-24 h-3 bg-zinc-900 rounded" />
+          <div className="w-48 h-5.5 bg-zinc-800 rounded" />
+          
+          <div className="bg-slate-950/60 border border-zinc-900/50 p-3 rounded-lg space-y-2.5">
+            <div className="flex items-center space-x-2">
+              <div className="w-3.5 h-3.5 bg-zinc-900 rounded-full" />
+              <div className="w-32 h-3 bg-zinc-900 rounded" />
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="w-3.5 h-3.5 bg-zinc-900 rounded-full" />
+              <div className="w-24 h-3.5 bg-zinc-800 rounded" />
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-2 bg-zinc-900/30 p-2.5 rounded-lg">
+            <div className="w-4 h-4 bg-zinc-850 rounded-full" />
+            <div className="space-y-1">
+              <div className="w-16 h-2.5 bg-zinc-900 rounded" />
+              <div className="w-28 h-3.5 bg-zinc-800 rounded" />
+            </div>
+          </div>
+
+          <div className="pt-2 border-t border-zinc-900/40 flex justify-between items-center">
+            <div className="w-20 h-4 bg-zinc-900 rounded" />
+            <div className="flex space-x-1">
+              <div className="w-7 h-7 bg-zinc-850 rounded" />
+              <div className="w-7 h-7 bg-zinc-850 rounded" />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function SchedulesGridSkeleton() {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 animate-pulse text-left">
+      {[1, 2].map((idx) => (
+        <div key={idx} className="bg-slate-900/20 border border-zinc-900 p-5 rounded-2xl space-y-4 flex flex-col justify-between">
+          <div className="space-y-2">
+            <div className="w-28 h-4.5 bg-zinc-800 rounded" />
+            <div className="w-full h-3 bg-zinc-900 rounded" />
+          </div>
+          
+          <div className="bg-slate-950/60 border border-zinc-900/50 p-3.5 rounded-xl space-y-2.5">
+            <div className="w-24 h-3 bg-zinc-900 rounded" />
+            <div className="w-48 h-3.5 bg-zinc-800 rounded" />
+            <div className="w-32 h-3 bg-zinc-900 rounded" />
+          </div>
+
+          <div className="pt-2 border-t border-zinc-900/40 flex justify-between items-center">
+            <div className="w-24 h-3 bg-zinc-900 rounded" />
+            <div className="flex space-x-1.5">
+              <div className="w-7 h-7 bg-zinc-850 rounded" />
+              <div className="w-7 h-7 bg-zinc-850 rounded" />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function AdminPanel() {
   // Auth and state managers
   const [user, setUser] = useState<User | null>(null);
@@ -1348,10 +1539,7 @@ export default function AdminPanel() {
 
           {/* Actual Admissions list table container */}
           {dataLoading ? (
-            <div className="py-20 text-center text-zinc-500 text-xs">
-              <div className="w-8 h-8 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-              <span>Fetching Live Database Records...</span>
-            </div>
+            <AdmissionsTableSkeleton />
           ) : filteredAdmissions.length === 0 ? (
             <div className="py-20 text-center text-zinc-600 text-xs font-light">
               No matching submission files recorded.
@@ -1493,10 +1681,7 @@ export default function AdminPanel() {
         {adminTab === 'batches' && (
           <div className="space-y-6">
             {batchesLoading ? (
-              <div className="py-24 text-center text-zinc-500 text-xs font-mono">
-                <div className="w-10 h-10 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-                <span className="font-heading font-black text-[9px] tracking-widest uppercase">SYNCING COHORT BATCHES DIRECTORY...</span>
-              </div>
+              <BatchesGridSkeleton />
             ) : batches.length === 0 ? (
               <div className="bg-slate-905 border border-zinc-900/60 rounded-2xl p-16 text-center space-y-6 max-w-xl mx-auto">
                 <div className="bg-yellow-500/5 p-4 rounded-full w-14 h-14 flex items-center justify-center mx-auto text-yellow-500">
@@ -1854,10 +2039,7 @@ export default function AdminPanel() {
                 </div>
 
                 {examsLoading && (
-                  <div className="py-24 text-center text-zinc-500 bg-slate-900/10 border border-zinc-900 rounded-xl space-y-3">
-                    <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-3" />
-                    <span className="font-heading font-black text-xs uppercase tracking-wider">Syncing Belt Registrations database...</span>
-                  </div>
+                  <ExamsTableSkeleton />
                 )}
 
                 {!examsLoading && (
@@ -2036,10 +2218,7 @@ export default function AdminPanel() {
                 </div>
 
                 {schedulesLoading && (
-                  <div className="py-20 text-center text-zinc-500 bg-slate-900/10 border border-zinc-900 rounded-xl space-y-3 animate-pulse">
-                    <RefreshCw className="w-8 h-8 animate-spin mx-auto text-yellow-500" />
-                    <span className="font-heading font-black text-xs uppercase tracking-wider block">Syncing Scheduled Exams...</span>
-                  </div>
+                  <SchedulesGridSkeleton />
                 )}
 
                 {!schedulesLoading && (

@@ -297,6 +297,101 @@ function KarateBeltGraphic({ beltName }: { beltName: string }) {
   );
 }
 
+function StudentPortalSkeleton() {
+  return (
+    <div className="space-y-8 animate-pulse text-left">
+      {/* Header Row */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/20 border border-zinc-900 p-5 rounded-2xl">
+        <div className="flex items-center space-x-4">
+          <div className="w-16 h-16 rounded-full bg-zinc-850" />
+          <div className="space-y-2">
+            <div className="flex items-center space-x-2">
+              <div className="w-24 h-4 bg-zinc-800 rounded" />
+              <div className="h-1 w-1 rounded-full bg-zinc-700" />
+              <div className="w-32 h-3 bg-zinc-900 rounded" />
+            </div>
+            <div className="w-48 h-6 bg-zinc-800 rounded" />
+            <div className="w-36 h-3 bg-zinc-900 rounded" />
+          </div>
+        </div>
+        <div className="w-32 h-10 bg-zinc-900 rounded-lg" />
+      </div>
+
+      {/* Progress & Belt graphics placeholder */}
+      <div className="bg-slate-900/20 border border-zinc-900 p-6 sm:p-8 rounded-2xl text-center space-y-6">
+        <div className="w-32 h-16 bg-zinc-850 rounded-xl mx-auto" />
+        <div className="space-y-2 max-w-sm mx-auto">
+          <div className="w-32 h-4 bg-zinc-800 rounded mx-auto" />
+          <div className="w-48 h-3 bg-zinc-900 rounded mx-auto" />
+        </div>
+        <div className="max-w-xl mx-auto space-y-2">
+          <div className="flex justify-between text-xs text-zinc-500">
+            <div className="w-20 h-3 bg-zinc-900 rounded" />
+            <div className="w-16 h-3 bg-zinc-900 rounded" />
+          </div>
+          <div className="w-full h-3 bg-zinc-900 rounded-full overflow-hidden">
+            <div className="w-3/5 h-full bg-zinc-800 rounded-full" />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto pt-4 border-t border-zinc-900/40">
+          <div className="bg-slate-950/40 p-4 rounded-xl border border-zinc-900/30 space-y-2">
+            <div className="w-16 h-3 bg-zinc-900 rounded mx-auto" />
+            <div className="w-24 h-4 bg-zinc-800 rounded mx-auto" />
+          </div>
+          <div className="bg-slate-950/40 p-4 rounded-xl border border-zinc-900/30 space-y-2">
+            <div className="w-16 h-3 bg-zinc-900 rounded mx-auto" />
+            <div className="w-24 h-4 bg-zinc-800 rounded mx-auto" />
+          </div>
+          <div className="bg-slate-950/40 p-4 rounded-xl border border-zinc-900/30 space-y-2">
+            <div className="w-16 h-3 bg-zinc-900 rounded mx-auto" />
+            <div className="w-24 h-4 bg-zinc-800 rounded mx-auto" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AttendanceSkeleton() {
+  return (
+    <div className="bg-slate-900/10 border border-zinc-900/50 p-6 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4 animate-pulse text-left">
+      <div className="space-y-3 flex-grow w-full">
+        <div className="w-36 h-4 bg-zinc-850 rounded" />
+        <div className="w-56 h-5 bg-zinc-805 rounded" />
+        <div className="w-full h-3 bg-zinc-900 rounded mt-2" />
+      </div>
+      <div className="w-28 h-9 bg-zinc-850 rounded-lg shrink-0 w-full md:w-auto" />
+    </div>
+  );
+}
+
+function ExamsHistoricalSkeleton() {
+  return (
+    <div className="space-y-4 animate-pulse">
+      <div className="bg-slate-900/10 border border-zinc-900 p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="space-y-2 flex-grow w-full">
+          <div className="flex items-center space-x-2">
+            <div className="w-24 h-4.5 bg-zinc-850 rounded" />
+            <div className="w-20 h-3 bg-zinc-900 rounded" />
+          </div>
+          <div className="h-16 bg-slate-950/30 rounded-xl border border-zinc-900/30 w-full" />
+        </div>
+        <div className="w-24 h-8 bg-zinc-850 rounded-lg shrink-0" />
+      </div>
+      <div className="bg-slate-900/10 border border-zinc-900 p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="space-y-2 flex-grow w-full">
+          <div className="flex items-center space-x-2">
+            <div className="w-24 h-4.5 bg-zinc-850 rounded" />
+            <div className="w-20 h-3 bg-zinc-900 rounded" />
+          </div>
+          <div className="h-16 bg-slate-950/30 rounded-xl border border-zinc-900/30 w-full" />
+        </div>
+        <div className="w-24 h-8 bg-zinc-850 rounded-lg shrink-0" />
+      </div>
+    </div>
+  );
+}
+
 interface StudentPortalProps {
   initialTab?: 'progress' | 'exam' | 'attendance';
   onNavigate?: (view: 'home' | 'admission' | 'student-portal' | 'admin') => void;
@@ -1185,6 +1280,12 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
         )}
 
         {/* ACTIVE STUDENT WORKFLOW SCREEN */}
+        {searching && !activeStudent && activeTab !== 'attendance' && (
+          <div className="mt-8">
+            <StudentPortalSkeleton />
+          </div>
+        )}
+
         {activeStudent && activeTab !== 'attendance' && (
           <div className="space-y-8">
             
@@ -1538,10 +1639,7 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
 
               if (attendanceLoading) {
                 return (
-                  <div className="bg-slate-900/10 border border-zinc-900/50 p-5 rounded-2xl flex items-center justify-center gap-3 animate-pulse">
-                    <RefreshCw className="w-4 h-4 animate-spin text-zinc-550" />
-                    <span className="text-xs text-zinc-500 font-heading select-none uppercase tracking-wider">Verifying class attendance records...</span>
-                  </div>
+                  <AttendanceSkeleton />
                 );
               }
 
@@ -1743,10 +1841,7 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
               </h4>
 
               {examsLoading && (
-                <div className="py-12 text-center text-zinc-550 bg-slate-900/10 border border-zinc-900 rounded-2xl">
-                  <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2" />
-                  <span className="font-heading font-black text-[10px] uppercase tracking-wider">Loading child's belt records...</span>
-                </div>
+                <ExamsHistoricalSkeleton />
               )}
 
               {!examsLoading && registeredExams.length === 0 && (
