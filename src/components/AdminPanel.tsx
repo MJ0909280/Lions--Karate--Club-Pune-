@@ -52,7 +52,8 @@ import {
   RefreshCw,
   Upload,
   Camera,
-  Sparkles
+  Sparkles,
+  Download
 } from 'lucide-react';
 
 // Required Admin check email literal configuration
@@ -697,6 +698,81 @@ export default function AdminPanel() {
     suggestNextStudentId();
     
     setEnrollModalOpen(true);
+  };
+
+  const exportToCSV = () => {
+    if (filteredAdmissions.length === 0) {
+      return;
+    }
+
+    const headers = [
+      "Roll ID",
+      "Full Name",
+      "DOB",
+      "Age",
+      "Gender",
+      "Parent Name",
+      "Phone",
+      "WhatsApp",
+      "Email",
+      "Address",
+      "Batch",
+      "Belt Level",
+      "Branch",
+      "Coach Name",
+      "Review Status",
+      "Fees Status",
+      "Registration Date"
+    ];
+
+    const escapeCSVValue = (val: any) => {
+      if (val === undefined || val === null) return "";
+      let str = String(val);
+      // Replace double quotes with double double quotes
+      str = str.replace(/"/g, '""');
+      // Wrap in double quotes if there are commas, double quotes, or newlines
+      if (str.includes(",") || str.includes('"') || str.includes("\n") || str.includes("\r")) {
+        return `"${str}"`;
+      }
+      return str;
+    };
+
+    const rows = filteredAdmissions.map((student) => {
+      const regDate = student.createdAt ? new Date(student.createdAt).toLocaleDateString() : "";
+      return [
+        student.studentId || "N/A",
+        student.fullName || "",
+        student.dob || "",
+        student.age !== undefined ? student.age : "",
+        student.gender || "",
+        student.parentName || "",
+        student.phone || "",
+        student.whatsApp || "",
+        student.email || "",
+        student.address || "",
+        student.batch || "",
+        student.beltLevel || "",
+        student.branch || "N/A",
+        student.coachName || "N/A",
+        student.status || "",
+        student.feesStatus || "Unpaid",
+        regDate
+      ].map(escapeCSVValue).join(",");
+    });
+
+    const csvContent = [headers.join(","), ...rows].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    
+    // Generate clean filename with current date
+    const today = new Date().toISOString().split("T")[0];
+    link.setAttribute("href", url);
+    link.setAttribute("download", `lions_karate_registry_${today}.csv`);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const compressAndProcessMImage = (file: File) => {
@@ -1421,6 +1497,15 @@ export default function AdminPanel() {
 
           {adminTab === 'admissions' && (
             <div className="flex items-center space-x-3 pb-4 sm:pb-0">
+              <button
+                onClick={exportToCSV}
+                disabled={filteredAdmissions.length === 0}
+                className="font-heading font-extrabold text-[10px] uppercase tracking-wider bg-slate-950 hover:bg-slate-900 border border-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed text-zinc-300 px-4 py-2 rounded transition-all flex items-center space-x-1.5 shadow-md cursor-pointer"
+                title="Export currently filtered student directory as CSV"
+              >
+                <Download className="w-3.5 h-3.5 text-zinc-550" />
+                <span>Export Registry (CSV)</span>
+              </button>
               <button
                 onClick={openEnrollModal}
                 className="font-heading font-extrabold text-[10px] uppercase tracking-wider bg-yellow-500 hover:bg-yellow-400 text-slate-950 px-4 py-2 rounded transition-all flex items-center space-x-1.5 shadow-md cursor-pointer"

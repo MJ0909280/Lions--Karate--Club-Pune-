@@ -1,6 +1,7 @@
 import { useRef, useState, useEffect } from 'react';
 import { Admission } from '../types';
 import { Printer, Download, CheckCircle2, Trophy, Award, Landmark, Volume2 } from 'lucide-react';
+import { motion } from 'motion/react';
 
 interface IDCardProps {
   admission: Admission;
@@ -436,9 +437,12 @@ export default function IDCard({ admission, showSuccessBanner = false, hideDownl
 
       {/* Visual representation of Student ID Card - Stylized vertical card layout with happy sky blue background */}
       <div className="flex justify-center w-full overflow-hidden py-1">
-        <div 
+        <motion.div 
           id="printable-id-card"
           ref={cardRef}
+          initial={{ opacity: 0, y: 35, scale: 0.94 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
           className="relative bg-[#BAE6FD] text-black p-8 w-[345px] h-[580px] flex flex-col justify-between border-[6px] border-black shadow-2xl z-20 select-none rounded-none scale-[0.85] xs:scale-[0.92] sm:scale-100 origin-center transition-transform"
         >
         {/* Upper Header Row */}
@@ -542,7 +546,7 @@ export default function IDCard({ admission, showSuccessBanner = false, hideDownl
             <span className="text-[5px] uppercase font-bold font-mono tracking-widest text-zinc-400">CHIEF TRAINER & ADMIN</span>
           </div>
         </div>
-      </div>
+      </motion.div>
     </div>
 
       {/* Interactive print and download options */}
