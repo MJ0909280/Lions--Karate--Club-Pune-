@@ -227,6 +227,16 @@ export default function Hero({ onNavigate }: HeroProps) {
 
               <div className="flex items-center space-x-2 bg-slate-900/60 border border-zinc-850 px-3 py-1.5 rounded-xl">
                 <img 
+                  src="https://res.cloudinary.com/dlzdagymx/image/upload/q_auto/f_auto/v1783013655/images_hs6ysx.jpg" 
+                  alt="KIO National" 
+                  className="w-6 h-6 object-contain rounded bg-white p-0.5"
+                  referrerPolicy="no-referrer"
+                />
+                <span className="text-[10px] font-heading font-bold uppercase tracking-wider text-zinc-350">KIO National</span>
+              </div>
+
+              <div className="flex items-center space-x-2 bg-slate-900/60 border border-zinc-850 px-3 py-1.5 rounded-xl">
+                <img 
                   src="https://res.cloudinary.com/dlzdagymx/image/upload/q_auto/f_auto/v1781585562/logo_new_t7ctxo.jpg" 
                   alt="Lions Karate Registered" 
                   className="w-6 h-6 object-contain rounded bg-white p-0.5"
