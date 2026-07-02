@@ -18,6 +18,14 @@ export default function Coaches() {
       experience: "National Player & Martial Arts Advocate",
       bio: "Passionate about inspiring students through martial arts, character development, discipline, and competitive excellence.",
       image: "https://res.cloudinary.com/dlzdagymx/image/upload/q_auto/f_auto/v1781354493/1000406954.jpg_gak7yh.jpg"
+    },
+    {
+      name: "Sensei Shital Samindar",
+      rank: "1st Dan Black Belt",
+      role: "Instructor",
+      experience: "Dedicated Martial Arts Instructor",
+      bio: "Dedicated to shaping disciplined, confident, and resilient students through professional martial arts training.",
+      image: "https://res.cloudinary.com/dlzdagymx/image/upload/v1783011427/WhatsApp_Image_2026-07-02_at_9.57.01_PM_euubfo.jpg"
     }
   ];
 
@@ -48,7 +56,7 @@ export default function Coaches() {
         </div>
 
         {/* Coach Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {coaches.map((c, idx) => (
             <div 
               key={idx} 

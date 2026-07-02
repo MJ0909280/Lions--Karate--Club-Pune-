@@ -515,7 +515,7 @@ Thank you.`;
                   <option value="All Coaches">-- Show All Coaches' Students --</option>
                   <option value="Maruti Jadhav Sir 2nd dan Black Belt">Sensei Maruti Jadhav (2nd Dan)</option>
                   <option value="Shivraj jejure Sir 2nd dan Black belt">Sensei Shivraj Jejure (2nd Dan)</option>
-                  <option value="Shital Samindar Mam assistant Coach">Sensei Shital Samindar (Assistant)</option>
+                  <option value="Shital Samindar Mam assistant Coach">Sensei Shital Samindar (1st Dan)</option>
                 </select>
                 <div className="text-[9px] text-zinc-500">
                   Filters student listing to only display your branch scholars.
