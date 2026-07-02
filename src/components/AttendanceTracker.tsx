@@ -322,12 +322,14 @@ export default function AttendanceTracker() {
     setMessageType(type);
     
     if (type === 'fees') {
+      const currentMonth = new Date().toLocaleString('en-US', { month: 'long' });
+      const currentYear = new Date().getFullYear();
       const template = `[Reminder from LIONS KARATE CLUB Website]
 [Auto-generated Message]
 
 Dear Parent,
 
-A gentle reminder that the karate fees for ${student.fullName} are pending. Kindly clear the dues at the earliest.
+A gentle reminder that the karate fees for ${student.fullName} for the month of ${currentMonth} ${currentYear} are pending. Kindly clear the dues at the earliest.
 
 📞 Sensei Maruti Jadhav
 9049688172
@@ -879,12 +881,14 @@ Thank you.`;
                   type="button"
                   onClick={() => {
                     setMessageType('fees');
+                    const currentMonth = new Date().toLocaleString('en-US', { month: 'long' });
+                    const currentYear = new Date().getFullYear();
                     setCustomText(`[Reminder from LIONS KARATE CLUB Website]
 [Auto-generated Message]
 
 Dear Parent,
 
-A gentle reminder that the karate fees for ${messageTarget.fullName} are pending. Kindly clear the dues at the earliest.
+A gentle reminder that the karate fees for ${messageTarget.fullName} for the month of ${currentMonth} ${currentYear} are pending. Kindly clear the dues at the earliest.
 
 📞 Sensei Maruti Jadhav
 9049688172

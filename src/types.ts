@@ -152,3 +152,33 @@ export interface ExamRegistration {
   updatedAt: number;
 }
 
+export interface ReceiptItem {
+  id: string;
+  description: string;
+  amount: number;
+}
+
+export interface Receipt {
+  id?: string;
+  receiptNo: string;
+  date: string;
+  studentId: string;
+  studentName: string;
+  parentName: string;
+  phone: string;
+  whatsApp: string;
+  email: string;
+  address: string;
+  branch: string;
+  batch: string;
+  beltLevel: string;
+  paymentMode: string;
+  items: ReceiptItem[];
+  totalAmount: number;
+  paidAmount: number;
+  balanceAmount: number;
+  remarks: string;
+  createdAt: number;
+}
+
+

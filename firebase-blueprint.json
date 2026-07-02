@@ -123,6 +123,33 @@
         "status": { "type": "string" }
       },
       "required": ["studentName", "createdAt", "status"]
+    },
+    "receipt": {
+      "title": "Receipt",
+      "description": "Represents a generated fee and billing receipt for student payments.",
+      "type": "object",
+      "properties": {
+        "receiptNo": { "type": "string", "description": "Receipt reference number" },
+        "date": { "type": "string", "description": "Date of receipt" },
+        "studentId": { "type": "string", "description": "Student LKCP ID" },
+        "studentName": { "type": "string", "description": "Student full name" },
+        "parentName": { "type": "string", "description": "Parent or guardian name" },
+        "phone": { "type": "string", "description": "Phone number" },
+        "whatsApp": { "type": "string", "description": "WhatsApp number" },
+        "email": { "type": "string", "description": "Email address" },
+        "address": { "type": "string", "description": "Physical address" },
+        "branch": { "type": "string", "description": "Dojo training branch" },
+        "batch": { "type": "string", "description": "Batch of the student" },
+        "beltLevel": { "type": "string", "description": "Belt level rank" },
+        "paymentMode": { "type": "string", "description": "Cash, GPay, UPI, etc." },
+        "items": { "type": "array", "description": "List of billing line items" },
+        "totalAmount": { "type": "number", "description": "Sum of all line items" },
+        "paidAmount": { "type": "number", "description": "Amount paid by user" },
+        "balanceAmount": { "type": "number", "description": "Balance due amount" },
+        "remarks": { "type": "string", "description": "Custom billing or payment remarks" },
+        "createdAt": { "type": "number", "description": "Timestamp created" }
+      },
+      "required": ["receiptNo", "date", "studentName", "paymentMode", "totalAmount", "paidAmount", "balanceAmount", "createdAt"]
     }
   },
   "firestore": {
@@ -153,6 +180,10 @@
     "/seo_indexing_logs/{logId}": {
       "schema": "seoIndexingLog",
       "description": "Store Search Console, AI Bot, and engine indexing feedback metrics."
+    },
+    "/receipts/{receiptId}": {
+      "schema": "receipt",
+      "description": "Store generated fee and billing receipts."
     }
   }
 }

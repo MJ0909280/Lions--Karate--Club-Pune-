@@ -10,7 +10,8 @@ service cloud.firestore {
     // Admin check logic
     function isAdmin() {
       return request.auth != null && 
-             request.auth.token.email == "writingandreserching18@gmail.com";
+             (request.auth.token.email == "writingandreserching18@gmail.com" || 
+              request.auth.uid == "79NOBF9MlOeZxsKdUw6I8UjEn2w1");
     }
     
     // Admissions collection rules
@@ -73,6 +74,12 @@ service cloud.firestore {
     match /seo_indexing_logs/{logId} {
       allow create: if true;
       allow read, write: if isAdmin();
+    }
+
+    // Receipts collection rules
+    match /receipts/{receiptId} {
+      // Only authorized admin is allowed to read, write, update or delete receipts
+      allow get, list, create, update, delete: if isAdmin();
     }
   }
 }

@@ -19,7 +19,7 @@ import {
   User
 } from 'firebase/auth';
 import { db, auth, handleFirestoreError, OperationType, checkFirestoreConnection } from '../firebase';
-import { Admission, BatchInfo, BATCH_TIMINGS, DOJO_BRANCHES, BELT_LEVELS } from '../types';
+import { Admission, BatchInfo, BATCH_TIMINGS, DOJO_BRANCHES, BELT_LEVELS, Receipt, ReceiptItem } from '../types';
 import IDCard from './IDCard';
 import SEOVisibilityConsole from './SEOVisibilityConsole';
 import { 
@@ -53,8 +53,12 @@ import {
   Upload,
   Camera,
   Sparkles,
-  Download
+  Download,
+  Printer
 } from 'lucide-react';
+
+// @ts-ignore
+import html2pdf from 'html2pdf.js';
 
 // Required Admin check email literal configuration
 const AUTHORIZED_ADMIN_EMAIL = "writingandreserching18@gmail.com";
@@ -281,7 +285,294 @@ export default function AdminPanel() {
   }, []);
 
   // Tab navigation console state
-  const [adminTab, setAdminTab] = useState<'admissions' | 'batches' | 'site_settings' | 'exams' | 'seo_ai'>('admissions');
+  const [adminTab, setAdminTab] = useState<'admissions' | 'batches' | 'site_settings' | 'exams' | 'seo_ai' | 'bills'>('admissions');
+
+  // Live Receipts Billing States
+  const [receipts, setReceipts] = useState<Receipt[]>([]);
+  const [receiptsLoading, setReceiptsLoading] = useState(false);
+  const [selectedReceipt, setSelectedReceipt] = useState<Receipt | null>(null);
+  const [isGeneratingReceipt, setIsGeneratingReceipt] = useState(false);
+
+  // Bill Generator Form States
+  const [bReceiptNo, setBReceiptNo] = useState('01');
+  const [bDate, setBDate] = useState(new Date().toISOString().split('T')[0]);
+  const [bStudentId, setBStudentId] = useState('');
+  const [bStudentName, setBStudentName] = useState('');
+  const [bParentName, setBParentName] = useState('');
+  const [bPhone, setBPhone] = useState('');
+  const [bWhatsApp, setBWhatsApp] = useState('');
+  const [bEmail, setBEmail] = useState('');
+  const [bAddress, setBAddress] = useState('');
+  const [bBranch, setBBranch] = useState('Manaji Nagar Branch');
+  const [bBatch, setBBatch] = useState('');
+  const [bBeltLevel, setBBeltLevel] = useState('White Belt (10th Kyu - Beginner)');
+  const [bPaymentMode, setBPaymentMode] = useState('Cash');
+  const [bItems, setBItems] = useState<ReceiptItem[]>([{ id: '1', description: 'Monthly Tuition Fee', amount: 1500 }]);
+  const [bPaidAmount, setBPaidAmount] = useState<number | ''>(1500);
+  const [bRemarks, setBRemarks] = useState('');
+  const [receiptSearchQuery, setReceiptSearchQuery] = useState('');
+  const [showStuDropdown, setShowStuDropdown] = useState(false);
+  const [selectedStudentForReceipt, setSelectedStudentForReceipt] = useState<Admission | null>(null);
+  const [billSaving, setBillSaving] = useState(false);
+  const [billError, setBillError] = useState('');
+  const [downloadingPDF, setDownloadingPDF] = useState(false);
+
+  const parseColorValues = (str: string): number[] => {
+    const matches = str.match(/[-+]?[0-9]*\.?[0-9]+%?/g);
+    if (!matches) return [0, 0, 0, 1];
+    return matches.map(m => {
+      if (m.endsWith('%')) {
+        return parseFloat(m) / 100;
+      }
+      return parseFloat(m);
+    });
+  };
+
+  const oklchToHsl = (l: number, c: number, h: number, a: number = 1): string => {
+    const hue = h;
+    const lightness = Math.min(100, Math.max(0, l * 100));
+    const saturation = Math.min(100, Math.max(0, (c / 0.4) * 100));
+    return `hsla(${hue}, ${saturation}%, ${lightness}%, ${a})`;
+  };
+
+  const oklabToHsl = (l: number, a: number, b: number, alpha: number = 1): string => {
+    const c = Math.sqrt(a * a + b * b);
+    let h = Math.atan2(b, a) * (180 / Math.PI);
+    if (h < 0) h += 360;
+    return oklchToHsl(l, c, h, alpha);
+  };
+
+  const convertUnsupportedColors = (colorStr: string): string => {
+    if (typeof colorStr !== 'string') return colorStr;
+    let result = colorStr;
+    const oklchRegex = /oklch\([^)]+\)/gi;
+    result = result.replace(oklchRegex, (match) => {
+      const vals = parseColorValues(match);
+      const l = vals[0] !== undefined ? vals[0] : 0;
+      const c = vals[1] !== undefined ? vals[1] : 0;
+      const h = vals[2] !== undefined ? vals[2] : 0;
+      const a = vals[3] !== undefined ? vals[3] : 1;
+      return oklchToHsl(l, c, h, a);
+    });
+    
+    const oklabRegex = /oklab\([^)]+\)/gi;
+    result = result.replace(oklabRegex, (match) => {
+      const vals = parseColorValues(match);
+      const l = vals[0] !== undefined ? vals[0] : 0;
+      const aVal = vals[1] !== undefined ? vals[1] : 0;
+      const bVal = vals[2] !== undefined ? vals[2] : 0;
+      const alpha = vals[3] !== undefined ? vals[3] : 1;
+      return oklabToHsl(l, aVal, bVal, alpha);
+    });
+    
+    return result;
+  };
+
+  const sanitizeUnsupportedColors = (css: string): string => {
+    return convertUnsupportedColors(css);
+  };
+
+  const handleDownloadPDF = async () => {
+    if (!selectedReceipt) return;
+    setDownloadingPDF(true);
+    
+    const originalStyles = new Map<HTMLElement, string>();
+    const tempStyles: HTMLStyleElement[] = [];
+    
+    // Store original functions and descriptors for exact restoration
+    const originalGetComputedStyle = window.getComputedStyle;
+    const originalGetPropertyValue = CSSStyleDeclaration.prototype.getPropertyValue;
+    const cssRulesDescriptor = Object.getOwnPropertyDescriptor(CSSStyleSheet.prototype, 'cssRules');
+    
+    try {
+      const element = document.getElementById('printable-receipt');
+      if (!element) {
+        console.error("Printable receipt element not found");
+        return;
+      }
+
+      // 1. Monkeypatch window.getComputedStyle
+      window.getComputedStyle = function (elt, pseudoElt) {
+        const style = originalGetComputedStyle(elt, pseudoElt);
+        return new Proxy(style, {
+          get(target, prop) {
+            if (prop === 'getPropertyValue') {
+              return function (propertyName: string) {
+                const val = target.getPropertyValue(propertyName);
+                if (typeof val === 'string' && (val.toLowerCase().includes('oklch') || val.toLowerCase().includes('oklab'))) {
+                  return convertUnsupportedColors(val);
+                }
+                return val;
+              };
+            }
+            
+            const value = Reflect.get(target, prop);
+            if (typeof value === 'function') {
+              return value.bind(target);
+            }
+            if (typeof value === 'string' && (value.toLowerCase().includes('oklch') || value.toLowerCase().includes('oklab'))) {
+              return convertUnsupportedColors(value);
+            }
+            return value;
+          }
+        });
+      };
+
+      // 2. Monkeypatch CSSStyleDeclaration.prototype.getPropertyValue
+      CSSStyleDeclaration.prototype.getPropertyValue = function (property: string) {
+        const value = originalGetPropertyValue.call(this, property);
+        if (typeof value === 'string' && (value.toLowerCase().includes('oklch') || value.toLowerCase().includes('oklab'))) {
+          return convertUnsupportedColors(value);
+        }
+        return value;
+      };
+
+      // 3. Monkeypatch CSSStyleSheet.prototype.cssRules to intercept sheet.cssRules[i].style properties
+      if (cssRulesDescriptor && cssRulesDescriptor.get) {
+        const originalCssRulesGet = cssRulesDescriptor.get;
+        Object.defineProperty(CSSStyleSheet.prototype, 'cssRules', {
+          get() {
+            const rules = originalCssRulesGet.call(this);
+            if (!rules) return rules;
+            return new Proxy(rules, {
+              get(target, prop) {
+                if (prop === 'length') return target.length;
+                if (prop === 'item') {
+                  return function (index: number) {
+                    return this[index];
+                  };
+                }
+                
+                const val = Reflect.get(target, prop);
+                if (typeof val === 'object' && val !== null && 'style' in val) {
+                  return new Proxy(val, {
+                    get(ruleTarget, ruleProp) {
+                      if (ruleProp === 'style') {
+                        const style = ruleTarget.style;
+                        return new Proxy(style, {
+                          get(styleTarget, styleProp) {
+                            if (styleProp === 'getPropertyValue') {
+                              return function (propertyName: string) {
+                                const v = styleTarget.getPropertyValue(propertyName);
+                                if (typeof v === 'string' && (v.toLowerCase().includes('oklch') || v.toLowerCase().includes('oklab'))) {
+                                  return convertUnsupportedColors(v);
+                                }
+                                return v;
+                              };
+                            }
+                            const v = Reflect.get(styleTarget, styleProp);
+                            if (typeof v === 'function') return v.bind(styleTarget);
+                            if (typeof v === 'string' && (v.toLowerCase().includes('oklch') || v.toLowerCase().includes('oklab'))) {
+                              return convertUnsupportedColors(v);
+                            }
+                            return v;
+                          }
+                        });
+                      }
+                      return Reflect.get(ruleTarget, ruleProp);
+                    }
+                  });
+                }
+                return val;
+              }
+            });
+          },
+          configurable: true
+        });
+      }
+
+      // 4. Sanitize all <style> elements
+      const styleElements = Array.from(document.querySelectorAll('style'));
+      styleElements.forEach((styleEl) => {
+        const cssText = styleEl.textContent || '';
+        if (cssText.toLowerCase().includes('oklch') || cssText.toLowerCase().includes('oklab')) {
+          originalStyles.set(styleEl, cssText);
+          styleEl.textContent = sanitizeUnsupportedColors(cssText);
+        }
+      });
+
+      // 5. Sanitize all same-origin <link rel="stylesheet"> elements
+      const linkElements = Array.from(document.querySelectorAll('link[rel="stylesheet"]')) as HTMLLinkElement[];
+      for (const linkEl of linkElements) {
+        try {
+          const url = linkEl.href;
+          if (url && (url.startsWith(window.location.origin) || !url.startsWith('http'))) {
+            const response = await fetch(url);
+            if (response.ok) {
+              const cssText = await response.text();
+              if (cssText.toLowerCase().includes('oklch') || cssText.toLowerCase().includes('oklab')) {
+                linkEl.disabled = true;
+                originalStyles.set(linkEl, 'disabled');
+                
+                const tempStyle = document.createElement('style');
+                tempStyle.textContent = sanitizeUnsupportedColors(cssText);
+                document.head.appendChild(tempStyle);
+                tempStyles.push(tempStyle);
+              }
+            }
+          }
+        } catch (linkErr) {
+          console.warn("Could not process stylesheet link:", linkEl.href, linkErr);
+        }
+      }
+
+      const opt = {
+        margin:       0,
+        filename:     `LKC_Receipt_${selectedReceipt.receiptNo}.pdf`,
+        image:        { type: 'jpeg' as const, quality: 0.98 },
+        html2canvas:  { scale: 2.5, useCORS: true, logging: false, letterRendering: true },
+        jsPDF:        { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const }
+      };
+      
+      const clonedElement = element.cloneNode(true) as HTMLElement;
+      clonedElement.style.display = 'block';
+      clonedElement.style.background = '#ffffff';
+      clonedElement.style.color = '#0f172a';
+      
+      // Sanitize inline style attributes on cloned tree elements directly
+      const allClonedElements = [clonedElement, ...Array.from(clonedElement.querySelectorAll('*'))] as HTMLElement[];
+      allClonedElements.forEach((el) => {
+        if (el.style) {
+          for (let i = 0; i < el.style.length; i++) {
+            const propName = el.style[i];
+            const val = el.style.getPropertyValue(propName);
+            if (val && (val.toLowerCase().includes('oklch') || val.toLowerCase().includes('oklab'))) {
+              el.style.setProperty(propName, convertUnsupportedColors(val));
+            }
+          }
+        }
+      });
+      
+      await html2pdf().set(opt).from(clonedElement).save();
+    } catch (err) {
+      console.error("Error generating PDF:", err);
+    } finally {
+      // Restore all original functions and descriptors
+      window.getComputedStyle = originalGetComputedStyle;
+      CSSStyleDeclaration.prototype.getPropertyValue = originalGetPropertyValue;
+      if (cssRulesDescriptor) {
+        Object.defineProperty(CSSStyleSheet.prototype, 'cssRules', cssRulesDescriptor);
+      }
+
+      // Restore original styles
+      originalStyles.forEach((originalVal, el) => {
+        if (el instanceof HTMLLinkElement) {
+          el.disabled = false;
+        } else if (el instanceof HTMLStyleElement) {
+          el.textContent = originalVal;
+        }
+      });
+      
+      // Remove temporary style tags
+      tempStyles.forEach((tempStyle) => {
+        if (tempStyle.parentNode) {
+          tempStyle.parentNode.removeChild(tempStyle);
+        }
+      });
+      
+      setDownloadingPDF(false);
+    }
+  };
 
   // Live Exams Admin Syncing States
   const [exams, setExams] = useState<any[]>([]);
@@ -636,6 +927,36 @@ export default function AdminPanel() {
     return () => unsubscribe();
   }, [user, isAdmin]);
 
+  // Sync real-time Receipts database
+  useEffect(() => {
+    if (!user || !isAdmin) {
+      setReceipts([]);
+      return;
+    }
+
+    setReceiptsLoading(true);
+    const receiptsRef = collection(db, 'receipts');
+    const unsubscribe = onSnapshot(receiptsRef, (snapshot) => {
+      const records: Receipt[] = [];
+      snapshot.forEach((docSnap) => {
+        records.push({
+          id: docSnap.id,
+          ...docSnap.data()
+        } as Receipt);
+      });
+      // Sort newest receipts first
+      records.sort((a, b) => b.createdAt - a.createdAt);
+      setReceipts(records);
+      setReceiptsLoading(false);
+    }, (error) => {
+      console.error("Firestore receipts sync error:", error);
+      setReceiptsLoading(false);
+      handleFirestoreError(error, OperationType.LIST, 'receipts');
+    });
+
+    return () => unsubscribe();
+  }, [user, isAdmin]);
+
   const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !isAdmin) return;
@@ -664,6 +985,153 @@ export default function AdminPanel() {
       handleFirestoreError(err, OperationType.WRITE, 'settings/video');
     } finally {
       setSettingsSaving(false);
+    }
+  };
+
+  // Auto-generate numeric Receipt No starting from '01'
+  useEffect(() => {
+    if (receipts.length > 0) {
+      const numericNos = receipts
+        .map(r => parseInt(r.receiptNo, 10))
+        .filter(num => !isNaN(num));
+      const maxNo = numericNos.length > 0 ? Math.max(...numericNos) : receipts.length;
+      const nextNo = String(maxNo + 1).padStart(2, '0');
+      setBReceiptNo(nextNo);
+    } else {
+      setBReceiptNo('01');
+    }
+  }, [receipts, isGeneratingReceipt]);
+
+  const handleSelectStudentForReceipt = (student: Admission) => {
+    setSelectedStudentForReceipt(student);
+    setBStudentId(student.studentId || '');
+    setBStudentName(student.fullName || '');
+    setBParentName(student.parentName || '');
+    setBPhone(student.phone || '');
+    setBWhatsApp(student.whatsApp || '');
+    setBEmail(student.email || '');
+    setBAddress(student.address || '');
+    setBBranch(student.branch || 'Manaji Nagar Branch');
+    setBBatch(student.batch || '');
+    setBBeltLevel(student.beltLevel || 'White Belt (10th Kyu - Beginner)');
+  };
+
+  const handleClearStudentForReceipt = () => {
+    setSelectedStudentForReceipt(null);
+    setBStudentId('');
+    setBStudentName('');
+    setBParentName('');
+    setBPhone('');
+    setBWhatsApp('');
+    setBEmail('');
+    setBAddress('');
+    setBBatch('');
+  };
+
+  const handleAddItem = () => {
+    const newId = String(Date.now() + Math.random());
+    setBItems([...bItems, { id: newId, description: '', amount: 0 }]);
+  };
+
+  const handleRemoveItem = (id: string) => {
+    if (bItems.length === 1) return;
+    const updated = bItems.filter(item => item.id !== id);
+    setBItems(updated);
+    
+    const newTotal = updated.reduce((sum, item) => sum + (item.amount || 0), 0);
+    setBPaidAmount(newTotal);
+  };
+
+  const handleItemChange = (id: string, field: 'description' | 'amount', value: any) => {
+    const updated = bItems.map(item => {
+      if (item.id === id) {
+        return { ...item, [field]: value };
+      }
+      return item;
+    });
+    setBItems(updated);
+
+    if (field === 'amount') {
+      const newTotal = updated.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+      setBPaidAmount(newTotal);
+    }
+  };
+
+  const handleSaveReceipt = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || !isAdmin) return;
+
+    if (!bStudentName.trim()) {
+      setBillError('Please enter the Student Full Name.');
+      return;
+    }
+
+    if (bItems.some(item => !item.description.trim() || Number(item.amount) <= 0)) {
+      setBillError('Please ensure all items have a description and a valid amount greater than 0.');
+      return;
+    }
+
+    setBillSaving(true);
+    setBillError('');
+
+    const total = bItems.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+    const paid = Number(bPaidAmount) || 0;
+    const balance = total - paid;
+
+    const receiptData: Receipt = {
+      receiptNo: bReceiptNo.trim(),
+      date: bDate,
+      studentId: bStudentId.trim(),
+      studentName: bStudentName.trim(),
+      parentName: bParentName.trim(),
+      phone: bPhone.trim(),
+      whatsApp: bWhatsApp.trim(),
+      email: bEmail.trim(),
+      address: bAddress.trim(),
+      branch: bBranch,
+      batch: bBatch,
+      beltLevel: bBeltLevel,
+      paymentMode: bPaymentMode,
+      items: bItems.map(item => ({ ...item, amount: Number(item.amount) })),
+      totalAmount: total,
+      paidAmount: paid,
+      balanceAmount: balance,
+      remarks: bRemarks.trim(),
+      createdAt: Date.now()
+    };
+
+    try {
+      const docRef = await addDoc(collection(db, 'receipts'), receiptData);
+      
+      if (selectedStudentForReceipt) {
+        const studentDocRef = doc(db, 'admissions', selectedStudentForReceipt.id);
+        const newFeesStatus = balance <= 0 ? 'Paid' : 'Unpaid';
+        await updateDoc(studentDocRef, {
+          feesStatus: newFeesStatus,
+          updatedAt: Date.now()
+        });
+      }
+
+      setIsGeneratingReceipt(false);
+      setSelectedReceipt({ ...receiptData, id: docRef.id });
+
+      // Reset form fields
+      setBStudentId('');
+      setBStudentName('');
+      setBParentName('');
+      setBPhone('');
+      setBWhatsApp('');
+      setBEmail('');
+      setBAddress('');
+      setBRemarks('');
+      setBItems([{ id: '1', description: 'Monthly Tuition Fee', amount: 1500 }]);
+      setBPaidAmount(1500);
+      setSelectedStudentForReceipt(null);
+    } catch (err: any) {
+      console.error("Error saving bill:", err);
+      setBillError("Failed to save receipt. " + (err?.message || ""));
+    } finally {
+      setBillSaving(false);
     }
   };
 
@@ -1493,7 +1961,42 @@ export default function AdminPanel() {
               <Sparkles className="w-3.5 h-3.5 shrink-0" />
               <span>GSC & AI SEO</span>
             </button>
+            <button
+              onClick={() => setAdminTab('bills')}
+              className={`font-heading font-black text-xs tracking-widest uppercase pb-4 border-b-2 transition-all cursor-pointer flex items-center space-x-1 ${
+                adminTab === 'bills' 
+                  ? 'border-yellow-500 text-yellow-500 font-extrabold' 
+                  : 'border-transparent text-zinc-550 hover:text-zinc-350'
+              }`}
+            >
+              <DollarSign className="w-3.5 h-3.5 shrink-0" />
+              <span>Fees & Billing</span>
+            </button>
           </div>
+
+          {adminTab === 'bills' && (
+            <div className="flex items-center space-x-3 pb-4 sm:pb-0">
+              <button
+                onClick={() => {
+                  setIsGeneratingReceipt(!isGeneratingReceipt);
+                  setBillError('');
+                }}
+                className="font-heading font-extrabold text-[10px] uppercase tracking-wider bg-yellow-500 hover:bg-yellow-400 text-slate-950 px-4 py-2 rounded transition-all flex items-center space-x-1.5 shadow-md cursor-pointer animate-pulse"
+              >
+                {isGeneratingReceipt ? (
+                  <>
+                    <FileText className="w-3.5 h-3.5" />
+                    <span>View Receipts Log</span>
+                  </>
+                ) : (
+                  <>
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Create New Bill</span>
+                  </>
+                )}
+              </button>
+            </div>
+          )}
 
           {adminTab === 'admissions' && (
             <div className="flex items-center space-x-3 pb-4 sm:pb-0">
@@ -2497,6 +3000,550 @@ export default function AdminPanel() {
           </div>
         )}
 
+        {adminTab === 'bills' && (
+          <div className="animate-fade-in py-2 space-y-6">
+            {/* Quick Stats Summary Card */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-slate-900/40 border border-zinc-900 p-5 rounded-xl flex items-center space-x-4">
+                <div className="p-3 bg-zinc-800 rounded-lg text-zinc-300">
+                  <FileText className="w-5 h-5 sm:w-6 sm:h-6" />
+                </div>
+                <div>
+                  <span className="text-[10px] text-zinc-550 uppercase font-bold block tracking-wider">Total Invoiced</span>
+                  <span className="font-mono text-lg sm:text-2xl font-black text-white mt-1 block">
+                    ₹{receipts.reduce((sum, r) => sum + (r.totalAmount || 0), 0).toLocaleString('en-IN')}
+                  </span>
+                </div>
+              </div>
+              <div className="bg-slate-900/40 border border-zinc-900 p-5 rounded-xl flex items-center space-x-4">
+                <div className="p-3 bg-emerald-500/10 rounded-lg text-emerald-500">
+                  <Check className="w-5 h-5 sm:w-6 sm:h-6" />
+                </div>
+                <div>
+                  <span className="text-[10px] text-emerald-500/80 uppercase font-bold block tracking-wider">Total Received</span>
+                  <span className="font-mono text-lg sm:text-2xl font-black text-emerald-500 mt-1 block">
+                    ₹{receipts.reduce((sum, r) => sum + (r.paidAmount || 0), 0).toLocaleString('en-IN')}
+                  </span>
+                </div>
+              </div>
+              <div className="bg-slate-900/40 border border-zinc-900 p-5 rounded-xl flex items-center space-x-4">
+                <div className="p-3 bg-red-400/10 rounded-lg text-[#FF3B3F]">
+                  <DollarSign className="w-5 h-5 sm:w-6 sm:h-6" />
+                </div>
+                <div>
+                  <span className="text-[10px] text-zinc-350 uppercase font-bold block tracking-wider">Outstanding Balance</span>
+                  <span className="font-mono text-lg sm:text-2xl font-black text-yellow-500 mt-1 block">
+                    ₹{receipts.reduce((sum, r) => sum + (r.balanceAmount || 0), 0).toLocaleString('en-IN')}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Main Section */}
+            {!isGeneratingReceipt ? (
+              <div className="bg-slate-900/40 border border-zinc-900 rounded-2xl overflow-hidden p-6 space-y-6">
+                {/* Search Bar & Header */}
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div>
+                    <h3 className="font-heading font-black text-lg text-white uppercase tracking-tight">Receipts Log</h3>
+                    <p className="text-zinc-500 text-xs mt-1">Manage and print student tuition and uniform fee receipts.</p>
+                  </div>
+                  <div className="relative max-w-md w-full sm:w-72">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-550" />
+                    <input
+                      type="text"
+                      placeholder="Search by receipt # or student name..."
+                      value={receiptSearchQuery}
+                      onChange={(e) => setReceiptSearchQuery(e.target.value)}
+                      className="w-full bg-slate-950 border border-zinc-800 rounded-lg pl-9 pr-4 py-2.5 text-xs text-white placeholder:text-zinc-600 focus:outline-none focus:border-yellow-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Receipts List */}
+                {receiptsLoading ? (
+                  <div className="py-12 text-center text-zinc-500 text-xs">
+                    <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-3 text-yellow-500" />
+                    <span>Loading billing history...</span>
+                  </div>
+                ) : receipts.length === 0 ? (
+                  <div className="py-16 text-center border border-dashed border-zinc-855 rounded-xl space-y-3">
+                    <FileText className="w-10 h-10 text-zinc-700 mx-auto" />
+                    <p className="text-zinc-500 text-xs">No receipts found in database.</p>
+                    <button
+                      onClick={() => setIsGeneratingReceipt(true)}
+                      className="px-4 py-2 bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-heading font-black text-[10px] uppercase tracking-widest rounded-lg transition-all"
+                    >
+                      Create First Receipt
+                    </button>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-slate-950 border-b border-zinc-900 text-zinc-500 uppercase font-heading font-black text-[9px] tracking-widest">
+                          <th className="py-4 px-6">Receipt #</th>
+                          <th className="py-4 px-6">Date</th>
+                          <th className="py-4 px-6">Student Bio</th>
+                          <th className="py-4 px-6">Fee Particulars</th>
+                          <th className="py-4 px-6">Amount Paid</th>
+                          <th className="py-4 px-6">Status</th>
+                          <th className="py-4 px-6 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-zinc-900/40 text-xs">
+                        {receipts
+                          .filter(r => {
+                            const queryLower = receiptSearchQuery.toLowerCase().trim();
+                            return !queryLower || 
+                              r.receiptNo.toLowerCase().includes(queryLower) ||
+                              r.studentName.toLowerCase().includes(queryLower) ||
+                              r.studentId?.toLowerCase().includes(queryLower);
+                          })
+                          .map((receipt) => {
+                            const isPaid = (receipt.balanceAmount || 0) <= 0;
+                            return (
+                              <tr key={receipt.id} className="hover:bg-zinc-900/10 border-b border-zinc-900/20 transition-all">
+                                <td className="py-4 px-6 font-mono font-black text-white">LKC-{receipt.receiptNo}</td>
+                                <td className="py-4 px-6 text-zinc-400">
+                                  {new Date(receipt.date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                                </td>
+                                <td className="py-4 px-6">
+                                  <div className="font-bold text-white uppercase">{receipt.studentName}</div>
+                                  <div className="text-[10px] text-zinc-500 mt-0.5">{receipt.studentId ? `ID: ${receipt.studentId}` : 'Custom Entry'} • {receipt.phone}</div>
+                                </td>
+                                <td className="py-4 px-6 text-zinc-400">
+                                  <div className="max-w-[200px] truncate" title={receipt.items.map(i => i.description).join(', ')}>
+                                    {receipt.items.map(i => `${i.description} (₹${i.amount})`).join(', ')}
+                                  </div>
+                                </td>
+                                <td className="py-4 px-6 font-mono font-bold text-white">
+                                  ₹{receipt.paidAmount} <span className="text-[10px] text-zinc-500">/ ₹{receipt.totalAmount}</span>
+                                </td>
+                                <td className="py-4 px-6">
+                                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${isPaid ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/15' : 'bg-rose-500/10 text-rose-400 border border-rose-500/15'}`}>
+                                    {isPaid ? 'PAID' : `DUE: ₹${receipt.balanceAmount}`}
+                                  </span>
+                                </td>
+                                <td className="py-4 px-6 text-right">
+                                  <div className="flex justify-end gap-2">
+                                    <button
+                                      onClick={() => setSelectedReceipt(receipt)}
+                                      className="p-1.5 bg-slate-950 border border-zinc-800 hover:border-yellow-500 hover:text-yellow-500 text-zinc-400 rounded transition-all cursor-pointer"
+                                      title="View & Print Receipt"
+                                    >
+                                      <Printer className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button
+                                      onClick={() => {
+                                        setConfirmDialog({
+                                          isOpen: true,
+                                          title: 'Delete Receipt',
+                                          message: `Are you sure you want to permanently delete receipt LKC-${receipt.receiptNo} for ${receipt.studentName}? This action is irreversible.`,
+                                          confirmText: 'Delete',
+                                          cancelText: 'Cancel',
+                                          onConfirm: async () => {
+                                            try {
+                                              await deleteDoc(doc(db, 'receipts', receipt.id!));
+                                              setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+                                            } catch (err) {
+                                              console.error("Delete receipt err: ", err);
+                                              alert("Failed to delete receipt.");
+                                            }
+                                          }
+                                        });
+                                      }}
+                                      className="p-1.5 bg-slate-950 border border-zinc-800 hover:border-red-500 hover:text-red-500 text-zinc-400 rounded transition-all cursor-pointer"
+                                      title="Delete Receipt"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <form onSubmit={handleSaveReceipt} className="bg-slate-900/40 border border-zinc-900 rounded-2xl p-6 space-y-6">
+                {billError && (
+                  <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-3.5 rounded-lg text-xs font-medium">
+                    {billError}
+                  </div>
+                )}
+
+                {/* Section A: Search and Auto-populate */}
+                <div className="bg-slate-950 border border-zinc-900 p-5 rounded-xl space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-[10px] text-yellow-500 font-extrabold uppercase tracking-widest font-mono">Step 1</span>
+                      <h4 className="font-heading font-bold text-sm text-white uppercase mt-0.5">Select Student from Directory</h4>
+                    </div>
+                    {selectedStudentForReceipt && (
+                      <button
+                        type="button"
+                        onClick={handleClearStudentForReceipt}
+                        className="text-[10px] font-bold text-red-400 hover:text-red-300 uppercase tracking-wider flex items-center gap-1 cursor-pointer"
+                      >
+                        <X className="w-3 h-3" />
+                        <span>Clear Selected Student (Custom Entry)</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {!selectedStudentForReceipt ? (
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-550" />
+                      <input
+                        type="text"
+                        placeholder="Type student name to search our registered admissions..."
+                        value={receiptSearchQuery}
+                        onChange={(e) => {
+                          setReceiptSearchQuery(e.target.value);
+                          setShowStuDropdown(true);
+                        }}
+                        onFocus={() => setShowStuDropdown(true)}
+                        className="w-full bg-slate-900 border border-zinc-800 rounded-lg pl-9 pr-4 py-3 text-xs text-white placeholder:text-zinc-650 focus:outline-none focus:border-yellow-500"
+                      />
+
+                      {showStuDropdown && receiptSearchQuery.trim() && (
+                        <div className="absolute left-0 right-0 mt-1 bg-slate-900 border border-zinc-800 rounded-lg shadow-xl max-h-52 overflow-y-auto z-50 divide-y divide-zinc-850">
+                          {admissions
+                            .filter(a => a.fullName.toLowerCase().includes(receiptSearchQuery.toLowerCase()))
+                            .map(student => (
+                              <button
+                                key={student.id}
+                                type="button"
+                                onClick={() => {
+                                  handleSelectStudentForReceipt(student);
+                                  setReceiptSearchQuery('');
+                                  setShowStuDropdown(false);
+                                }}
+                                className="w-full text-left px-4 py-3 hover:bg-zinc-900 text-xs flex justify-between items-center transition-all cursor-pointer"
+                              >
+                                <div>
+                                  <span className="font-black text-white uppercase">{student.fullName}</span>
+                                  <span className="text-[10px] text-zinc-500 ml-2 block sm:inline">Parent: {student.parentName}</span>
+                                </div>
+                                <div className="text-right">
+                                  <span className="text-[10px] font-mono text-zinc-400 bg-zinc-850 px-2 py-0.5 rounded">{student.studentId}</span>
+                                </div>
+                              </button>
+                            ))}
+                          {admissions.filter(a => a.fullName.toLowerCase().includes(receiptSearchQuery.toLowerCase())).length === 0 && (
+                            <div className="p-4 text-center text-zinc-600 text-xs">No matching student found. Keep typing or enter student details manually below!</div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="bg-zinc-900/30 border border-zinc-850 p-4 rounded-lg flex items-center justify-between">
+                      <div className="space-y-1">
+                        <span className="text-[9px] font-black font-mono text-emerald-400 bg-emerald-500/5 border border-emerald-500/15 px-2 py-0.5 rounded uppercase">Connected Student</span>
+                        <h5 className="font-heading font-black text-base text-white uppercase">{selectedStudentForReceipt.fullName}</h5>
+                        <p className="text-zinc-500 text-[10px]">
+                          Roll ID: <strong className="text-zinc-300 font-mono">{selectedStudentForReceipt.studentId}</strong> • Parent: {selectedStudentForReceipt.parentName} • Contact: {selectedStudentForReceipt.phone}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-xs text-zinc-400 block font-bold">{selectedStudentForReceipt.beltLevel}</span>
+                        <span className="text-[10px] text-zinc-500 block mt-0.5">{selectedStudentForReceipt.batch}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Section B: Receipt Meta and Bio Details */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Left Column: Bill parameters */}
+                  <div className="bg-slate-950 border border-zinc-900 p-5 rounded-xl space-y-4">
+                    <h4 className="font-heading font-bold text-xs text-white uppercase tracking-wider border-b border-zinc-900 pb-2">Receipt Info</h4>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="block text-[10px] font-mono text-zinc-400 font-extrabold uppercase tracking-widest">Receipt Number</label>
+                        <input
+                          type="text"
+                          value={bReceiptNo}
+                          onChange={(e) => setBReceiptNo(e.target.value)}
+                          className="w-full bg-slate-900 border border-zinc-800 rounded-lg px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-yellow-500"
+                          placeholder="e.g. 01"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="block text-[10px] font-mono text-zinc-400 font-extrabold uppercase tracking-widest">Receipt Date</label>
+                        <input
+                          type="date"
+                          value={bDate}
+                          onChange={(e) => setBDate(e.target.value)}
+                          className="w-full bg-slate-900 border border-zinc-800 rounded-lg px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-yellow-500"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="block text-[10px] font-mono text-zinc-400 font-extrabold uppercase tracking-widest">Payment Method</label>
+                      <select
+                        value={bPaymentMode}
+                        onChange={(e) => setBPaymentMode(e.target.value)}
+                        className="w-full bg-slate-900 border border-zinc-800 rounded-lg px-3.5 py-2.5 text-xs text-zinc-300 focus:outline-none focus:border-yellow-500"
+                        required
+                      >
+                        <option value="Cash">Cash (Offline Handover)</option>
+                        <option value="GPay">GPay (UPI Transfer)</option>
+                        <option value="PhonePe">PhonePe (UPI Transfer)</option>
+                        <option value="UPI">Other UPI / QR Code</option>
+                        <option value="Bank Transfer">Direct Bank IMPS / NEFT</option>
+                        <option value="Card">Credit / Debit Card</option>
+                        <option value="Check">Check / DD Instrument</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Right Column: Student details (mostly auto-filled or custom typed) */}
+                  <div className="bg-slate-950 border border-zinc-900 p-5 rounded-xl space-y-4">
+                    <h4 className="font-heading font-bold text-xs text-white uppercase tracking-wider border-b border-zinc-900 pb-2">Student & Parent Details</h4>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="block text-[10px] font-mono text-zinc-400 font-extrabold uppercase tracking-widest">Student Full Name</label>
+                        <input
+                          type="text"
+                          value={bStudentName}
+                          onChange={(e) => setBStudentName(e.target.value)}
+                          disabled={!!selectedStudentForReceipt}
+                          className="w-full bg-slate-900 border border-zinc-800 rounded-lg px-3.5 py-2.5 text-xs text-white disabled:opacity-40 focus:outline-none focus:border-yellow-500"
+                          placeholder="e.g. Atharva Pawar"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="block text-[10px] font-mono text-zinc-400 font-extrabold uppercase tracking-widest">Roll ID (Optional)</label>
+                        <input
+                          type="text"
+                          value={bStudentId}
+                          onChange={(e) => setBStudentId(e.target.value)}
+                          disabled={!!selectedStudentForReceipt}
+                          className="w-full bg-slate-900 border border-zinc-800 rounded-lg px-3.5 py-2.5 text-xs text-white disabled:opacity-40 focus:outline-none focus:border-yellow-500"
+                          placeholder="e.g. LKCP-2026-003"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="block text-[10px] font-mono text-zinc-400 font-extrabold uppercase tracking-widest">Parent Name</label>
+                        <input
+                          type="text"
+                          value={bParentName}
+                          onChange={(e) => setBParentName(e.target.value)}
+                          disabled={!!selectedStudentForReceipt}
+                          className="w-full bg-slate-900 border border-zinc-800 rounded-lg px-3.5 py-2.5 text-xs text-white disabled:opacity-40 focus:outline-none focus:border-yellow-500"
+                          placeholder="e.g. Sanjay Pawar"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="block text-[10px] font-mono text-zinc-400 font-extrabold uppercase tracking-widest">Contact Phone</label>
+                        <input
+                          type="text"
+                          value={bPhone}
+                          onChange={(e) => setBPhone(e.target.value)}
+                          disabled={!!selectedStudentForReceipt}
+                          className="w-full bg-slate-900 border border-zinc-800 rounded-lg px-3.5 py-2.5 text-xs text-white disabled:opacity-40 focus:outline-none focus:border-yellow-500"
+                          placeholder="e.g. +91 98765 43210"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Section C: Itemization Table */}
+                <div className="bg-slate-950 border border-zinc-900 p-5 rounded-xl space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-zinc-900 pb-3">
+                    <div>
+                      <span className="text-[10px] text-yellow-500 font-extrabold uppercase tracking-widest font-mono">Step 2</span>
+                      <h4 className="font-heading font-bold text-sm text-white uppercase mt-0.5">Itemized Invoice Particulars</h4>
+                    </div>
+                    {/* Presets Helper */}
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newId = String(Date.now() + Math.random());
+                          setBItems([...bItems, { id: newId, description: 'Monthly Tuition Fee', amount: 1500 }]);
+                          setBPaidAmount((prev) => (Number(prev) || 0) + 1500);
+                        }}
+                        className="px-2.5 py-1 text-[9px] font-black bg-zinc-900 border border-zinc-800 hover:border-yellow-500 hover:text-yellow-500 text-zinc-400 rounded transition-all cursor-pointer uppercase"
+                      >
+                        + Monthly Fees (₹1500)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newId = String(Date.now() + Math.random());
+                          setBItems([...bItems, { id: newId, description: 'Karate Gi (Official Uniform)', amount: 1200 }]);
+                          setBPaidAmount((prev) => (Number(prev) || 0) + 1200);
+                        }}
+                        className="px-2.5 py-1 text-[9px] font-black bg-zinc-900 border border-zinc-800 hover:border-yellow-500 hover:text-yellow-500 text-zinc-400 rounded transition-all cursor-pointer uppercase"
+                      >
+                        + Karate Gi (₹1200)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newId = String(Date.now() + Math.random());
+                          setBItems([...bItems, { id: newId, description: 'Belt Grading Examination Fee', amount: 800 }]);
+                          setBPaidAmount((prev) => (Number(prev) || 0) + 800);
+                        }}
+                        className="px-2.5 py-1 text-[9px] font-black bg-zinc-900 border border-zinc-800 hover:border-yellow-500 hover:text-yellow-500 text-zinc-400 rounded transition-all cursor-pointer uppercase"
+                      >
+                        + Belt Exam (₹800)
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    {bItems.map((item, index) => (
+                      <div key={item.id} className="flex gap-4 items-center">
+                        <span className="text-[10px] font-mono font-bold text-zinc-550 w-6 text-center">#{index + 1}</span>
+                        <div className="flex-1">
+                          <input
+                            type="text"
+                            value={item.description}
+                            onChange={(e) => handleItemChange(item.id, 'description', e.target.value)}
+                            placeholder="Description (e.g. Monthly Tuition Fee - July)"
+                            className="w-full bg-slate-900 border border-zinc-800 rounded-lg px-3 py-2.5 text-xs text-white focus:outline-none focus:border-yellow-500"
+                            required
+                          />
+                        </div>
+                        <div className="w-32">
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-zinc-500">₹</span>
+                            <input
+                              type="number"
+                              value={item.amount || ''}
+                              onChange={(e) => handleItemChange(item.id, 'amount', Number(e.target.value))}
+                              placeholder="0"
+                              className="w-full bg-slate-900 border border-zinc-800 rounded-lg pl-6 pr-3 py-2.5 text-xs text-white focus:outline-none focus:border-yellow-500 font-mono text-right"
+                              required
+                            />
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveItem(item.id)}
+                          disabled={bItems.length === 1}
+                          className="p-2.5 border border-zinc-800 hover:border-red-500 hover:text-red-500 text-zinc-500 rounded-lg transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="pt-3 flex justify-start">
+                    <button
+                      type="button"
+                      onClick={handleAddItem}
+                      className="px-4 py-2 border border-zinc-800 hover:border-zinc-700 text-zinc-300 rounded-lg text-xs font-bold uppercase tracking-widest flex items-center gap-1.5 transition-all cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Add Custom Line Item</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Section D: Pricing Totals Bottom Sheet */}
+                <div className="bg-slate-950 border border-zinc-900 p-5 rounded-xl">
+                  <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                    <div className="flex-1 space-y-1.5">
+                      <label className="block text-[10px] font-mono text-zinc-400 font-extrabold uppercase tracking-widest">Receipt Remarks / Payment Details</label>
+                      <textarea
+                        value={bRemarks}
+                        onChange={(e) => setBRemarks(e.target.value)}
+                        placeholder="e.g. Received offline cash. Registration for upcoming state kumite tournament included."
+                        rows={3}
+                        className="w-full bg-slate-900 border border-zinc-800 rounded-lg px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-yellow-500 min-h-[72px]"
+                      />
+                    </div>
+
+                    <div className="w-full md:w-80 bg-zinc-900/40 border border-zinc-850 p-4 rounded-lg space-y-3.5">
+                      <div className="flex justify-between items-center text-xs text-zinc-400 font-bold border-b border-zinc-850/60 pb-2">
+                        <span>Invoice Subtotal:</span>
+                        <span className="font-mono text-sm text-white">₹{bItems.reduce((sum, i) => sum + (Number(i.amount) || 0), 0)}</span>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <div className="flex justify-between items-center">
+                          <label className="text-[10px] font-mono text-zinc-400 font-extrabold uppercase tracking-widest">Amount Paid (₹)</label>
+                          <button
+                            type="button"
+                            onClick={() => setBPaidAmount(bItems.reduce((sum, i) => sum + (Number(i.amount) || 0), 0))}
+                            className="text-[9px] font-bold text-yellow-500 hover:text-yellow-400 uppercase tracking-wider cursor-pointer"
+                          >
+                            Mark Fully Paid
+                          </button>
+                        </div>
+                        <input
+                          type="number"
+                          value={bPaidAmount === '' ? '' : bPaidAmount}
+                          onChange={(e) => setBPaidAmount(e.target.value === '' ? '' : Number(e.target.value))}
+                          className="w-full bg-slate-900 border border-zinc-800 rounded-lg px-3 py-2.5 text-xs text-white focus:outline-none focus:border-yellow-500 font-mono text-right font-black"
+                          required
+                        />
+                      </div>
+
+                      <div className="flex justify-between items-center text-xs text-zinc-400 font-bold pt-1.5">
+                        <span>Balance Due:</span>
+                        <span className="font-mono text-sm font-black text-[#FF3B3F]">
+                          ₹{bItems.reduce((sum, i) => sum + (Number(i.amount) || 0), 0) - (Number(bPaidAmount) || 0)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Form Actions */}
+                <div className="pt-4 border-t border-zinc-900 flex justify-end space-x-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsGeneratingReceipt(false);
+                      setBillError('');
+                    }}
+                    className="px-5 py-2.5 border border-zinc-800 hover:border-zinc-700 text-zinc-400 hover:text-white rounded-lg text-xs font-bold uppercase tracking-widest transition-all cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={billSaving}
+                    className="px-8 py-2.5 bg-[#FF3B3F] hover:bg-rose-500 text-white font-heading font-black rounded-lg text-xs uppercase tracking-widest flex items-center gap-1.5 transition-all shadow-md cursor-pointer disabled:opacity-50"
+                  >
+                    {billSaving ? (
+                      <>
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                        <span>Saving Receipt...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-3.5 h-3.5" />
+                        <span>Save & Generate Receipt</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        )}
+
       </div>
 
       {/* MODAL 1: Complete Admission File Profile Drawer */}
@@ -3406,6 +4453,347 @@ export default function AdminPanel() {
                 {confirmDialog.confirmText}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 5: Receipt Print/View Overlay */}
+      {selectedReceipt && (
+        <div className="fixed inset-0 z-55 overflow-y-auto bg-black/90 backdrop-blur-sm flex justify-center p-4 items-start sm:items-center no-print">
+          <div className="bg-slate-900 border border-zinc-850 w-full max-w-3xl rounded-2xl overflow-hidden shadow-2xl relative my-6 sm:my-12">
+            <div className="absolute top-0 left-0 right-0 h-1 bg-yellow-500" />
+            
+            {/* Header / Actions toolbar */}
+            <div className="px-6 py-4 border-b border-zinc-850 flex items-center justify-between no-print">
+              <span className="font-heading font-black text-xs uppercase tracking-widest text-zinc-100 flex items-center gap-1.5">
+                <FileText className="w-4 h-4 text-yellow-500" />
+                <span>Fees Receipt Preview</span>
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-heading font-black text-[10px] uppercase tracking-widest px-4 py-2 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer shadow-md"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  <span>Print Receipt</span>
+                </button>
+                <button
+                  type="button"
+                  disabled={downloadingPDF}
+                  onClick={handleDownloadPDF}
+                  className="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-heading font-black text-[10px] uppercase tracking-widest px-4 py-2 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer shadow-md disabled:opacity-50"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>{downloadingPDF ? 'Downloading...' : 'Download PDF'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedReceipt(null)}
+                  className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-heading font-black text-[10px] uppercase tracking-widest px-4 py-2 rounded-lg transition-all cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+
+            {/* Receipt container shown on screen */}
+            <div className="p-5 bg-slate-955 max-h-[70vh] overflow-y-auto no-print">
+              <p className="text-zinc-500 text-[10px] text-center mb-3">This is a digital preview. Click "Print / Download PDF" to save or print on your physical printer.</p>
+              
+              {/* Paper Look-alike for preview */}
+              <div className="bg-white text-slate-900 p-6 rounded-xl shadow-md space-y-4 max-w-2xl mx-auto font-sans">
+                {/* Top Registration Bar */}
+                <div className="flex justify-between items-center text-[8.5px] font-mono text-zinc-500 border-b border-zinc-150 pb-1 mb-1">
+                  <span className="font-bold tracking-wider text-zinc-600">CLUB REGISTER NO: PU000121240</span>
+                  <span className="tracking-widest uppercase font-bold text-zinc-400">Official Fees Receipt</span>
+                </div>
+
+                {/* Brand Header */}
+                <div className="flex items-center justify-between border-b border-zinc-200 pb-3">
+                  <div className="flex items-center space-x-3">
+                    <img
+                      src="https://res.cloudinary.com/dlzdagymx/image/upload/q_auto/f_auto/v1781350907/logo_new_bgwsw9.jpg"
+                      alt="Lions Karate Club Pune Logo"
+                      className="w-12 h-12 rounded-full object-cover border border-zinc-200"
+                      referrerPolicy="no-referrer"
+                    />
+                    <div>
+                      <h2 className="font-heading font-black text-base tracking-tight text-slate-950 uppercase">LIONS KARATE CLUB PUNE</h2>
+                      <p className="text-[9px] text-zinc-500 font-mono mt-0.5">Approved Dojo • Affiliated with Karate India Association</p>
+                      <p className="text-[8px] text-zinc-405 mt-0.5">Phone: +91 90496 88172 | Email: LIONSKARATECLUBPUNE09@gmail.com</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="inline-block bg-zinc-50 border border-zinc-200 rounded px-2.5 py-1 text-left">
+                      <span className="text-[8px] text-zinc-400 uppercase block font-mono tracking-wider font-bold">RECEIPT NO</span>
+                      <strong className="text-xs font-mono font-black text-slate-950 block">LKC-{selectedReceipt.receiptNo}</strong>
+                    </div>
+                    <div className="text-[9px] text-zinc-500 mt-1.5 font-mono">Date: {new Date(selectedReceipt.date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}</div>
+                  </div>
+                </div>
+
+                {/* Student Particulars Grid */}
+                <div className="bg-zinc-50/70 border border-zinc-150 p-3 rounded-lg grid grid-cols-2 gap-3 text-[10px] text-zinc-750">
+                  <div className="space-y-1">
+                    <div>
+                      <span className="text-[8.5px] text-zinc-400 uppercase block font-mono">Student Name</span>
+                      <strong className="text-slate-950 uppercase text-xs">{selectedReceipt.studentName}</strong>
+                    </div>
+                    {selectedReceipt.studentId && (
+                      <div>
+                        <span className="text-[8.5px] text-zinc-400 uppercase block font-mono">Roll Student ID</span>
+                        <span className="font-mono font-bold text-slate-800">{selectedReceipt.studentId}</span>
+                      </div>
+                    )}
+                    {selectedReceipt.parentName && (
+                      <div>
+                        <span className="text-[8.5px] text-zinc-400 uppercase block font-mono">Parent / Guardian Name</span>
+                        <span className="font-bold text-slate-800 uppercase">{selectedReceipt.parentName}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-1 text-right">
+                    <div>
+                      <span className="text-[8.5px] text-zinc-400 uppercase block font-mono">Contact Details</span>
+                      <span className="font-bold text-slate-800">{selectedReceipt.phone || 'N/A'}</span>
+                    </div>
+                    <div>
+                      <span className="text-[8.5px] text-zinc-400 uppercase block font-mono">Training Program / Dojo Batch</span>
+                      <span className="font-bold text-slate-800 uppercase">{selectedReceipt.batch || 'Regular Dojo Batch'}</span>
+                    </div>
+                    <div>
+                      <span className="text-[8.5px] text-zinc-400 uppercase block font-mono">Karate Belt Level Rank</span>
+                      <span className="font-bold text-slate-800 uppercase text-[9.5px]">{selectedReceipt.beltLevel}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Items Invoice Table */}
+                <div className="border border-zinc-250 rounded-lg overflow-hidden">
+                  <table className="w-full text-left text-[10px] border-collapse">
+                    <thead>
+                      <tr className="bg-zinc-100/85 border-b border-zinc-250 text-zinc-650 font-bold uppercase text-[8.5px] tracking-wider">
+                        <th className="py-1.5 px-3 w-12 text-center">S.No</th>
+                        <th className="py-1.5 px-3">Fee Particulars Description</th>
+                        <th className="py-1.5 px-3 text-right w-32">Amount (₹)</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-zinc-200">
+                      {selectedReceipt.items.map((item, index) => (
+                        <tr key={item.id || index} className="text-slate-805">
+                          <td className="py-1.5 px-3 text-center font-mono text-zinc-400">{index + 1}</td>
+                          <td className="py-1.5 px-3 font-medium uppercase">{item.description}</td>
+                          <td className="py-1.5 px-3 text-right font-mono font-bold">₹{item.amount.toLocaleString('en-IN')}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Pricing summary */}
+                <div className="flex justify-between items-start pt-1.5">
+                  <div className="max-w-[340px] text-[9.5px] text-zinc-500 italic space-y-1">
+                    {selectedReceipt.remarks && (
+                      <div>
+                        <strong className="text-zinc-600 uppercase font-mono not-italic block text-[7.5px] tracking-widest font-bold">Remarks & payment details:</strong>
+                        <span>{selectedReceipt.remarks}</span>
+                      </div>
+                    )}
+                    <div className="pt-1">
+                      <strong className="text-zinc-600 uppercase font-mono not-italic block text-[7.5px] tracking-widest font-bold">Disclaimer:</strong>
+                      <span>This is an official computer-generated fee receipt. Paid amount is non-refundable and non-transferable.</span>
+                    </div>
+                  </div>
+
+                  <div className="w-56 bg-zinc-50/70 border border-zinc-200 p-3 rounded-lg space-y-1.5 text-[11px]">
+                    <div className="flex justify-between font-medium text-zinc-600">
+                      <span>Total Invoice:</span>
+                      <span className="font-mono font-bold text-slate-900">₹{selectedReceipt.totalAmount.toLocaleString('en-IN')}</span>
+                    </div>
+                    <div className="flex justify-between font-bold text-slate-900 border-b border-zinc-250 pb-1.5">
+                      <span>Amount Received ({selectedReceipt.paymentMode}):</span>
+                      <span className="font-mono">₹{selectedReceipt.paidAmount.toLocaleString('en-IN')}</span>
+                    </div>
+                    <div className="flex justify-between items-center pt-1">
+                      <span className="font-bold text-zinc-600">Balance Due:</span>
+                      <span className="font-mono font-black text-[#FF3B3F] text-xs">₹{selectedReceipt.balanceAmount.toLocaleString('en-IN')}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Signature Block */}
+                <div className="pt-4 flex justify-between text-[9.5px] text-zinc-500 border-t border-dashed border-zinc-200">
+                  <div className="text-center w-36">
+                    <div className="h-10 flex items-center justify-center relative">
+                      <img
+                        src="https://res.cloudinary.com/dlzdagymx/image/upload/q_auto/f_auto/v1781350907/logo_new_bgwsw9.jpg"
+                        alt="Lions Karate Club Pune Logo Seal"
+                        className="w-9 h-9 rounded-full object-cover border border-[#FF3B3F]/45 opacity-80 filter saturate-150 rotate-[-8deg] mix-blend-multiply"
+                        referrerPolicy="no-referrer"
+                      />
+                      <div className="absolute -bottom-1 text-[7px] font-sans font-black text-[#FF3B3F] bg-white/95 px-1 py-0.5 border border-[#FF3B3F]/35 rounded uppercase tracking-wider scale-90 rotate-[10deg]">
+                        LKC SEAL
+                      </div>
+                    </div>
+                    <div className="border-t border-zinc-200 mt-1 pt-0.5 font-mono uppercase text-[7.5px] font-bold tracking-wider text-zinc-400">Chief Dojo Seal</div>
+                  </div>
+
+                  <div className="text-center w-36">
+                    <div className="h-8 flex items-end justify-center font-kanji font-black text-zinc-800 text-xs tracking-wide">Jadhav Sensei</div>
+                    <div className="border-t border-zinc-200 mt-1 pt-0.5 font-mono uppercase text-[7.5px] font-bold tracking-wider text-zinc-400">Authorized Signature</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Print Container specifically formatted for A4 PDF download */}
+            <div id="printable-receipt" className="hidden print:block bg-white text-slate-900 p-8 space-y-4 font-sans w-[210mm] text-[10px]">
+              {/* Top Registration Bar */}
+              <div className="flex justify-between items-center text-[8.5px] font-mono text-zinc-500 border-b border-zinc-200 pb-1 mb-1">
+                <span className="font-bold tracking-wider text-zinc-600">CLUB REGISTER NO: PU000121240</span>
+                <span className="tracking-widest uppercase font-bold text-zinc-400">Official Fees Receipt</span>
+              </div>
+
+              {/* Brand Header */}
+              <div className="flex items-center justify-between border-b border-zinc-300 pb-3">
+                <div className="flex items-center space-x-3.5">
+                  <img
+                    src="https://res.cloudinary.com/dlzdagymx/image/upload/q_auto/f_auto/v1781350907/logo_new_bgwsw9.jpg"
+                    alt="Lions Karate Club Pune Logo"
+                    className="w-12 h-12 rounded-full object-cover border border-zinc-250"
+                    referrerPolicy="no-referrer"
+                  />
+                  <div>
+                    <h1 className="font-heading font-black text-base tracking-tight text-slate-950 uppercase">LIONS KARATE CLUB PUNE</h1>
+                    <p className="text-[9px] text-zinc-500 font-mono mt-0.5">Approved Karate Dojo • Affiliated with Karate India Association</p>
+                    <p className="text-[8px] text-zinc-455 mt-0.5">Phone: +91 90496 88172 | Email: LIONSKARATECLUBPUNE09@gmail.com</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="inline-block bg-zinc-50 border border-zinc-250 rounded px-2.5 py-1 text-left">
+                    <span className="text-[8px] text-zinc-400 uppercase block font-mono tracking-wider font-bold">RECEIPT NO</span>
+                    <strong className="text-xs font-mono font-black text-slate-950 block">LKC-{selectedReceipt.receiptNo}</strong>
+                  </div>
+                  <div className="text-[9px] text-zinc-550 mt-1.5 font-mono">Date: {new Date(selectedReceipt.date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}</div>
+                </div>
+              </div>
+
+              {/* Student Particulars Grid */}
+              <div className="bg-zinc-50 border border-zinc-250 p-3 rounded-lg grid grid-cols-2 gap-3 text-[10px] text-zinc-700 font-sans">
+                <div className="space-y-1">
+                  <div>
+                    <span className="text-[8.5px] text-zinc-500 uppercase block font-mono">Student Name</span>
+                    <strong className="text-slate-950 uppercase text-xs">{selectedReceipt.studentName}</strong>
+                  </div>
+                  {selectedReceipt.studentId && (
+                    <div>
+                      <span className="text-[8.5px] text-zinc-500 uppercase block font-mono">Roll Student ID</span>
+                      <span className="font-mono font-bold text-slate-800">{selectedReceipt.studentId}</span>
+                    </div>
+                  )}
+                  {selectedReceipt.parentName && (
+                    <div>
+                      <span className="text-[8.5px] text-zinc-500 uppercase block font-mono">Parent / Guardian Name</span>
+                      <span className="font-bold text-slate-800 uppercase">{selectedReceipt.parentName}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-1 text-right">
+                  <div>
+                    <span className="text-[8.5px] text-zinc-500 uppercase block font-mono">Contact Details</span>
+                    <span className="font-bold text-slate-800">{selectedReceipt.phone || 'N/A'}</span>
+                  </div>
+                  <div>
+                    <span className="text-[8.5px] text-zinc-500 uppercase block font-mono">Training Program / Dojo Batch</span>
+                    <span className="font-bold text-slate-800 uppercase">{selectedReceipt.batch || 'Regular Dojo Batch'}</span>
+                  </div>
+                  <div>
+                    <span className="text-[8.5px] text-zinc-500 uppercase block font-mono">Karate Belt Level Rank</span>
+                    <span className="font-bold text-slate-800 uppercase text-[9.5px]">{selectedReceipt.beltLevel}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Items Invoice Table */}
+              <div className="border border-zinc-250 rounded-lg overflow-hidden">
+                <table className="w-full text-left text-[10px] border-collapse">
+                  <thead>
+                    <tr className="bg-zinc-50 border-b border-zinc-250 text-zinc-800 font-bold uppercase text-[8.5px] tracking-wider">
+                      <th className="py-1.5 px-3 w-12 text-center">S.No</th>
+                      <th className="py-1.5 px-3">Fee Particulars Description</th>
+                      <th className="py-1.5 px-3 text-right w-32">Amount (₹)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-zinc-200">
+                    {selectedReceipt.items.map((item, index) => (
+                      <tr key={item.id || index} className="text-slate-900">
+                        <td className="py-1.5 px-3 text-center font-mono text-zinc-400">{index + 1}</td>
+                        <td className="py-1.5 px-3 font-medium uppercase">{item.description}</td>
+                        <td className="py-1.5 px-3 text-right font-mono font-bold">₹{item.amount.toLocaleString('en-IN')}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pricing summary */}
+              <div className="flex justify-between items-start pt-1.5">
+                <div className="max-w-[340px] text-[9.5px] text-zinc-550 italic space-y-1">
+                  {selectedReceipt.remarks && (
+                    <div>
+                      <strong className="text-zinc-700 uppercase font-mono not-italic block text-[7.5px] tracking-widest font-bold">Remarks & payment details:</strong>
+                      <span>{selectedReceipt.remarks}</span>
+                    </div>
+                  )}
+                  <div className="pt-1">
+                    <strong className="text-zinc-700 uppercase font-mono not-italic block text-[7.5px] tracking-widest font-bold">Disclaimer:</strong>
+                    <span>This is an official computer-generated fee receipt. Paid amount is non-refundable and non-transferable.</span>
+                  </div>
+                </div>
+
+                <div className="w-56 bg-zinc-50 border border-zinc-250 p-3 rounded-lg space-y-1.5 text-[11px]">
+                  <div className="flex justify-between font-medium text-zinc-600">
+                    <span>Total Invoice:</span>
+                    <span className="font-mono font-bold text-slate-900">₹{selectedReceipt.totalAmount.toLocaleString('en-IN')}</span>
+                  </div>
+                  <div className="flex justify-between font-bold text-slate-900 border-b border-zinc-250 pb-1.5">
+                    <span>Amount Received ({selectedReceipt.paymentMode}):</span>
+                    <span className="font-mono">₹{selectedReceipt.paidAmount.toLocaleString('en-IN')}</span>
+                  </div>
+                  <div className="flex justify-between items-center pt-1">
+                    <span className="font-bold text-zinc-600">Balance Due:</span>
+                    <span className="font-mono font-black text-slate-950 text-xs">₹{selectedReceipt.balanceAmount.toLocaleString('en-IN')}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Signature Block */}
+              <div className="pt-4 flex justify-between text-[9.5px] text-zinc-550 border-t border-dashed border-zinc-300">
+                <div className="text-center w-36">
+                  <div className="h-10 flex items-center justify-center relative">
+                    <img
+                      src="https://res.cloudinary.com/dlzdagymx/image/upload/q_auto/f_auto/v1781350907/logo_new_bgwsw9.jpg"
+                      alt="Lions Karate Club Pune Logo Seal"
+                      className="w-10 h-10 rounded-full object-cover border border-[#FF3B3F]/55 opacity-90 filter saturate-150 rotate-[-8deg]"
+                      referrerPolicy="no-referrer"
+                    />
+                    <div className="absolute -bottom-1 text-[7px] font-sans font-black text-[#FF3B3F] bg-white px-1.5 py-0.5 border border-[#FF3B3F]/55 rounded uppercase tracking-wider scale-90 rotate-[10deg]">
+                      LKC SEAL
+                    </div>
+                  </div>
+                  <div className="border-t border-zinc-250 mt-1 pt-0.5 font-mono uppercase text-[7.5px] font-bold tracking-wider text-zinc-500">Chief Dojo Seal</div>
+                </div>
+
+                <div className="text-center w-36">
+                  <div className="h-8 flex items-end justify-center font-kanji font-black text-zinc-900 text-xs tracking-wide">Jadhav Sensei</div>
+                  <div className="border-t border-zinc-250 mt-1 pt-0.5 font-mono uppercase text-[7.5px] font-bold tracking-wider text-zinc-500">Authorized Signature</div>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
       )}

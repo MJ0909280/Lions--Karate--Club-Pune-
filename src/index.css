@@ -69,12 +69,12 @@ body {
   opacity: 1;
 }
 
-/* Print CSS setup for downloading & printing the ID Card */
+/* Print CSS setup for downloading & printing the ID Card & Receipt */
 @media print {
   body * {
     visibility: hidden;
   }
-  #printable-id-card, #printable-id-card * {
+  #printable-id-card, #printable-id-card *, #printable-receipt, #printable-receipt * {
     visibility: visible;
   }
   #printable-id-card {
@@ -86,6 +86,19 @@ body {
     border: 6px solid #000000 !important;
     background-color: #ffffff !important;
     color: #000000 !important;
+  }
+  #printable-receipt {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    transform: translateX(-50%);
+    width: 210mm !important; /* standard A4 width */
+    max-width: 100% !important;
+    box-shadow: none !important;
+    border: none !important;
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    padding: 10px !important;
   }
   .no-print {
     display: none !important;
