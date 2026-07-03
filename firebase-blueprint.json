@@ -150,6 +150,25 @@
         "createdAt": { "type": "number", "description": "Timestamp created" }
       },
       "required": ["receiptNo", "date", "studentName", "paymentMode", "totalAmount", "paidAmount", "balanceAmount", "createdAt"]
+    },
+    "parentQuery": {
+      "title": "ParentQuery",
+      "description": "Represents an online enquiry or query submitted by a parent.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique auto-generated ID" },
+        "parentName": { "type": "string", "description": "Full name of the parent" },
+        "childName": { "type": "string", "description": "Name of the child (optional)" },
+        "phone": { "type": "string", "description": "Contact phone number" },
+        "email": { "type": "string", "description": "Email address (optional)" },
+        "queryType": { "type": "string", "description": "Category of query (e.g. Admission, Fees, Batch, Exam)" },
+        "message": { "type": "string", "description": "Detailed query text" },
+        "status": { "type": "string", "enum": ["new", "in_progress", "resolved"], "description": "Resolution status" },
+        "followUpNotes": { "type": "string", "description": "Internal admin-only notes (optional)" },
+        "createdAt": { "type": "number", "description": "Timestamp created" },
+        "updatedAt": { "type": "number", "description": "Timestamp updated" }
+      },
+      "required": ["parentName", "phone", "queryType", "message", "status", "createdAt"]
     }
   },
   "firestore": {
@@ -184,6 +203,10 @@
     "/receipts/{receiptId}": {
       "schema": "receipt",
       "description": "Store generated fee and billing receipts."
+    },
+    "/parent_queries/{queryId}": {
+      "schema": "parentQuery",
+      "description": "Store online enquiries submitted by parents."
     }
   }
 }

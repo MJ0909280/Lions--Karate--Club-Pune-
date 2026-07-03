@@ -1,9 +1,75 @@
-import { useState, useEffect } from 'react';
-import { Phone, Mail, Clock, ChevronDown, HelpCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Phone, Mail, Clock, ChevronDown, HelpCircle, Send, CheckCircle2, MessageSquare } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { collection, addDoc } from 'firebase/firestore';
+import { db, triggerWhatsAppNotification } from '../firebase';
 
 export default function Contact() {
   const [openFaqId, setOpenFaqId] = useState<number | null>(null);
+
+  // Parent query state variables
+  const [parentName, setParentName] = useState('');
+  const [childName, setChildName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
+  const [queryType, setQueryType] = useState('General Query');
+  const [message, setMessage] = useState('');
+  
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+
+  const handleSubmitQuery = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!parentName.trim() || !phone.trim() || !message.trim()) {
+      setSubmitError('Please fill in all required fields (Parent Name, Phone, and Message).');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setSubmitError('');
+
+    try {
+      const queryPayload = {
+        parentName: parentName.trim(),
+        childName: childName.trim() || '',
+        phone: phone.trim(),
+        email: email.trim() || '',
+        queryType,
+        message: message.trim(),
+        status: 'new' as const,
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+      };
+
+      await addDoc(collection(db, 'parent_queries'), queryPayload);
+
+      // Trigger automatic real-time WhatsApp alert
+      await triggerWhatsAppNotification('inquiry', {
+        fullName: parentName.trim(),
+        phone: phone.trim(),
+        batch: queryType,
+        branch: `Child: ${childName.trim() || 'N/A'}. Msg: ${message.trim().substring(0, 50)}`
+      });
+
+      setSubmitSuccess(true);
+      setParentName('');
+      setChildName('');
+      setPhone('');
+      setEmail('');
+      setQueryType('General Query');
+      setMessage('');
+
+      setTimeout(() => {
+        setSubmitSuccess(false);
+      }, 5000);
+    } catch (err: any) {
+      console.error('Error submitting query:', err);
+      setSubmitError('Failed to send enquiry. Please try again or call us directly.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const contactDetails = [
     {
@@ -97,64 +163,240 @@ export default function Contact() {
         </div>
 
         {/* Info Grid: Center contact workspace */}
-        <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch pt-4 mb-16">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch pt-4 mb-16">
           
-          {/* Left Column: Direct channels and descriptions */}
-          <div className="bg-[#0f0e0f] border border-zinc-900 p-6 sm:p-8 rounded-2xl flex flex-col justify-between space-y-6">
-            <div className="space-y-3">
-              <h3 className="font-title text-base sm:text-lg font-extrabold text-white uppercase tracking-wider">Contact Channels</h3>
-              <p className="text-zinc-550 text-xs leading-relaxed font-sans">
-                Whether you have queries regarding children's developmental programs, self-defense packages, belt rank certificates, or tournament coaching under Shihan, we are here to support your child's physical development.
-              </p>
+          {/* Left Column (span 5): Contact Channels and Operating Hours stacked */}
+          <div className="lg:col-span-5 flex flex-col gap-6">
+            
+            {/* Contact Channels card */}
+            <div className="bg-[#0f0e0f] border border-zinc-900 p-6 rounded-2xl flex flex-col justify-between space-y-6">
+              <div className="space-y-3">
+                <h3 className="font-title text-base sm:text-lg font-extrabold text-white uppercase tracking-wider flex items-center gap-2">
+                  <span className="w-1.5 h-4 bg-yellow-500 rounded-sm"></span>
+                  Contact Channels
+                </h3>
+                <p className="text-zinc-500 text-xs leading-relaxed font-sans">
+                  Whether you have queries regarding children's programs, fees, trial drills, or belt rank tests, our team is happy to assist.
+                </p>
+              </div>
+
+              {/* Direct buttons/cards */}
+              <div className="space-y-4">
+                {contactDetails.map((item, id) => (
+                  <a 
+                    key={id}
+                    href={item.clickUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center space-x-4 bg-zinc-950/50 border border-zinc-900 p-4 rounded-xl hover:border-yellow-500/30 hover:bg-zinc-900/40 transition-all cursor-pointer group"
+                  >
+                    <div className="bg-slate-900/80 p-2.5 rounded-lg border border-zinc-800 group-hover:text-yellow-400 transition-colors shrink-0">
+                      {item.icon}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h4 className="font-heading font-black text-[10px] uppercase text-zinc-500 tracking-wider">
+                        {item.title}
+                      </h4>
+                      <span className="text-zinc-200 text-xs sm:text-sm font-semibold mt-0.5 block group-hover:text-yellow-500 transition-colors break-all">
+                        {item.val === "+91 90496 88172_admissions" ? "9049688172" : item.val}
+                      </span>
+                    </div>
+                  </a>
+                ))}
+              </div>
             </div>
 
-            {/* Direct buttons/cards */}
-            <div className="space-y-4">
-              {contactDetails.map((item, id) => (
-                <a 
-                  key={id}
-                  href={item.clickUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center space-x-4 bg-zinc-950/50 border border-zinc-900 p-4 rounded-xl hover:border-yellow-500/30 hover:bg-zinc-900/40 transition-all cursor-pointer group"
-                >
-                  <div className="bg-slate-900/80 p-2.5 rounded-lg border border-zinc-800 group-hover:text-yellow-400 transition-colors shrink-0">
-                    {item.icon}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h4 className="font-heading font-black text-[10px] uppercase text-zinc-500 tracking-wider">
-                      {item.title}
-                    </h4>
-                    <span className="text-zinc-200 text-xs sm:text-sm font-semibold mt-0.5 block group-hover:text-yellow-500 transition-colors break-all">
-                      {item.val === "+91 90496 88172_admissions" ? "9049688172" : item.val}
+            {/* Training periods card */}
+            <div className="bg-[#0f0e0f] border border-zinc-900 p-6 rounded-2xl flex flex-col justify-center">
+              <div className="flex items-center space-x-2 text-yellow-500 mb-4">
+                <Clock className="w-5 h-5 animate-pulse" />
+                <h3 className="font-title text-base sm:text-lg font-extrabold text-white uppercase tracking-wider">TRAINING PERIODS</h3>
+              </div>
+              
+              <p className="text-zinc-500 text-xs leading-relaxed font-sans mb-4">
+                Selected program batches are available at dedicated times throughout the week.
+              </p>
+
+              <div className="space-y-2.5">
+                {operatingHours.map((oh, i) => (
+                  <div key={i} className="flex justify-between items-center text-xs py-2 border-b border-zinc-900/80 font-sans last:border-0 last:pb-0">
+                    <span className="font-medium text-zinc-450">{oh.day}</span>
+                    <span className="font-mono text-[11px] text-zinc-400 bg-zinc-950/80 border border-zinc-900/80 px-2 py-0.5 rounded">
+                      {oh.hours}
                     </span>
                   </div>
-                </a>
-              ))}
+                ))}
+              </div>
             </div>
+
           </div>
 
-          {/* Right Column: Training periods */}
-          <div className="bg-[#0f0e0f] border border-zinc-900 p-6 sm:p-8 rounded-2xl flex flex-col justify-center">
-            <div className="flex items-center space-x-2 text-yellow-500 mb-6">
-              <Clock className="w-5 h-5 animate-pulse" />
-              <h3 className="font-title text-base sm:text-lg font-extrabold text-white uppercase tracking-wider">TRAINING PERIODS</h3>
-            </div>
-            
-            <p className="text-zinc-550 text-xs leading-relaxed font-sans mb-6">
-              Please note our scheduling framework. Selected program batches are available at dedicated times throughout the week.
-            </p>
+          {/* Right Column (span 7): Parents Quick Enquiry Form */}
+          <div className="lg:col-span-7 bg-[#0f0e0f] border border-zinc-900 p-6 sm:p-8 rounded-2xl relative flex flex-col justify-between">
+            <AnimatePresence mode="wait">
+              {submitSuccess ? (
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  className="flex flex-col items-center justify-center text-center py-12 px-4 h-full"
+                >
+                  <div className="bg-emerald-500/10 text-emerald-500 p-4 rounded-full border border-emerald-500/20 mb-6">
+                    <CheckCircle2 className="w-12 h-12" />
+                  </div>
+                  <h3 className="font-title text-lg sm:text-2xl font-black text-white uppercase tracking-wider mb-3">
+                    Query Submitted Successfully!
+                  </h3>
+                  <p className="text-zinc-400 text-xs sm:text-sm max-w-md leading-relaxed font-sans">
+                    Thank you! Your online query has been registered in our portal. Dojo Administrators and Coaches have been alerted via WhatsApp and will connect with you shortly.
+                  </p>
+                  <button
+                    onClick={() => setSubmitSuccess(false)}
+                    className="mt-8 font-heading font-extrabold text-xs uppercase tracking-widest bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-white px-5 py-3 rounded-lg cursor-pointer transition-colors"
+                  >
+                    Send Another Query
+                  </button>
+                </motion.div>
+              ) : (
+                <motion.form 
+                  onSubmit={handleSubmitQuery}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="space-y-4"
+                >
+                  <div className="flex items-center space-x-2 text-yellow-500 mb-1">
+                    <MessageSquare className="w-5 h-5" />
+                    <h3 className="font-title text-base sm:text-lg font-extrabold text-white uppercase tracking-wider">
+                      Parents Online Query Desk
+                    </h3>
+                  </div>
+                  <p className="text-zinc-500 text-xs leading-relaxed font-sans mb-4">
+                    Have questions about fees, timings, or belts? Type them in below. Submissions are processed instantly and are reviewed directly by the chief administrators.
+                  </p>
 
-            <div className="space-y-3">
-              {operatingHours.map((oh, i) => (
-                <div key={i} className="flex justify-between items-center text-xs py-2.5 border-b border-zinc-900/85 font-sans">
-                  <span className="font-medium text-zinc-350">{oh.day}</span>
-                  <span className="font-mono text-zinc-400 bg-zinc-950/80 border border-zinc-900/80 px-2.5 py-1 rounded">
-                    {oh.hours}
-                  </span>
-                </div>
-              ))}
-            </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Parent Name */}
+                    <div>
+                      <label className="block text-[10px] font-mono text-zinc-500 uppercase tracking-wider mb-1.5 font-bold">
+                        Parent / Guardian Name <span className="text-red-500">*</span>
+                      </label>
+                      <input 
+                        type="text"
+                        value={parentName}
+                        onChange={(e) => setParentName(e.target.value)}
+                        placeholder="e.g. Ramesh Kumar"
+                        className="w-full text-xs font-sans text-zinc-200 bg-zinc-950/80 border border-zinc-900 rounded-lg p-3 focus:border-yellow-500/50 focus:outline-none focus:ring-0 transition-colors"
+                        required
+                      />
+                    </div>
+
+                    {/* Student Name */}
+                    <div>
+                      <label className="block text-[10px] font-mono text-zinc-500 uppercase tracking-wider mb-1.5 font-bold">
+                        Child's Name <span className="text-zinc-650 text-[9px] font-normal">(Optional)</span>
+                      </label>
+                      <input 
+                        type="text"
+                        value={childName}
+                        onChange={(e) => setChildName(e.target.value)}
+                        placeholder="e.g. Aarav Kumar"
+                        className="w-full text-xs font-sans text-zinc-200 bg-zinc-950/80 border border-zinc-900 rounded-lg p-3 focus:border-yellow-500/50 focus:outline-none focus:ring-0 transition-colors"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Phone Number */}
+                    <div>
+                      <label className="block text-[10px] font-mono text-zinc-500 uppercase tracking-wider mb-1.5 font-bold">
+                        Contact Number <span className="text-red-500">*</span>
+                      </label>
+                      <input 
+                        type="tel"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        placeholder="10-digit mobile number"
+                        className="w-full text-xs font-sans text-zinc-200 bg-zinc-950/80 border border-zinc-900 rounded-lg p-3 focus:border-yellow-500/50 focus:outline-none focus:ring-0 transition-colors"
+                        required
+                      />
+                    </div>
+
+                    {/* Email Address */}
+                    <div>
+                      <label className="block text-[10px] font-mono text-zinc-500 uppercase tracking-wider mb-1.5 font-bold">
+                        Email Address <span className="text-zinc-650 text-[9px] font-normal">(Optional)</span>
+                      </label>
+                      <input 
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="name@domain.com"
+                        className="w-full text-xs font-sans text-zinc-200 bg-zinc-950/80 border border-zinc-900 rounded-lg p-3 focus:border-yellow-500/50 focus:outline-none focus:ring-0 transition-colors"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Query Type */}
+                  <div>
+                    <label className="block text-[10px] font-mono text-zinc-500 uppercase tracking-wider mb-1.5 font-bold">
+                      Query Topic / category <span className="text-red-500">*</span>
+                    </label>
+                    <select 
+                      value={queryType}
+                      onChange={(e) => setQueryType(e.target.value)}
+                      className="w-full text-xs font-sans text-zinc-300 bg-zinc-950 border border-zinc-900 rounded-lg p-3 focus:border-yellow-500/50 focus:outline-none focus:ring-0 transition-colors cursor-pointer"
+                    >
+                      <option value="General Query">General Query & Timings</option>
+                      <option value="Admission Enquiry">Admission & Trial Sessions</option>
+                      <option value="Fees & Billing Query">Monthly Tuition & Fees Structure</option>
+                      <option value="Belt Exam & Promotions">Belt Grading Exams & Promotion</option>
+                      <option value="Complaints or Feedback">Complaints or Feedback</option>
+                      <option value="Other">Other Query</option>
+                    </select>
+                  </div>
+
+                  {/* Message */}
+                  <div>
+                    <label className="block text-[10px] font-mono text-zinc-500 uppercase tracking-wider mb-1.5 font-bold">
+                      Detail Query / Questions <span className="text-red-500">*</span>
+                    </label>
+                    <textarea 
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      placeholder="Write your query or message in detail so our head instructor can prepare a helpful answer before calling you back..."
+                      rows={4}
+                      className="w-full text-xs font-sans text-zinc-200 bg-zinc-950/80 border border-zinc-900 rounded-lg p-3 focus:border-yellow-500/50 focus:outline-none focus:ring-0 transition-colors resize-none"
+                      required
+                    ></textarea>
+                  </div>
+
+                  {submitError && (
+                    <p className="text-red-500 font-sans text-[11px] font-semibold bg-red-500/5 border border-red-500/10 p-2.5 rounded-lg">
+                      {submitError}
+                    </p>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="w-full inline-flex items-center justify-center gap-2 font-heading font-black text-xs text-slate-950 bg-yellow-500 hover:bg-yellow-400 disabled:opacity-50 px-5 py-3.5 rounded-lg shadow-lg hover:shadow-yellow-500/20 active:scale-98 transition-all cursor-pointer uppercase tracking-wider"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <div className="w-3.5 h-3.5 border-2 border-slate-950 border-t-transparent rounded-full animate-spin"></div>
+                        <span>Submitting Query...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-3.5 h-3.5" />
+                        <span>Submit Enquiry Online</span>
+                      </>
+                    )}
+                  </button>
+                </motion.form>
+              )}
+            </AnimatePresence>
           </div>
 
         </div>

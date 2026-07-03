@@ -81,5 +81,13 @@ service cloud.firestore {
       // Only authorized admin is allowed to read, write, update or delete receipts
       allow get, list, create, update, delete: if isAdmin();
     }
+
+    // Parent Queries collection rules
+    match /parent_queries/{queryId} {
+      // Anyone can submit a query online
+      allow create: if true;
+      // Only admin can read, update, or delete parent queries
+      allow get, list, update, delete: if isAdmin();
+    }
   }
 }

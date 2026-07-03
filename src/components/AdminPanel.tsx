@@ -19,7 +19,7 @@ import {
   User
 } from 'firebase/auth';
 import { db, auth, handleFirestoreError, OperationType, checkFirestoreConnection } from '../firebase';
-import { Admission, BatchInfo, BATCH_TIMINGS, DOJO_BRANCHES, BELT_LEVELS, Receipt, ReceiptItem } from '../types';
+import { Admission, BatchInfo, BATCH_TIMINGS, DOJO_BRANCHES, BELT_LEVELS, Receipt, ReceiptItem, ParentQuery } from '../types';
 import IDCard from './IDCard';
 import SEOVisibilityConsole from './SEOVisibilityConsole';
 import { 
@@ -54,7 +54,9 @@ import {
   Camera,
   Sparkles,
   Download,
-  Printer
+  Printer,
+  MessageSquare,
+  CheckCircle2
 } from 'lucide-react';
 
 // @ts-ignore
@@ -285,7 +287,65 @@ export default function AdminPanel() {
   }, []);
 
   // Tab navigation console state
-  const [adminTab, setAdminTab] = useState<'admissions' | 'batches' | 'site_settings' | 'exams' | 'seo_ai' | 'bills'>('admissions');
+  const [adminTab, setAdminTab] = useState<'parent_queries' | 'admissions' | 'batches' | 'site_settings' | 'exams' | 'seo_ai' | 'bills'>('admissions');
+
+  // Parents Online Queries States
+  const [parentQueries, setParentQueries] = useState<ParentQuery[]>([]);
+  const [parentQueriesLoading, setParentQueriesLoading] = useState(false);
+  const [selectedQuery, setSelectedQuery] = useState<ParentQuery | null>(null);
+  const [querySearch, setQuerySearch] = useState('');
+  const [queryStatusFilter, setQueryStatusFilter] = useState<'all' | 'new' | 'in_progress' | 'resolved'>('all');
+  const [queryTypeFilter, setQueryTypeFilter] = useState('all');
+  const [editingNotesId, setEditingNotesId] = useState<string | null>(null);
+  const [editingNotesText, setEditingNotesText] = useState('');
+
+  const handleUpdateQueryStatus = async (queryId: string, newStatus: 'new' | 'in_progress' | 'resolved') => {
+    try {
+      await updateDoc(doc(db, 'parent_queries', queryId), {
+        status: newStatus,
+        updatedAt: Date.now()
+      });
+      // Update selectedQuery if currently displayed
+      if (selectedQuery && selectedQuery.id === queryId) {
+        setSelectedQuery(prev => prev ? { ...prev, status: newStatus, updatedAt: Date.now() } : null);
+      }
+    } catch (error: any) {
+      console.error('Error updating query status:', error);
+      handleFirestoreError(error, OperationType.UPDATE, 'parent_queries');
+    }
+  };
+
+  const handleUpdateQueryNotes = async (queryId: string, notes: string) => {
+    try {
+      await updateDoc(doc(db, 'parent_queries', queryId), {
+        followUpNotes: notes.trim(),
+        updatedAt: Date.now()
+      });
+      setEditingNotesId(null);
+      // Update selectedQuery if currently displayed
+      if (selectedQuery && selectedQuery.id === queryId) {
+        setSelectedQuery(prev => prev ? { ...prev, followUpNotes: notes.trim(), updatedAt: Date.now() } : null);
+      }
+    } catch (error: any) {
+      console.error('Error updating query notes:', error);
+      handleFirestoreError(error, OperationType.UPDATE, 'parent_queries');
+    }
+  };
+
+  const handleDeleteQuery = async (queryId: string) => {
+    if (!window.confirm('Are you absolutely sure you want to delete this parent query enquiry? This action is permanent.')) {
+      return;
+    }
+    try {
+      await deleteDoc(doc(db, 'parent_queries', queryId));
+      if (selectedQuery?.id === queryId) {
+        setSelectedQuery(null);
+      }
+    } catch (error: any) {
+      console.error('Error deleting query:', error);
+      handleFirestoreError(error, OperationType.DELETE, 'parent_queries');
+    }
+  };
 
   // Live Receipts Billing States
   const [receipts, setReceipts] = useState<Receipt[]>([]);
@@ -736,6 +796,37 @@ export default function AdminPanel() {
       console.error("Firestore loading error: ", error);
       setDataLoading(false);
       handleFirestoreError(error, OperationType.LIST, 'admissions');
+    });
+
+    return () => unsubscribe();
+  }, [user, isAdmin]);
+
+  // 2b. Manage Real-time Parent Queries synced listeners
+  useEffect(() => {
+    if (!user || !isAdmin) {
+      setParentQueries([]);
+      return;
+    }
+
+    setParentQueriesLoading(true);
+    const parentQueriesRef = collection(db, 'parent_queries');
+    
+    const unsubscribe = onSnapshot(parentQueriesRef, (snapshot) => {
+      const records: ParentQuery[] = [];
+      snapshot.forEach((docSnap) => {
+        records.push({
+          id: docSnap.id,
+          ...docSnap.data()
+        } as ParentQuery);
+      });
+      // Sort newest queries first
+      records.sort((a, b) => b.createdAt - a.createdAt);
+      setParentQueries(records);
+      setParentQueriesLoading(false);
+    }, (error) => {
+      console.error("Parent queries loading error: ", error);
+      setParentQueriesLoading(false);
+      handleFirestoreError(error, OperationType.LIST, 'parent_queries');
     });
 
     return () => unsubscribe();
@@ -1736,6 +1827,22 @@ export default function AdminPanel() {
     return matchesSearch && matchesStatus && matchesBatch && matchesBranch && matchesFees;
   });
 
+  // Perform search criteria match filters for parent queries
+  const filteredQueries = parentQueries.filter((q) => {
+    const s = querySearch.trim().toLowerCase();
+    const matchesSearch = !s || 
+      q.parentName.toLowerCase().includes(s) || 
+      (q.childName && q.childName.toLowerCase().includes(s)) ||
+      q.phone.includes(s) ||
+      (q.email && q.email.toLowerCase().includes(s)) ||
+      q.message.toLowerCase().includes(s);
+
+    const matchesStatus = queryStatusFilter === 'all' || q.status === queryStatusFilter;
+    const matchesType = queryTypeFilter === 'all' || q.queryType === queryTypeFilter;
+
+    return matchesSearch && matchesStatus && matchesType;
+  });
+
   // Extract unique batches list dynamically from Firestore if loaded, else fallback to actual admissions lists
   const batchesList: string[] = batches.length > 0
     ? batches.map(b => b.name)
@@ -1921,6 +2028,22 @@ export default function AdminPanel() {
               Student Directory
             </button>
             <button
+              onClick={() => setAdminTab('parent_queries')}
+              className={`font-heading font-black text-xs tracking-widest uppercase pb-4 border-b-2 transition-all cursor-pointer flex items-center space-x-1.5 ${
+                adminTab === 'parent_queries' 
+                  ? 'border-yellow-500 text-yellow-500 font-extrabold' 
+                  : 'border-transparent text-zinc-550 hover:text-zinc-300'
+              }`}
+            >
+              <MessageSquare className="w-3.5 h-3.5 shrink-0" />
+              <span>Parent Queries</span>
+              {parentQueries.filter(q => q.status === 'new').length > 0 && (
+                <span className="bg-[#FF3B3F] text-white text-[9px] font-mono px-1.5 py-0.5 rounded-full font-bold animate-bounce shrink-0">
+                  {parentQueries.filter(q => q.status === 'new').length}
+                </span>
+              )}
+            </button>
+            <button
               onClick={() => setAdminTab('batches')}
               className={`font-heading font-black text-xs tracking-widest uppercase pb-4 border-b-2 transition-all cursor-pointer ${
                 adminTab === 'batches' 
@@ -2040,6 +2163,380 @@ export default function AdminPanel() {
             </div>
           )}
         </div>
+
+        {/* TAB 0: Real-time Parents Online Queries desk */}
+        {adminTab === 'parent_queries' && (
+          <div className="space-y-6">
+            <div className="bg-slate-900/40 border border-zinc-900 rounded-2xl overflow-hidden shadow-xl">
+              {/* Filter and search bar */}
+              <div className="p-5 sm:p-6 border-b border-zinc-900 flex flex-col xl:flex-row gap-4 items-center justify-between">
+                <div className="relative w-full xl:max-w-md">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                  <input
+                    type="text"
+                    placeholder="Search parent name, child name, phone or message..."
+                    value={querySearch}
+                    onChange={(e) => setQuerySearch(e.target.value)}
+                    className="w-full bg-slate-950 border border-zinc-850 text-zinc-300 placeholder:text-zinc-600 pl-11 pr-4 py-3 rounded-lg text-xs focus:outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 transition-all"
+                  />
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto">
+                  {/* Status filter */}
+                  <div className="flex items-center space-x-2 bg-slate-950 px-3 py-1.5 rounded-lg border border-zinc-900">
+                    <span className="text-[10px] font-mono text-zinc-550 uppercase font-black">Status:</span>
+                    <select
+                      value={queryStatusFilter}
+                      onChange={(e: any) => setQueryStatusFilter(e.target.value)}
+                      className="bg-transparent text-zinc-350 text-xs focus:outline-none cursor-pointer font-sans"
+                    >
+                      <option value="all" className="bg-zinc-950 text-zinc-350">All Queries</option>
+                      <option value="new" className="bg-zinc-950 text-yellow-500">New</option>
+                      <option value="in_progress" className="bg-zinc-950 text-blue-400">In Progress</option>
+                      <option value="resolved" className="bg-zinc-950 text-emerald-500">Resolved</option>
+                    </select>
+                  </div>
+
+                  {/* Topic filter */}
+                  <div className="flex items-center space-x-2 bg-slate-950 px-3 py-1.5 rounded-lg border border-zinc-900">
+                    <span className="text-[10px] font-mono text-zinc-550 uppercase font-black">Topic:</span>
+                    <select
+                      value={queryTypeFilter}
+                      onChange={(e) => setQueryTypeFilter(e.target.value)}
+                      className="bg-transparent text-zinc-350 text-xs focus:outline-none cursor-pointer font-sans"
+                    >
+                      <option value="all" className="bg-zinc-950">All Topics</option>
+                      <option value="General Query">General Query</option>
+                      <option value="Admission Enquiry">Admission Enquiry</option>
+                      <option value="Fees & Billing Query">Fees & Billing</option>
+                      <option value="Belt Exam & Promotions">Belt Exam</option>
+                      <option value="Complaints or Feedback">Feedback</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+
+                  {parentQueries.filter(q => q.status === 'new').length > 0 && (
+                    <span className="bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 text-[10px] font-semibold px-3 py-1.5 rounded-lg font-mono">
+                      {parentQueries.filter(q => q.status === 'new').length} Unhandled Enquiry
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {parentQueriesLoading ? (
+                <div className="p-12 text-center">
+                  <div className="w-8 h-8 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                  <p className="text-zinc-550 text-xs font-mono uppercase tracking-widest">Loading parents queries database...</p>
+                </div>
+              ) : filteredQueries.length === 0 ? (
+                <div className="p-16 text-center">
+                  <div className="bg-slate-950 text-zinc-650 w-12 h-12 rounded-full border border-zinc-900 flex items-center justify-center mx-auto mb-4">
+                    <MessageSquare className="w-6 h-6" />
+                  </div>
+                  <h4 className="font-title text-base font-bold text-zinc-300 uppercase tracking-wide">No Parent Enquiries Found</h4>
+                  <p className="text-zinc-550 text-xs max-w-sm mx-auto mt-2 font-sans">
+                    No online submissions match your selected query filters or keyword. Parents can submit enquiries on the public contact section.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-12 min-h-[500px]">
+                  
+                  {/* Left panel: Query List (5 cols) */}
+                  <div className="lg:col-span-5 border-r border-zinc-900 overflow-y-auto max-h-[600px] divide-y divide-zinc-900/60">
+                    {filteredQueries.map((q) => {
+                      const isSelected = selectedQuery?.id === q.id;
+                      return (
+                        <div 
+                          key={q.id}
+                          onClick={() => {
+                            setSelectedQuery(q);
+                            setEditingNotesId(null);
+                            setEditingNotesText(q.followUpNotes || '');
+                          }}
+                          className={`p-4 sm:p-5 text-left transition-all cursor-pointer select-none relative group ${
+                            isSelected 
+                              ? 'bg-[#141214] border-l-4 border-yellow-500' 
+                              : 'hover:bg-zinc-900/20 bg-transparent'
+                          }`}
+                        >
+                          <div className="flex justify-between items-start mb-2 gap-2">
+                            <span className="font-heading font-black text-xs sm:text-sm text-white tracking-wide block truncate max-w-[150px]">
+                              {q.parentName}
+                            </span>
+                            
+                            <span className={`text-[9px] font-mono uppercase tracking-widest px-2 py-0.5 rounded font-black ${
+                              q.status === 'new' 
+                                ? 'bg-yellow-500/10 text-yellow-500 border border-yellow-500/25'
+                                : q.status === 'in_progress'
+                                ? 'bg-blue-500/10 text-blue-400 border border-blue-500/25'
+                                : 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/25'
+                            }`}>
+                              {q.status === 'new' ? 'new' : q.status === 'in_progress' ? 'in progress' : 'resolved'}
+                            </span>
+                          </div>
+
+                          {q.childName && (
+                            <span className="text-[10px] text-zinc-400 bg-zinc-950 border border-zinc-900 px-2 py-0.5 rounded inline-block font-sans mb-2">
+                              Child: <span className="font-semibold text-zinc-300">{q.childName}</span>
+                            </span>
+                          )}
+
+                          <p className="text-zinc-500 text-xs line-clamp-2 font-sans mb-3 pr-2">
+                            {q.message}
+                          </p>
+
+                          <div className="flex justify-between items-center text-[10px] font-mono text-zinc-550 pt-1">
+                            <span>{q.queryType}</span>
+                            <span>{new Date(q.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                          </div>
+
+                          {/* Quick change hover hint */}
+                          {!isSelected && q.status === 'new' && (
+                            <div className="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-zinc-950 p-1.5 border border-zinc-900 rounded-lg text-[10px] text-zinc-400">
+                              Click to view ↗
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Right panel: Details view (7 cols) */}
+                  <div className="lg:col-span-7 bg-[#0b0a0b]/60 flex flex-col justify-between p-6 sm:p-8">
+                    {selectedQuery ? (
+                      <div className="space-y-6">
+                        
+                        {/* Header Area */}
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-900 pb-5">
+                          <div>
+                            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-550 block mb-1">ONLINE INQUIRY</span>
+                            <h3 className="font-heading text-lg sm:text-2xl font-black text-white uppercase tracking-tight">
+                              {selectedQuery.parentName}
+                            </h3>
+                            <div className="flex items-center gap-2 mt-1.5">
+                              <span className="text-xs text-zinc-400 font-sans">Topic:</span>
+                              <span className="text-xs text-yellow-500 font-bold bg-yellow-500/5 px-2.5 py-0.5 rounded border border-yellow-500/10 font-sans">
+                                {selectedQuery.queryType}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="flex flex-col sm:items-end gap-1.5 shrink-0">
+                            <span className="text-[10px] font-mono text-zinc-550">
+                              Received: {new Date(selectedQuery.createdAt).toLocaleString()}
+                            </span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[11px] font-mono text-zinc-400">Status:</span>
+                              <div className="flex rounded-md overflow-hidden border border-zinc-850">
+                                <button
+                                  onClick={() => handleUpdateQueryStatus(selectedQuery.id, 'new')}
+                                  className={`px-2.5 py-1 text-[10px] font-mono font-black uppercase transition-colors cursor-pointer ${
+                                    selectedQuery.status === 'new'
+                                      ? 'bg-yellow-500 text-slate-950'
+                                      : 'bg-zinc-950 text-zinc-500 hover:text-zinc-300'
+                                  }`}
+                                >
+                                  New
+                                </button>
+                                <button
+                                  onClick={() => handleUpdateQueryStatus(selectedQuery.id, 'in_progress')}
+                                  className={`px-2.5 py-1 text-[10px] font-mono font-black uppercase transition-colors cursor-pointer ${
+                                    selectedQuery.status === 'in_progress'
+                                      ? 'bg-blue-500 text-white'
+                                      : 'bg-zinc-950 text-zinc-500 hover:text-zinc-300'
+                                  }`}
+                                >
+                                  In Progress
+                                </button>
+                                <button
+                                  onClick={() => handleUpdateQueryStatus(selectedQuery.id, 'resolved')}
+                                  className={`px-2.5 py-1 text-[10px] font-mono font-black uppercase transition-colors cursor-pointer ${
+                                    selectedQuery.status === 'resolved'
+                                      ? 'bg-emerald-500 text-white'
+                                      : 'bg-zinc-950 text-zinc-500 hover:text-zinc-300'
+                                  }`}
+                                >
+                                  Resolved
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Bio Cards */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div className="bg-slate-950/80 border border-zinc-900/80 p-4 rounded-xl space-y-2">
+                            <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest block font-bold">Parent Contact</span>
+                            
+                            <div className="space-y-1.5 text-xs font-sans">
+                              <div className="flex items-center gap-2">
+                                <Phone className="w-3.5 h-3.5 text-zinc-550 shrink-0" />
+                                <a 
+                                  href={`tel:${selectedQuery.phone}`} 
+                                  className="text-zinc-300 hover:text-yellow-500 transition-colors font-mono font-bold"
+                                >
+                                  {selectedQuery.phone}
+                                </a>
+                              </div>
+
+                              {selectedQuery.email ? (
+                                <div className="flex items-center gap-2">
+                                  <Mail className="w-3.5 h-3.5 text-zinc-550 shrink-0" />
+                                  <a 
+                                    href={`mailto:${selectedQuery.email}`} 
+                                    className="text-zinc-350 hover:text-yellow-500 transition-colors break-all"
+                                  >
+                                    {selectedQuery.email}
+                                  </a>
+                                </div>
+                              ) : (
+                                <span className="text-zinc-650 text-[11px] italic block">No email provided</span>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="bg-slate-950/80 border border-zinc-900/80 p-4 rounded-xl space-y-2">
+                            <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest block font-bold">Student Detail</span>
+                            <div className="text-xs font-sans">
+                              {selectedQuery.childName ? (
+                                <div className="space-y-1">
+                                  <p className="text-zinc-300">
+                                    Name: <span className="font-semibold text-white">{selectedQuery.childName}</span>
+                                  </p>
+                                  <span className="text-[10px] text-zinc-500">Interested in joining LKCP training.</span>
+                                </div>
+                              ) : (
+                                <span className="text-zinc-650 italic text-[11px] block py-1">No child name specified (General enquiry)</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Query message box */}
+                        <div className="space-y-2">
+                          <span className="text-[9px] font-mono text-zinc-550 uppercase tracking-widest block font-bold">PARENTS ENQUIRY MESSAGE</span>
+                          <div className="bg-zinc-950 border border-zinc-900 p-5 rounded-xl">
+                            <p className="text-zinc-300 text-xs sm:text-sm font-sans leading-relaxed whitespace-pre-wrap">
+                              "{selectedQuery.message}"
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Follow up Notes Desk */}
+                        <div className="bg-zinc-950/30 border border-zinc-900 p-5 rounded-xl space-y-3">
+                          <div className="flex justify-between items-center">
+                            <span className="text-[9px] font-mono text-yellow-500/80 uppercase tracking-widest block font-bold">
+                              INTERNAL ADMINISTRATIVE FOLLOW-UP NOTES
+                            </span>
+                            
+                            {editingNotesId !== selectedQuery.id ? (
+                              <button
+                                onClick={() => {
+                                  setEditingNotesId(selectedQuery.id);
+                                  setEditingNotesText(selectedQuery.followUpNotes || '');
+                                }}
+                                className="text-[10px] font-mono uppercase text-yellow-500 hover:text-yellow-400 cursor-pointer flex items-center gap-1 font-bold"
+                              >
+                                <Edit2 className="w-3 h-3" />
+                                <span>{selectedQuery.followUpNotes ? 'Edit Notes' : 'Add Notes'}</span>
+                              </button>
+                            ) : (
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => handleUpdateQueryNotes(selectedQuery.id, editingNotesText)}
+                                  className="text-[10px] font-mono uppercase text-emerald-500 hover:text-emerald-400 cursor-pointer flex items-center gap-1 font-bold"
+                                >
+                                  <Save className="w-3 h-3" />
+                                  <span>Save</span>
+                                </button>
+                                <button
+                                  onClick={() => setEditingNotesId(null)}
+                                  className="text-[10px] font-mono uppercase text-zinc-500 hover:text-zinc-400 cursor-pointer"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            )}
+                          </div>
+
+                          {editingNotesId === selectedQuery.id ? (
+                            <textarea
+                              value={editingNotesText}
+                              onChange={(e) => setEditingNotesText(e.target.value)}
+                              placeholder="Type administrative updates here (e.g. 'Called parent. Parents agreed to bring the kid for a free demo session this Friday at 5:00 PM.')"
+                              rows={3}
+                              className="w-full text-xs font-sans text-zinc-200 bg-slate-950 border border-zinc-900 rounded-lg p-3 focus:outline-none focus:border-yellow-500/50"
+                            />
+                          ) : (
+                            <div className="text-xs text-zinc-400 font-sans leading-relaxed">
+                              {selectedQuery.followUpNotes ? (
+                                <p className="bg-zinc-950/50 p-3 rounded border border-zinc-900/60 text-zinc-300 font-sans italic">
+                                  "{selectedQuery.followUpNotes}"
+                                </p>
+                              ) : (
+                                <p className="text-zinc-600 italic text-[11px]">
+                                  No internal follow-up notes written yet. Keep logs of parental communications here to collaborate easily with other coaches.
+                                </p>
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Call Actions Panel */}
+                        <div className="flex flex-wrap items-center gap-4 pt-2 border-t border-zinc-900">
+                          {/* Call Button */}
+                          <a
+                            href={`tel:${selectedQuery.phone}`}
+                            className="bg-zinc-900 hover:bg-zinc-850 border border-zinc-800 text-white text-xs font-heading font-black uppercase tracking-wider px-4 py-2.5 rounded-lg flex items-center gap-2 transition-colors cursor-pointer"
+                          >
+                            <Phone className="w-3.5 h-3.5" />
+                            <span>Call Parent</span>
+                          </a>
+
+                          {/* Precompiled Reply on WhatsApp */}
+                          <a
+                            href={`https://wa.me/${selectedQuery.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
+                              `Hello ${selectedQuery.parentName}, this is Shihan Maruti Jadhav Sir from Lions Karate Club Pune. Thank you for your inquiry about ${selectedQuery.queryType}. We would love to invite you and ${selectedQuery.childName || 'your child'} for a free trial session at our Dojo branch! Let us know what time works best.`
+                            )}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-heading font-black uppercase tracking-wider px-4 py-2.5 rounded-lg flex items-center gap-2 transition-colors cursor-pointer"
+                          >
+                            <MessageSquare className="w-3.5 h-3.5" />
+                            <span>WhatsApp Reply</span>
+                          </a>
+
+                          <div className="ml-auto">
+                            <button
+                              onClick={() => handleDeleteQuery(selectedQuery.id)}
+                              className="text-red-500 hover:text-red-400 hover:bg-red-500/5 p-2 rounded-lg transition-colors cursor-pointer"
+                              title="Delete Query permanently"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+
+                      </div>
+                    ) : (
+                      <div className="h-full flex flex-col items-center justify-center text-center py-24">
+                        <div className="bg-slate-950 text-zinc-700 w-12 h-12 rounded-full border border-zinc-900 flex items-center justify-center mb-4">
+                          <Eye className="w-5 h-5 animate-pulse" />
+                        </div>
+                        <h4 className="font-title text-sm font-bold text-zinc-400 uppercase tracking-widest">No Query Selected</h4>
+                        <p className="text-zinc-650 text-xs max-w-xs mx-auto mt-1 font-sans">
+                          Select a parent query from the left-hand column to view communications, update follow-up logs, and reply instantly.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                </div>
+              )}
+
+            </div>
+          </div>
+        )}
 
         {/* TAB 1: Real-time Admissions directory */}
         {adminTab === 'admissions' && (

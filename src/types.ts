@@ -181,4 +181,19 @@ export interface Receipt {
   createdAt: number;
 }
 
+export interface ParentQuery {
+  id: string; // Document ID in Firestore
+  parentName: string;
+  childName?: string;
+  phone: string;
+  email?: string;
+  queryType: string;
+  message: string;
+  status: 'new' | 'in_progress' | 'resolved';
+  followUpNotes?: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
+
 

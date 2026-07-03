@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { Play, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Play, X, ChevronLeft, ChevronRight, Newspaper, ExternalLink } from 'lucide-react';
 
 interface GalleryItem {
   src: string;
   alt: string;
-  category: 'dojo' | 'tournaments' | 'grading';
+  category: 'dojo' | 'tournaments' | 'grading' | 'news';
   title: string;
   type?: 'image' | 'video';
   description?: string;
@@ -12,7 +12,7 @@ interface GalleryItem {
 }
 
 export default function Gallery() {
-  const [filter, setFilter] = useState<'all' | 'dojo' | 'tournaments' | 'grading'>('all');
+  const [filter, setFilter] = useState<'all' | 'dojo' | 'tournaments' | 'grading' | 'news'>('all');
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
   const galleryItems: GalleryItem[] = [
@@ -63,6 +63,54 @@ export default function Gallery() {
       type: "video",
       description: "Proud moments of our fighters stepping up to their next belt and elevating to the next level at Lions Karate Club Pune.",
       objectPosition: "object-center"
+    },
+    {
+      src: "https://res.cloudinary.com/dlzdagymx/image/upload/v1783050165/WhatsApp_Image_2026-07-03_at_9.10.18_AM_1_pnowsc.jpg",
+      alt: "Lions Karate Club tournament victory press coverage highlighting student achievements",
+      category: "news",
+      title: "Championship Victory Spotlight",
+      description: "Local news publication celebrates the grand triumph and multiple medals secured by the Lions Karate team.",
+      objectPosition: "object-center"
+    },
+    {
+      src: "https://res.cloudinary.com/dlzdagymx/image/upload/v1783050165/WhatsApp_Image_2026-07-03_at_9.10.18_AM_fip5yi.jpg",
+      alt: "Lions Karate Club women and girls self-defence training publication feature",
+      category: "news",
+      title: "Community Self-Defence Drive",
+      description: "Press highlight covering our dedicated, life-saving self-defence workshops conducted for local women and girls.",
+      objectPosition: "object-center"
+    },
+    {
+      src: "https://res.cloudinary.com/dlzdagymx/image/upload/v1783050165/WhatsApp_Image_2026-07-03_at_9.10.17_AM_yiatxc.jpg",
+      alt: "Shotokan Karate traditional training excellence news report",
+      category: "news",
+      title: "Martial Arts Legacy & Growth",
+      description: "In-depth news feature on traditional Shotokan standards, discipline, and outstanding coaching at Lions Dojo.",
+      objectPosition: "object-center"
+    },
+    {
+      src: "https://res.cloudinary.com/dlzdagymx/image/upload/v1783050164/WhatsApp_Image_2026-07-03_at_9.10.14_AM_ypbelu.jpg",
+      alt: "Lions Karate Club junior champions selection press coverage",
+      category: "news",
+      title: "Youth Talents & National Selection",
+      description: "Media focus on our young fighters selected for representing the district in upcoming national-level tournaments.",
+      objectPosition: "object-center"
+    },
+    {
+      src: "https://res.cloudinary.com/dlzdagymx/image/upload/v1783050163/WhatsApp_Image_2026-07-03_at_9.10.08_AM_kkcefp.jpg",
+      alt: "Lions Karate Club grand belt promotion and grading report in local newspaper",
+      category: "news",
+      title: "Official Belt Grading & Ceremony",
+      description: "Press editorial celebrating our students' advancement to higher ranks and recognition of their stellar grit.",
+      objectPosition: "object-center"
+    },
+    {
+      src: "https://res.cloudinary.com/dlzdagymx/image/upload/v1783050162/WhatsApp_Image_2026-07-03_at_9.10.00_AM_vem7a0.jpg",
+      alt: "Lions Karate Club character building and fitness campaign news clipping",
+      category: "news",
+      title: "Building Character and Focus",
+      description: "Newspaper highlight praising our dojo's unique focus on mental resilience, focus, and character building in students.",
+      objectPosition: "object-center"
     }
   ];
 
@@ -108,12 +156,13 @@ export default function Gallery() {
 
           {/* Filtering buttons */}
           <div className="flex flex-wrap gap-2">
-            {(['all', 'dojo', 'tournaments', 'grading'] as const).map((cat) => {
+            {(['all', 'dojo', 'tournaments', 'grading', 'news'] as const).map((cat) => {
               const labelMap = {
                 all: 'All Media',
                 dojo: 'Training',
                 tournaments: 'Tournaments',
-                grading: 'Grading & Events'
+                grading: 'Grading & Events',
+                news: 'News'
               };
               return (
                 <button
@@ -142,7 +191,7 @@ export default function Gallery() {
             <div 
               key={idx}
               onClick={() => setSelectedIndex(idx)}
-              className="group relative h-[260px] cursor-pointer bg-slate-900 rounded-lg overflow-hidden border border-zinc-900 shadow-md flex-1"
+              className="group relative h-[260px] cursor-pointer bg-slate-900 rounded-lg overflow-hidden border border-zinc-900 shadow-md flex-1 animate-fade-in"
             >
               {item.type === 'video' ? (
                 <video
@@ -168,18 +217,29 @@ export default function Gallery() {
                   <Play className="w-3 h-3 fill-current" />
                 </div>
               )}
+              {/* Newspaper symbol badge overlay for news clippings */}
+              {item.category === 'news' && (
+                <div className="absolute top-4 right-4 bg-red-600 text-white p-2 rounded-full border border-red-500 shadow-md backdrop-blur-sm z-10 animate-fade-in group-hover:scale-110 transition-transform flex items-center justify-center">
+                  <Newspaper className="w-3.5 h-3.5" />
+                </div>
+              )}
               {/* Hover Text Banner Element */}
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-5">
-                <span className="text-[9px] font-mono text-yellow-500 uppercase tracking-widest block mb-1">
-                  {item.category === 'dojo' ? 'Dojo Training' : item.category === 'tournaments' ? 'Tournaments' : 'Belt Grading'}
+                <span className="text-[9px] font-mono text-yellow-500 uppercase tracking-widest flex items-center gap-1.5 mb-1">
+                  {item.category === 'news' && <Newspaper className="w-3 h-3 text-red-500" />}
+                  {item.category === 'dojo' ? 'Dojo Training' : item.category === 'tournaments' ? 'Tournaments' : item.category === 'grading' ? 'Belt Grading' : 'News'}
                 </span>
-                <span className="font-heading font-black text-sm text-white block uppercase tracking-wide">
-                  {item.title}
-                </span>
-                {item.description && (
-                  <p className="text-[10px] text-zinc-300 font-medium leading-normal mt-1 block">
-                    {item.description}
-                  </p>
+                {item.category !== 'news' && (
+                  <>
+                    <span className="font-heading font-black text-sm text-white block uppercase tracking-wide">
+                      {item.title}
+                    </span>
+                    {item.description && (
+                      <p className="text-[10px] text-zinc-300 font-medium leading-normal mt-1 block line-clamp-2">
+                        {item.description}
+                      </p>
+                    )}
+                  </>
                 )}
               </div>
             </div>
@@ -275,20 +335,43 @@ export default function Gallery() {
 
               {/* Title & Description Info Bar */}
               <div className="text-center max-w-2xl px-2">
-                <span className="text-[10px] font-mono text-yellow-500 uppercase tracking-widest block mb-1">
-                  {selectedItem.category === 'dojo' ? 'Dojo Training' : selectedItem.category === 'tournaments' ? 'Tournaments' : 'Belt Grading'}
+                <span className="text-[10px] font-mono text-yellow-500 uppercase tracking-widest flex items-center justify-center gap-1.5 mb-1">
+                  {selectedItem.category === 'news' && <Newspaper className="w-3.5 h-3.5 text-red-500 animate-pulse" />}
+                  {selectedItem.category === 'dojo' ? 'Dojo Training' : selectedItem.category === 'tournaments' ? 'Tournaments' : selectedItem.category === 'grading' ? 'Belt Grading' : 'News'}
                 </span>
-                <h3 className="font-heading font-black text-lg sm:text-2xl text-white uppercase tracking-wider mb-2 leading-tight">
-                  {selectedItem.title}
-                </h3>
-                {selectedItem.description ? (
-                  <p className="text-zinc-300 text-xs sm:text-sm font-normal leading-relaxed">
-                    {selectedItem.description}
-                  </p>
-                ) : (
-                  <p className="text-zinc-400 text-xs sm:text-sm font-light italic leading-relaxed">
-                    {selectedItem.alt}
-                  </p>
+                {selectedItem.category !== 'news' && (
+                  <>
+                    <h3 className="font-heading font-black text-lg sm:text-2xl text-white uppercase tracking-wider mb-2 leading-tight">
+                      {selectedItem.title}
+                    </h3>
+                    {selectedItem.description ? (
+                      <p className="text-zinc-300 text-xs sm:text-sm font-normal leading-relaxed">
+                        {selectedItem.description}
+                      </p>
+                    ) : (
+                      <p className="text-zinc-400 text-xs sm:text-sm font-light italic leading-relaxed">
+                        {selectedItem.alt}
+                      </p>
+                    )}
+                  </>
+                )}
+
+                {/* Enhanced UX for reading small newspaper text */}
+                {selectedItem.category === 'news' && (
+                  <div className="mt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
+                    <a 
+                      href={selectedItem.src} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="inline-flex items-center gap-2 text-xs font-heading font-black text-slate-950 bg-yellow-500 hover:bg-yellow-400 border border-yellow-500 px-4 py-2.5 rounded-lg shadow-lg hover:shadow-yellow-500/20 active:scale-95 transition-all cursor-pointer uppercase tracking-wider"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      View High-Res Clipping ↗
+                    </a>
+                    <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider">
+                      (Opens full scan in a new tab for easy reading & zooming)
+                    </span>
+                  </div>
                 )}
               </div>
             </div>
