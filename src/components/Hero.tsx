@@ -24,7 +24,7 @@ export default function Hero({ onNavigate }: HeroProps) {
       id: 'parent-reviews',
       title: 'What Real Parents Say',
       desc: 'Hear directly from Pune parents about how our Karate program builds real focus, robust health, and active confidence at Lions Karate Club Pune.',
-      url: 'https://res.cloudinary.com/dlzdagymx/video/upload/q_auto/f_auto/v1781347453/Check_out_the_full_video_to_see_what_parents_think_of_our_program_At_LIONS_KARATE_CLUB_PUNE_l5vhas.mp4',
+      url: 'https://res.cloudinary.com/dlzdagymx/video/upload/v1781347453/Check_out_the_full_video_to_see_what_parents_think_of_our_program_At_LIONS_KARATE_CLUB_PUNE_l5vhas.mp4',
       watermark: 'PARENT FEEDBACK',
       benefits: [
         { label: "👨‍👩‍👦 Better Focus at Home", desc: "Parents notice kids start listening without needing to repeat tasks." },
@@ -36,7 +36,7 @@ export default function Hero({ onNavigate }: HeroProps) {
       id: 'kata-perfection',
       title: 'Kata Form Perfection Drill',
       desc: 'Mock pattern combat practice where children learn precise balanced steps, core posture, and extreme focus.',
-      url: 'https://res.cloudinary.com/dlzdagymx/video/upload/q_auto/f_auto/v1781884670/WhatsApp_Video_2026-06-19_at_9.01.28_PM_mu9fjt.mp4',
+      url: 'https://res.cloudinary.com/dlzdagymx/video/upload/v1781884670/WhatsApp_Video_2026-06-19_at_9.01.28_PM_mu9fjt.mp4',
       watermark: 'LIONS DOJO KATA',
       benefits: [
         { label: "🤝 Mind Discipline", desc: "Teaches extreme focus, memory control, and absolute follow-through." },
@@ -48,7 +48,7 @@ export default function Hero({ onNavigate }: HeroProps) {
       id: 'combat-reflexes',
       title: 'Combat Agile Reaction Drill',
       desc: 'High energy active preparation drills. Children build sharp agility, timing, and brave confidence to defend their boundaries.',
-      url: 'https://res.cloudinary.com/dlzdagymx/video/upload/q_auto/f_auto/v1781884714/WhatsApp_Video_2026-06-19_at_9.04.09_PM_i3odue.mp4',
+      url: 'https://res.cloudinary.com/dlzdagymx/video/upload/v1781346883/Untitled_-_June_11_2026_at_22.20.41_qrs7vz.mp4',
       watermark: 'LIONS DOJO AGILITY',
       benefits: [
         { label: "⚡ Fast Alertness", desc: "Sharpen child reaction times to instantly dodge or block surprises." },
@@ -134,7 +134,7 @@ export default function Hero({ onNavigate }: HeroProps) {
           >
             {heroVideoUrl && <source src={heroVideoUrl} type="video/mp4" />}
             {/* Primary cloud hosted direct video source supplied by user */}
-            <source src="https://res.cloudinary.com/dlzdagymx/video/upload/q_auto/f_auto/v1779342942/lions-karate-website-media/m3hfwi7bsfujadlsy5sl.mp4" type="video/mp4" />
+            <source src="https://res.cloudinary.com/dlzdagymx/video/upload/v1779342942/lions-karate-website-media/m3hfwi7bsfujadlsy5sl.mp4" type="video/mp4" />
             {/* Direct reference to platform local paths if the user uploaded it to the project folder */}
             <source src="/hero.mp4" type="video/mp4" />
             <source src="/video.mp4" type="video/mp4" />
