@@ -1252,6 +1252,20 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
                       className="w-full bg-slate-950 border border-zinc-850 text-zinc-300 text-xs px-3.5 py-2.5 rounded-lg focus:outline-none focus:border-red-500"
                     />
                   </div>
+
+                  <div>
+                    <label className="text-zinc-400 text-[10px] uppercase tracking-wider font-bold mb-1.5 block">
+                      School / Academic Institution Name * <span className="text-zinc-500 font-normal">/ स्कूल या कॉलेज का नाम *</span>
+                    </label>
+                    <input 
+                      type="text" 
+                      required 
+                      value={schoolName}
+                      onChange={(e) => setSchoolName(e.target.value)}
+                      placeholder="e.g. Podar International School, Pune"
+                      className="w-full bg-slate-950 border border-zinc-850 text-zinc-300 text-xs px-3.5 py-2.5 rounded-lg focus:outline-none focus:border-red-500"
+                    />
+                  </div>
                 </div>
 
                 <div className="bg-slate-950/80 p-4 border border-zinc-900 rounded-xl space-y-3 text-left">

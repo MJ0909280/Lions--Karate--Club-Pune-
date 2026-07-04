@@ -58,7 +58,9 @@ import {
   MessageSquare,
   CheckCircle2,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Copy,
+  Share2
 } from 'lucide-react';
 
 // @ts-ignore
@@ -650,6 +652,7 @@ export default function AdminPanel() {
   const [examSchedules, setExamSchedules] = useState<any[]>([]);
   const [schedulesLoading, setSchedulesLoading] = useState(false);
   const [examsSubTab, setExamsSubTab] = useState<'applications' | 'schedules'>('applications');
+  const [copiedSchedId, setCopiedSchedId] = useState<string | null>(null);
 
   // Exam Schedule Form inputs
   const [schedModalOpen, setSchedModalOpen] = useState(false);
@@ -1595,6 +1598,19 @@ export default function AdminPanel() {
           handleFirestoreError(error, OperationType.DELETE, `exam_schedules/${scheduleId}`);
         }
       }
+    });
+  };
+
+  const handleCopyExamRegistrationLink = (schedId: string) => {
+    const baseUrl = window.location.origin + window.location.pathname;
+    const directLink = `${baseUrl}#belt-exam`;
+    navigator.clipboard.writeText(directLink).then(() => {
+      setCopiedSchedId(schedId);
+      setTimeout(() => {
+        setCopiedSchedId(null);
+      }, 3000);
+    }).catch(err => {
+      console.error("Failed to copy registration link:", err);
     });
   };
 
@@ -3526,6 +3542,33 @@ export default function AdminPanel() {
                                 <span className="text-zinc-350 whitespace-pre-line leading-relaxed">{sched.prerequisites}</span>
                               </div>
                             </div>
+                          </div>
+
+                          {/* Direct Parent Registration Link Sharer */}
+                          <div className="mt-4 bg-zinc-950/40 p-3.5 border border-zinc-900 rounded-xl space-y-2 text-left">
+                            <div className="flex justify-between items-center">
+                              <span className="text-[9px] uppercase font-extrabold text-yellow-500/80 tracking-wider">Exam Registration Sharer</span>
+                              <span className="text-[9px] text-zinc-500 font-mono">#belt-exam</span>
+                            </div>
+                            <button
+                              onClick={() => handleCopyExamRegistrationLink(sched.id)}
+                              className="w-full bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 hover:text-yellow-400 border border-yellow-500/25 py-2 px-3 rounded-lg flex items-center justify-center space-x-2 text-xs font-bold transition-all cursor-pointer"
+                            >
+                              {copiedSchedId === sched.id ? (
+                                <>
+                                  <Check className="w-4 h-4 text-emerald-400 stroke-[3px]" />
+                                  <span className="text-emerald-400">Direct Link Copied!</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Copy className="w-3.5 h-3.5" />
+                                  <span>Copy Registration Link</span>
+                                </>
+                              )}
+                            </button>
+                            <p className="text-[9px] text-zinc-500 leading-normal text-center">
+                              Send this link to parents on WhatsApp/SMS. They will land directly on the Registration Form!
+                            </p>
                           </div>
                         </div>
 
