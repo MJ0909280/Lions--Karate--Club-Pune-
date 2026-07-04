@@ -2907,7 +2907,7 @@ export default function AdminPanel() {
                       <td className="py-4 px-6">
                         <div className="flex items-center space-x-3">
                           <div className="w-10 h-10 rounded-md overflow-hidden bg-neutral-900 border border-zinc-800 shrink-0">
-                            <img src={student.photoUrl} alt="Portrait" className="w-full h-full object-cover" />
+                            <img src={student.photoUrl || "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=80&fit=crop"} alt="Portrait" className="w-full h-full object-cover" />
                           </div>
                           <span className="font-mono text-xs font-bold text-zinc-100">{student.studentId}</span>
                         </div>
@@ -4383,7 +4383,7 @@ export default function AdminPanel() {
               <div className="flex flex-col sm:flex-row gap-6 items-start sm:items-center">
                 {/* Profile Photo */}
                 <div className="w-24 h-24 rounded-lg overflow-hidden border border-zinc-800 bg-zinc-950 shrink-0 mx-auto sm:mx-0">
-                  <img src={selectedAdmission.photoUrl} alt="Student" className="w-full h-full object-cover object-top" />
+                  <img src={selectedAdmission.photoUrl || "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=80&fit=crop"} alt="Student" className="w-full h-full object-cover object-top" />
                 </div>
                 {/* Visual Metadata banner */}
                 <div className="text-center sm:text-left space-y-1.5 flex-grow">
@@ -4756,7 +4756,7 @@ export default function AdminPanel() {
                       <div key={st.id} className="py-3 flex items-center justify-between gap-4 text-xs">
                         <div className="flex items-center space-x-3.5">
                           <div className="w-9 h-9 rounded-md overflow-hidden bg-neutral-900 border border-zinc-800 shrink-0">
-                            <img src={st.photoUrl} alt={st.fullName} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                            <img src={st.photoUrl || "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=80&fit=crop"} alt={st.fullName} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                           </div>
                           <div>
                             <span className="font-bold text-zinc-150 block">{st.fullName}</span>

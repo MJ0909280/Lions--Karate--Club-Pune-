@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import html2pdf from 'html2pdf.js';
 import { 
   collection, 
   query, 
@@ -35,7 +36,8 @@ import {
   X,
   CheckSquare,
   Bell,
-  Info
+  Info,
+  Download
 } from 'lucide-react';
 
 const playKarateBell = () => {
@@ -414,6 +416,257 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
   const [examsLoading, setExamsLoading] = useState(false);
   const [showExamForm, setShowExamForm] = useState(false);
   const [selectedCert, setSelectedCert] = useState<ExamRecord | null>(null);
+  const [downloadingCert, setDownloadingCert] = useState(false);
+
+  const parseColorValues = (str: string): number[] => {
+    const matches = str.match(/[-+]?[0-9]*\.?[0-9]+%?/g);
+    if (!matches) return [0, 0, 0, 1];
+    return matches.map(m => {
+      if (m.endsWith('%')) {
+        return parseFloat(m) / 100;
+      }
+      return parseFloat(m);
+    });
+  };
+
+  const oklchToHsl = (l: number, c: number, h: number, a: number = 1): string => {
+    const hue = h;
+    const lightness = Math.min(100, Math.max(0, l * 100));
+    const saturation = Math.min(100, Math.max(0, (c / 0.4) * 100));
+    return `hsla(${hue}, ${saturation}%, ${lightness}%, ${a})`;
+  };
+
+  const oklabToHsl = (l: number, a: number, b: number, alpha: number = 1): string => {
+    const c = Math.sqrt(a * a + b * b);
+    let h = Math.atan2(b, a) * (180 / Math.PI);
+    if (h < 0) h += 360;
+    return oklchToHsl(l, c, h, alpha);
+  };
+
+  const convertUnsupportedColors = (colorStr: string): string => {
+    if (typeof colorStr !== 'string') return colorStr;
+    let result = colorStr;
+    const oklchRegex = /oklch\([^)]+\)/gi;
+    result = result.replace(oklchRegex, (match) => {
+      const vals = parseColorValues(match);
+      const l = vals[0] !== undefined ? vals[0] : 0;
+      const c = vals[1] !== undefined ? vals[1] : 0;
+      const h = vals[2] !== undefined ? vals[2] : 0;
+      const a = vals[3] !== undefined ? vals[3] : 1;
+      return oklchToHsl(l, c, h, a);
+    });
+    
+    const oklabRegex = /oklab\([^)]+\)/gi;
+    result = result.replace(oklabRegex, (match) => {
+      const vals = parseColorValues(match);
+      const l = vals[0] !== undefined ? vals[0] : 0;
+      const aVal = vals[1] !== undefined ? vals[1] : 0;
+      const bVal = vals[2] !== undefined ? vals[2] : 0;
+      const alpha = vals[3] !== undefined ? vals[3] : 1;
+      return oklabToHsl(l, aVal, bVal, alpha);
+    });
+    
+    return result;
+  };
+
+  const sanitizeUnsupportedColors = (css: string): string => {
+    return convertUnsupportedColors(css);
+  };
+
+  const handleDownloadCertificatePDF = async () => {
+    if (!selectedCert) return;
+    setDownloadingCert(true);
+    
+    const originalStyles = new Map<HTMLElement, string>();
+    const tempStyles: HTMLStyleElement[] = [];
+    
+    const originalGetComputedStyle = window.getComputedStyle;
+    const originalGetPropertyValue = CSSStyleDeclaration.prototype.getPropertyValue;
+    const cssRulesDescriptor = Object.getOwnPropertyDescriptor(CSSStyleSheet.prototype, 'cssRules');
+    
+    try {
+      const element = document.getElementById('printable-certificate-el');
+      if (!element) {
+        console.error("Printable certificate element not found");
+        return;
+      }
+
+      window.getComputedStyle = function (elt, pseudoElt) {
+        const style = originalGetComputedStyle(elt, pseudoElt);
+        return new Proxy(style, {
+          get(target, prop) {
+            if (prop === 'getPropertyValue') {
+              return function (propertyName: string) {
+                const val = target.getPropertyValue(propertyName);
+                if (typeof val === 'string' && (val.toLowerCase().includes('oklch') || val.toLowerCase().includes('oklab'))) {
+                  return convertUnsupportedColors(val);
+                }
+                return val;
+              };
+            }
+            
+            const value = Reflect.get(target, prop);
+            if (typeof value === 'function') {
+              return value.bind(target);
+            }
+            if (typeof value === 'string' && (value.toLowerCase().includes('oklch') || value.toLowerCase().includes('oklab'))) {
+              return convertUnsupportedColors(value);
+            }
+            return value;
+          }
+        });
+      };
+
+      CSSStyleDeclaration.prototype.getPropertyValue = function (property: string) {
+        const value = originalGetPropertyValue.call(this, property);
+        if (typeof value === 'string' && (value.toLowerCase().includes('oklch') || value.toLowerCase().includes('oklab'))) {
+          return convertUnsupportedColors(value);
+        }
+        return value;
+      };
+
+      if (cssRulesDescriptor && cssRulesDescriptor.get) {
+        const originalCssRulesGet = cssRulesDescriptor.get;
+        Object.defineProperty(CSSStyleSheet.prototype, 'cssRules', {
+          get() {
+            const rules = originalCssRulesGet.call(this);
+            if (!rules) return rules;
+            return new Proxy(rules, {
+              get(target, prop) {
+                if (prop === 'length') return target.length;
+                if (prop === 'item') {
+                  return function (index: number) {
+                    return this[index];
+                  };
+                }
+                
+                const val = Reflect.get(target, prop);
+                if (typeof val === 'object' && val !== null && 'style' in val) {
+                  return new Proxy(val, {
+                    get(ruleTarget, ruleProp) {
+                      if (ruleProp === 'style') {
+                        const style = ruleTarget.style;
+                        return new Proxy(style, {
+                          get(styleTarget, styleProp) {
+                            if (styleProp === 'getPropertyValue') {
+                              return function (propertyName: string) {
+                                const v = styleTarget.getPropertyValue(propertyName);
+                                if (typeof v === 'string' && (v.toLowerCase().includes('oklch') || v.toLowerCase().includes('oklab'))) {
+                                  return convertUnsupportedColors(v);
+                                }
+                                return v;
+                              };
+                            }
+                            const v = Reflect.get(styleTarget, styleProp);
+                            if (typeof v === 'function') return v.bind(styleTarget);
+                            if (typeof v === 'string' && (v.toLowerCase().includes('oklch') || v.toLowerCase().includes('oklab'))) {
+                              return convertUnsupportedColors(v);
+                            }
+                            return v;
+                          }
+                        });
+                      }
+                      return Reflect.get(ruleTarget, ruleProp);
+                    }
+                  });
+                }
+                return val;
+              }
+            });
+          },
+          configurable: true
+        });
+      }
+
+      const styleElements = Array.from(document.querySelectorAll('style'));
+      styleElements.forEach((styleEl) => {
+        const cssText = styleEl.textContent || '';
+        if (cssText.toLowerCase().includes('oklch') || cssText.toLowerCase().includes('oklab')) {
+          originalStyles.set(styleEl, cssText);
+          styleEl.textContent = sanitizeUnsupportedColors(cssText);
+        }
+      });
+
+      const linkElements = Array.from(document.querySelectorAll('link[rel="stylesheet"]')) as HTMLLinkElement[];
+      for (const linkEl of linkElements) {
+        try {
+          const url = linkEl.href;
+          if (url && (url.startsWith(window.location.origin) || !url.startsWith('http'))) {
+            const response = await fetch(url);
+            if (response.ok) {
+              const cssText = await response.text();
+              if (cssText.toLowerCase().includes('oklch') || cssText.toLowerCase().includes('oklab')) {
+                linkEl.disabled = true;
+                originalStyles.set(linkEl, 'disabled');
+                
+                const tempStyle = document.createElement('style');
+                tempStyle.textContent = sanitizeUnsupportedColors(cssText);
+                document.head.appendChild(tempStyle);
+                tempStyles.push(tempStyle);
+              }
+            }
+          }
+        } catch (linkErr) {
+          console.warn("Could not process stylesheet link:", linkEl.href, linkErr);
+        }
+      }
+
+      const opt = {
+        margin:       10,
+        filename:     `LKC_Certificate_${selectedCert.studentName.replace(/\s+/g, '_')}.pdf`,
+        image:        { type: 'jpeg' as const, quality: 0.98 },
+        html2canvas:  { scale: 2.5, useCORS: true, logging: false, letterRendering: true },
+        jsPDF:        { unit: 'mm' as const, format: 'a4' as const, orientation: 'landscape' as const }
+      };
+
+      const clonedElement = element.cloneNode(true) as HTMLElement;
+      clonedElement.style.display = 'block';
+      clonedElement.style.background = '#fffbeb';
+      clonedElement.style.color = '#0c0a09';
+      clonedElement.style.margin = '0 auto';
+      clonedElement.style.padding = '35px';
+      clonedElement.style.maxWidth = '1000px';
+      
+      const allClonedElements = [clonedElement, ...Array.from(clonedElement.querySelectorAll('*'))] as HTMLElement[];
+      allClonedElements.forEach((el) => {
+        if (el.style) {
+          for (let i = 0; i < el.style.length; i++) {
+            const propName = el.style[i];
+            const val = el.style.getPropertyValue(propName);
+            if (val && (val.toLowerCase().includes('oklch') || val.toLowerCase().includes('oklab'))) {
+              el.style.setProperty(propName, convertUnsupportedColors(val));
+            }
+          }
+        }
+      });
+      
+      await html2pdf().set(opt).from(clonedElement).save();
+    } catch (err) {
+      console.error("Error generating PDF:", err);
+    } finally {
+      window.getComputedStyle = originalGetComputedStyle;
+      CSSStyleDeclaration.prototype.getPropertyValue = originalGetPropertyValue;
+      if (cssRulesDescriptor) {
+        Object.defineProperty(CSSStyleSheet.prototype, 'cssRules', cssRulesDescriptor);
+      }
+
+      originalStyles.forEach((originalVal, el) => {
+        if (el instanceof HTMLLinkElement) {
+          el.disabled = false;
+        } else if (el instanceof HTMLStyleElement) {
+          el.textContent = originalVal;
+        }
+      });
+      
+      tempStyles.forEach(styleEl => {
+        if (styleEl.parentNode) {
+          styleEl.parentNode.removeChild(styleEl);
+        }
+      });
+      
+      setDownloadingCert(false);
+    }
+  };
 
   // Scheduled Exams states
   const [examSchedules, setExamSchedules] = useState<any[]>([]);
@@ -2028,32 +2281,61 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm print-hide">
             <style>{`
               @media print {
+                html, body {
+                  background: white !important;
+                  background-color: white !important;
+                  color: black !important;
+                  margin: 0 !important;
+                  padding: 0 !important;
+                  width: 100% !important;
+                  height: 100% !important;
+                }
+                #root, .print-hide {
+                  background: transparent !important;
+                  background-color: transparent !important;
+                  display: none !important;
+                }
                 body * {
                   visibility: hidden;
                 }
                 .printable-certificate, .printable-certificate * {
-                  visibility: visible;
+                  visibility: visible !important;
                 }
                 .printable-certificate {
-                  position: absolute;
-                  left: 0;
-                  top: 0;
+                  visibility: visible !important;
+                  position: fixed !important;
+                  left: 0 !important;
+                  top: 0 !important;
+                  right: 0 !important;
+                  bottom: 0 !important;
                   width: 100% !important;
-                  height: auto !important;
+                  height: 100% !important;
                   margin: 0 !important;
-                  padding: 2.5rem !important;
+                  padding: 3rem !important;
                   border: 12px double #d97706 !important;
-                  background: white !important;
-                  box-shadow: none !important;
-                  display: block !important;
+                  background: #fffbeb !important;
+                  background-color: #fffbeb !important;
                   color: #0c0a09 !important;
+                  box-shadow: none !important;
+                  display: flex !important;
+                  flex-direction: column !important;
+                  justify-content: space-between !important;
+                  box-sizing: border-box !important;
+                  z-index: 9999999 !important;
                 }
-                .print-hide {
-                  display: none !important;
+                div, section, main, header, footer, [role="dialog"] {
+                  background: transparent !important;
+                  background-color: transparent !important;
+                  box-shadow: none !important;
+                  border-color: transparent !important;
+                }
+                * {
+                  -webkit-print-color-adjust: exact !important;
+                  print-color-adjust: exact !important;
                 }
               }
             `}</style>
-            <div className="bg-slate-900 border border-zinc-800 rounded-2xl max-w-4xl w-full p-4 sm:p-6 relative shadow-2xl overflow-hidden flex flex-col max-h-[95vh]">
+            <div className="bg-slate-900 border border-zinc-800 rounded-2xl max-w-4xl w-full p-4 sm:p-6 relative shadow-2xl overflow-hidden flex flex-col max-h-[95vh] print-hide">
               <div className="flex items-center justify-between border-b border-zinc-800 pb-3 mb-4">
                 <div className="text-left">
                   <h3 className="font-heading font-black text-sm uppercase text-yellow-500 flex items-center gap-2">
@@ -2071,7 +2353,7 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
               </div>
 
               {/* Printable Frame Area */}
-              <div className="bg-amber-50/95 text-zinc-950 p-5 sm:p-10 rounded-xl border-8 border-amber-600 shadow-inner relative printable-certificate overflow-hidden text-center aspect-[1.414/1] max-w-full mx-auto font-serif" style={{ borderStyle: 'double', borderWidth: '10px' }}>
+              <div id="printable-certificate-el" className="bg-amber-50/95 text-zinc-950 p-5 sm:p-10 rounded-xl border-8 border-amber-600 shadow-inner relative printable-certificate overflow-hidden text-center aspect-[1.414/1] max-w-full mx-auto font-serif" style={{ borderStyle: 'double', borderWidth: '10px' }}>
                 {/* Watermark symbol background */}
                 <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none select-none">
                   <Award className="w-64 h-64 text-amber-900" />
@@ -2141,8 +2423,8 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
                 </div>
 
                 {/* Beautiful Engaging Karate Journey Note */}
-                <div className="my-3 sm:my-4 max-w-lg mx-auto bg-amber-100/40 p-2 rounded-lg border border-amber-200/50 relative z-10 text-center">
-                  <p className="italic text-[8px] sm:text-[10px] text-zinc-650 font-serif leading-snug">
+                <div className="my-3 sm:my-4 max-w-lg mx-auto bg-amber-100/40 p-2 rounded-lg border border-amber-200/50 relative z-10 text-center font-serif">
+                  <p className="italic text-[8px] sm:text-[10px] text-zinc-650 leading-snug">
                     "The ultimate aim of Karate lies not in victory or defeat, but in the perfection of the character of its participants." Remain humble, stay focused, and persist with determination.
                   </p>
                 </div>
@@ -2168,8 +2450,8 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
                 </div>
               </div>
 
-              {/* Print Control Buttons (Hidden when printing) */}
-              <div className="mt-4 flex justify-end space-x-3 border-t border-zinc-800 pt-3 shrink-0">
+              {/* Print & Download Control Buttons (Hidden when printing) */}
+              <div className="mt-4 flex flex-wrap gap-2 justify-end border-t border-zinc-800 pt-3 shrink-0 print-hide">
                 <button
                   type="button"
                   onClick={() => setSelectedCert(null)}
@@ -2180,10 +2462,21 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
                 <button
                   type="button"
                   onClick={() => window.print()}
-                  className="bg-yellow-500 hover:bg-yellow-400 text-slate-950 text-[10px] font-heading font-black uppercase tracking-widest px-4.5 py-2 rounded-lg flex items-center space-x-1.5 shadow-lg hover:shadow-yellow-500/10 transition-all cursor-pointer"
+                  className="bg-amber-600 hover:bg-amber-500 text-white text-[10px] font-heading font-black uppercase tracking-widest px-4.5 py-2 rounded-lg flex items-center space-x-1.5 shadow-lg hover:shadow-amber-500/10 transition-all cursor-pointer"
+                  title="Open standard browser print dialog"
                 >
                   <Printer className="w-3.5 h-3.5" />
-                  <span>Print / Save PDF</span>
+                  <span>Print Certificate</span>
+                </button>
+                <button
+                  type="button"
+                  disabled={downloadingCert}
+                  onClick={handleDownloadCertificatePDF}
+                  className="bg-yellow-500 hover:bg-yellow-400 disabled:bg-zinc-750 disabled:text-zinc-500 text-slate-950 text-[10px] font-heading font-black uppercase tracking-widest px-4.5 py-2 rounded-lg flex items-center space-x-1.5 shadow-lg hover:shadow-yellow-500/10 transition-all cursor-pointer"
+                  title="Directly download high quality PDF file"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>{downloadingCert ? 'Downloading...' : 'Download Certificate PDF'}</span>
                 </button>
               </div>
             </div>
