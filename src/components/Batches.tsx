@@ -115,6 +115,12 @@ export default function Batches({ onSelectBatch }: BatchesProps) {
       const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
       if (!AudioContext) return;
       const ctx = new AudioContext();
+      
+      // Explicitly resume audio context to handle browser-specific autoplay restrictions
+      if (ctx.state === 'suspended') {
+        ctx.resume().catch(e => console.warn('AudioContext resume failed:', e));
+      }
+      
       const now = ctx.currentTime;
       const notes = [784, 1046.5, 1318.5]; // G5, C6, E6
       notes.forEach((freq, i) => {

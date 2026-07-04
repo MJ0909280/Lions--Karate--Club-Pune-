@@ -35,6 +35,12 @@ const playKarateBell = () => {
     const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
     if (!AudioContextClass) return;
     const ctx = new AudioContextClass();
+    
+    // Explicitly resume audio context to handle browser-specific autoplay restrictions
+    if (ctx.state === 'suspended') {
+      ctx.resume().catch(e => console.warn('AudioContext resume failed:', e));
+    }
+    
     const now = ctx.currentTime;
 
     const fundamental = 330; // pitch frequency (E4 resonant tone)

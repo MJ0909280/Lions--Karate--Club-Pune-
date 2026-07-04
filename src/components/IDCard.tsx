@@ -23,6 +23,11 @@ export default function IDCard({ admission, showSuccessBanner = false, hideDownl
       if (!AudioContext) return;
       const ctx = new AudioContext();
       
+      // Explicitly resume audio context to handle browser-specific autoplay restrictions
+      if (ctx.state === 'suspended') {
+        ctx.resume().catch(e => console.warn('AudioContext resume failed:', e));
+      }
+      
       const playTone = (freq: number, start: number, duration: number) => {
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
