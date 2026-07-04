@@ -56,7 +56,9 @@ import {
   Download,
   Printer,
   MessageSquare,
-  CheckCircle2
+  CheckCircle2,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 
 // @ts-ignore
@@ -288,6 +290,7 @@ export default function AdminPanel() {
 
   // Tab navigation console state
   const [adminTab, setAdminTab] = useState<'parent_queries' | 'admissions' | 'batches' | 'site_settings' | 'exams' | 'seo_ai' | 'bills'>('admissions');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Parents Online Queries States
   const [parentQueries, setParentQueries] = useState<ParentQuery[]>([]);
@@ -2015,111 +2018,279 @@ export default function AdminPanel() {
         </div>
 
         {/* Tab Selection Row */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-zinc-900 pb-px">
-          <div className="flex space-x-6">
-            <button
-              onClick={() => setAdminTab('admissions')}
-              className={`font-heading font-black text-xs tracking-widest uppercase pb-4 border-b-2 transition-all cursor-pointer ${
-                adminTab === 'admissions' 
-                  ? 'border-yellow-500 text-yellow-500 font-extrabold' 
-                  : 'border-transparent text-zinc-550 hover:text-zinc-300'
-              }`}
-            >
-              Student Directory
-            </button>
-            <button
-              onClick={() => setAdminTab('parent_queries')}
-              className={`font-heading font-black text-xs tracking-widest uppercase pb-4 border-b-2 transition-all cursor-pointer flex items-center space-x-1.5 ${
-                adminTab === 'parent_queries' 
-                  ? 'border-yellow-500 text-yellow-500 font-extrabold' 
-                  : 'border-transparent text-zinc-550 hover:text-zinc-300'
-              }`}
-            >
-              <MessageSquare className="w-3.5 h-3.5 shrink-0" />
-              <span>Parent Queries</span>
-              {parentQueries.filter(q => q.status === 'new').length > 0 && (
-                <span className="bg-[#FF3B3F] text-white text-[9px] font-mono px-1.5 py-0.5 rounded-full font-bold animate-bounce shrink-0">
-                  {parentQueries.filter(q => q.status === 'new').length}
-                </span>
-              )}
-            </button>
-            <button
-              onClick={() => setAdminTab('batches')}
-              className={`font-heading font-black text-xs tracking-widest uppercase pb-4 border-b-2 transition-all cursor-pointer ${
-                adminTab === 'batches' 
-                  ? 'border-yellow-500 text-yellow-500 font-extrabold' 
-                  : 'border-transparent text-zinc-550 hover:text-zinc-300'
-              }`}
-            >
-              Karate Batches
-            </button>
-            <button
-              onClick={() => setAdminTab('site_settings')}
-              className={`font-heading font-black text-xs tracking-widest uppercase pb-4 border-b-2 transition-all cursor-pointer ${
-                adminTab === 'site_settings' 
-                  ? 'border-yellow-500 text-yellow-500 font-extrabold' 
-                  : 'border-transparent text-zinc-550 hover:text-zinc-350'
-              }`}
-            >
-              Site Videos
-            </button>
-            <button
-              onClick={() => setAdminTab('exams')}
-              className={`font-heading font-black text-xs tracking-widest uppercase pb-4 border-b-2 transition-all cursor-pointer ${
-                adminTab === 'exams' 
-                  ? 'border-yellow-500 text-yellow-500 font-extrabold' 
-                  : 'border-transparent text-zinc-555 hover:text-zinc-350'
-              }`}
-            >
-              Exams & Belt Grading
-            </button>
-            <button
-              onClick={() => setAdminTab('seo_ai')}
-              className={`font-heading font-black text-xs tracking-widest uppercase pb-4 border-b-2 transition-all cursor-pointer flex items-center space-x-1 ${
-                adminTab === 'seo_ai' 
-                  ? 'border-yellow-500 text-yellow-500 font-extrabold' 
-                  : 'border-transparent text-zinc-550 hover:text-zinc-300'
-              }`}
-            >
-              <Sparkles className="w-3.5 h-3.5 shrink-0" />
-              <span>GSC & AI SEO</span>
-            </button>
-            <button
-              onClick={() => setAdminTab('bills')}
-              className={`font-heading font-black text-xs tracking-widest uppercase pb-4 border-b-2 transition-all cursor-pointer flex items-center space-x-1 ${
-                adminTab === 'bills' 
-                  ? 'border-yellow-500 text-yellow-500 font-extrabold' 
-                  : 'border-transparent text-zinc-550 hover:text-zinc-350'
-              }`}
-            >
-              <DollarSign className="w-3.5 h-3.5 shrink-0" />
-              <span>Fees & Billing</span>
-            </button>
-          </div>
-
-          {adminTab === 'bills' && (
-            <div className="flex items-center space-x-3 pb-4 sm:pb-0">
+        <div className="border-b border-zinc-900 pb-px">
+          {/* Desktop Version (xl and above) */}
+          <div className="hidden xl:flex flex-row items-center justify-between gap-4">
+            <div className="flex space-x-6">
               <button
-                onClick={() => {
-                  setIsGeneratingReceipt(!isGeneratingReceipt);
-                  setBillError('');
-                }}
-                className="font-heading font-extrabold text-[10px] uppercase tracking-wider bg-yellow-500 hover:bg-yellow-400 text-slate-950 px-4 py-2 rounded transition-all flex items-center space-x-1.5 shadow-md cursor-pointer animate-pulse"
+                onClick={() => setAdminTab('admissions')}
+                className={`font-heading font-black text-xs tracking-widest uppercase pb-4 border-b-2 transition-all cursor-pointer ${
+                  adminTab === 'admissions' 
+                    ? 'border-yellow-500 text-yellow-500 font-extrabold' 
+                    : 'border-transparent text-zinc-550 hover:text-zinc-300'
+                }`}
               >
-                {isGeneratingReceipt ? (
-                  <>
-                    <FileText className="w-3.5 h-3.5" />
-                    <span>View Receipts Log</span>
-                  </>
-                ) : (
-                  <>
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Create New Bill</span>
-                  </>
+                Student Directory
+              </button>
+              <button
+                onClick={() => setAdminTab('parent_queries')}
+                className={`font-heading font-black text-xs tracking-widest uppercase pb-4 border-b-2 transition-all cursor-pointer flex items-center space-x-1.5 ${
+                  adminTab === 'parent_queries' 
+                    ? 'border-yellow-500 text-yellow-500 font-extrabold' 
+                    : 'border-transparent text-zinc-550 hover:text-zinc-300'
+                }`}
+              >
+                <MessageSquare className="w-3.5 h-3.5 shrink-0" />
+                <span>Parent Queries</span>
+                {parentQueries.filter(q => q.status === 'new').length > 0 && (
+                  <span className="bg-[#FF3B3F] text-white text-[9px] font-mono px-1.5 py-0.5 rounded-full font-bold animate-bounce shrink-0">
+                    {parentQueries.filter(q => q.status === 'new').length}
+                  </span>
                 )}
               </button>
+              <button
+                onClick={() => setAdminTab('batches')}
+                className={`font-heading font-black text-xs tracking-widest uppercase pb-4 border-b-2 transition-all cursor-pointer ${
+                  adminTab === 'batches' 
+                    ? 'border-yellow-500 text-yellow-500 font-extrabold' 
+                    : 'border-transparent text-zinc-550 hover:text-zinc-300'
+                }`}
+              >
+                Karate Batches
+              </button>
+              <button
+                onClick={() => setAdminTab('site_settings')}
+                className={`font-heading font-black text-xs tracking-widest uppercase pb-4 border-b-2 transition-all cursor-pointer ${
+                  adminTab === 'site_settings' 
+                    ? 'border-yellow-500 text-yellow-500 font-extrabold' 
+                    : 'border-transparent text-zinc-550 hover:text-zinc-350'
+                }`}
+              >
+                Site Videos
+              </button>
+              <button
+                onClick={() => setAdminTab('exams')}
+                className={`font-heading font-black text-xs tracking-widest uppercase pb-4 border-b-2 transition-all cursor-pointer ${
+                  adminTab === 'exams' 
+                    ? 'border-yellow-500 text-yellow-500 font-extrabold' 
+                    : 'border-transparent text-zinc-555 hover:text-zinc-350'
+                }`}
+              >
+                Exams & Belt Grading
+              </button>
+              <button
+                onClick={() => setAdminTab('seo_ai')}
+                className={`font-heading font-black text-xs tracking-widest uppercase pb-4 border-b-2 transition-all cursor-pointer flex items-center space-x-1 ${
+                  adminTab === 'seo_ai' 
+                    ? 'border-yellow-500 text-yellow-500 font-extrabold' 
+                    : 'border-transparent text-zinc-550 hover:text-zinc-300'
+                }`}
+              >
+                <Sparkles className="w-3.5 h-3.5 shrink-0" />
+                <span>GSC & AI SEO</span>
+              </button>
+              <button
+                onClick={() => setAdminTab('bills')}
+                className={`font-heading font-black text-xs tracking-widest uppercase pb-4 border-b-2 transition-all cursor-pointer flex items-center space-x-1 ${
+                  adminTab === 'bills' 
+                    ? 'border-yellow-500 text-yellow-500 font-extrabold' 
+                    : 'border-transparent text-zinc-550 hover:text-zinc-350'
+                }`}
+              >
+                <DollarSign className="w-3.5 h-3.5 shrink-0" />
+                <span>Fees & Billing</span>
+              </button>
             </div>
-          )}
+
+            {adminTab === 'bills' && (
+              <div className="flex items-center space-x-3 pb-4">
+                <button
+                  onClick={() => {
+                    setIsGeneratingReceipt(!isGeneratingReceipt);
+                    setBillError('');
+                  }}
+                  className="font-heading font-extrabold text-[10px] uppercase tracking-wider bg-yellow-500 hover:bg-yellow-400 text-slate-950 px-4 py-2 rounded transition-all flex items-center space-x-1.5 shadow-md cursor-pointer animate-pulse"
+                >
+                  {isGeneratingReceipt ? (
+                    <>
+                      <FileText className="w-3.5 h-3.5" />
+                      <span>View Receipts Log</span>
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Create New Bill</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Mobile Version (Below xl) */}
+          <div className="xl:hidden w-full flex flex-col space-y-3 pb-4 pt-1">
+            <div className="relative w-full">
+              <button
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="w-full bg-slate-950 border border-zinc-900 rounded-xl px-4 py-3.5 flex items-center justify-between text-left shadow-lg cursor-pointer focus:outline-none hover:border-yellow-500/30 transition-all"
+              >
+                <div className="flex items-center space-x-3">
+                  {adminTab === 'admissions' && <Users className="w-4 h-4 text-yellow-500" />}
+                  {adminTab === 'parent_queries' && <MessageSquare className="w-4 h-4 text-yellow-500" />}
+                  {adminTab === 'batches' && <Calendar className="w-4 h-4 text-yellow-500" />}
+                  {adminTab === 'site_settings' && <Video className="w-4 h-4 text-yellow-500" />}
+                  {adminTab === 'exams' && <Award className="w-4 h-4 text-yellow-500" />}
+                  {adminTab === 'seo_ai' && <Sparkles className="w-4 h-4 text-yellow-500" />}
+                  {adminTab === 'bills' && <DollarSign className="w-4 h-4 text-yellow-500" />}
+
+                  <span className="font-heading font-black text-xs uppercase tracking-widest text-zinc-100">
+                    {adminTab === 'admissions' && 'Student Directory'}
+                    {adminTab === 'parent_queries' && 'Parent Queries'}
+                    {adminTab === 'batches' && 'Karate Batches'}
+                    {adminTab === 'site_settings' && 'Site Videos'}
+                    {adminTab === 'exams' && 'Exams & Belt Grading'}
+                    {adminTab === 'seo_ai' && 'GSC & AI SEO'}
+                    {adminTab === 'bills' && 'Fees & Billing'}
+                  </span>
+
+                  {adminTab === 'parent_queries' && parentQueries.filter(q => q.status === 'new').length > 0 && (
+                    <span className="bg-[#FF3B3F] text-white text-[9px] font-mono px-1.5 py-0.5 rounded-full font-bold">
+                      {parentQueries.filter(q => q.status === 'new').length}
+                    </span>
+                  )}
+                </div>
+                {isMobileMenuOpen ? (
+                  <ChevronUp className="w-4 h-4 text-zinc-400" />
+                ) : (
+                  <ChevronDown className="w-4 h-4 text-zinc-400" />
+                )}
+              </button>
+
+              {isMobileMenuOpen && (
+                <div className="absolute z-50 left-0 right-0 mt-2 bg-slate-950 border border-zinc-900 rounded-xl overflow-hidden shadow-2xl divide-y divide-zinc-900/50">
+                  <button
+                    onClick={() => { setAdminTab('admissions'); setIsMobileMenuOpen(false); }}
+                    className={`w-full px-4 py-3 flex items-center justify-between text-left transition-all hover:bg-zinc-900/65 ${
+                      adminTab === 'admissions' ? 'bg-zinc-900/30 text-yellow-500' : 'text-zinc-400'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <Users className={`w-4 h-4 ${adminTab === 'admissions' ? 'text-yellow-500' : 'text-zinc-500'}`} />
+                      <span className="font-heading font-bold text-xs uppercase tracking-wider">Student Directory</span>
+                    </div>
+                    {adminTab === 'admissions' && <Check className="w-3.5 h-3.5 text-yellow-500" />}
+                  </button>
+
+                  <button
+                    onClick={() => { setAdminTab('parent_queries'); setIsMobileMenuOpen(false); }}
+                    className={`w-full px-4 py-3 flex items-center justify-between text-left transition-all hover:bg-zinc-900/65 ${
+                      adminTab === 'parent_queries' ? 'bg-zinc-900/30 text-yellow-500' : 'text-zinc-400'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <MessageSquare className={`w-4 h-4 ${adminTab === 'parent_queries' ? 'text-yellow-500' : 'text-zinc-500'}`} />
+                      <span className="font-heading font-bold text-xs uppercase tracking-wider">Parent Queries</span>
+                      {parentQueries.filter(q => q.status === 'new').length > 0 && (
+                        <span className="bg-[#FF3B3F] text-white text-[9px] font-mono px-1.5 py-0.5 rounded-full font-bold">
+                          {parentQueries.filter(q => q.status === 'new').length}
+                        </span>
+                      )}
+                    </div>
+                    {adminTab === 'parent_queries' && <Check className="w-3.5 h-3.5 text-yellow-500" />}
+                  </button>
+
+                  <button
+                    onClick={() => { setAdminTab('batches'); setIsMobileMenuOpen(false); }}
+                    className={`w-full px-4 py-3 flex items-center justify-between text-left transition-all hover:bg-zinc-900/65 ${
+                      adminTab === 'batches' ? 'bg-zinc-900/30 text-yellow-500' : 'text-zinc-400'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <Calendar className={`w-4 h-4 ${adminTab === 'batches' ? 'text-yellow-500' : 'text-zinc-500'}`} />
+                      <span className="font-heading font-bold text-xs uppercase tracking-wider">Karate Batches</span>
+                    </div>
+                    {adminTab === 'batches' && <Check className="w-3.5 h-3.5 text-yellow-500" />}
+                  </button>
+
+                  <button
+                    onClick={() => { setAdminTab('site_settings'); setIsMobileMenuOpen(false); }}
+                    className={`w-full px-4 py-3 flex items-center justify-between text-left transition-all hover:bg-zinc-900/65 ${
+                      adminTab === 'site_settings' ? 'bg-zinc-900/30 text-yellow-500' : 'text-zinc-400'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <Video className={`w-4 h-4 ${adminTab === 'site_settings' ? 'text-yellow-500' : 'text-zinc-500'}`} />
+                      <span className="font-heading font-bold text-xs uppercase tracking-wider">Site Videos</span>
+                    </div>
+                    {adminTab === 'site_settings' && <Check className="w-3.5 h-3.5 text-yellow-500" />}
+                  </button>
+
+                  <button
+                    onClick={() => { setAdminTab('exams'); setIsMobileMenuOpen(false); }}
+                    className={`w-full px-4 py-3 flex items-center justify-between text-left transition-all hover:bg-zinc-900/65 ${
+                      adminTab === 'exams' ? 'bg-zinc-900/30 text-yellow-500' : 'text-zinc-400'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <Award className={`w-4 h-4 ${adminTab === 'exams' ? 'text-yellow-500' : 'text-zinc-500'}`} />
+                      <span className="font-heading font-bold text-xs uppercase tracking-wider">Exams & Belt Grading</span>
+                    </div>
+                    {adminTab === 'exams' && <Check className="w-3.5 h-3.5 text-yellow-500" />}
+                  </button>
+
+                  <button
+                    onClick={() => { setAdminTab('seo_ai'); setIsMobileMenuOpen(false); }}
+                    className={`w-full px-4 py-3 flex items-center justify-between text-left transition-all hover:bg-zinc-900/65 ${
+                      adminTab === 'seo_ai' ? 'bg-zinc-900/30 text-yellow-500' : 'text-zinc-400'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <Sparkles className={`w-4 h-4 ${adminTab === 'seo_ai' ? 'text-yellow-500' : 'text-zinc-500'}`} />
+                      <span className="font-heading font-bold text-xs uppercase tracking-wider">GSC & AI SEO</span>
+                    </div>
+                    {adminTab === 'seo_ai' && <Check className="w-3.5 h-3.5 text-yellow-500" />}
+                  </button>
+
+                  <button
+                    onClick={() => { setAdminTab('bills'); setIsMobileMenuOpen(false); }}
+                    className={`w-full px-4 py-3 flex items-center justify-between text-left transition-all hover:bg-zinc-900/65 ${
+                      adminTab === 'bills' ? 'bg-zinc-900/30 text-yellow-500' : 'text-zinc-400'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <DollarSign className={`w-4 h-4 ${adminTab === 'bills' ? 'text-yellow-500' : 'text-zinc-500'}`} />
+                      <span className="font-heading font-bold text-xs uppercase tracking-wider">Fees & Billing</span>
+                    </div>
+                    {adminTab === 'bills' && <Check className="w-3.5 h-3.5 text-yellow-500" />}
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {adminTab === 'bills' && (
+              <div className="w-full pt-1.5">
+                <button
+                  onClick={() => {
+                    setIsGeneratingReceipt(!isGeneratingReceipt);
+                    setBillError('');
+                  }}
+                  className="w-full justify-center font-heading font-extrabold text-[11px] uppercase tracking-wider bg-yellow-500 hover:bg-yellow-400 text-slate-950 px-4 py-3 rounded-xl transition-all flex items-center space-x-1.5 shadow-md cursor-pointer"
+                >
+                  {isGeneratingReceipt ? (
+                    <>
+                      <FileText className="w-3.5 h-3.5" />
+                      <span>View Receipts Log</span>
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Create New Bill</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+          </div>
 
           {adminTab === 'admissions' && (
             <div className="flex items-center space-x-3 pb-4 sm:pb-0">
@@ -3155,6 +3326,7 @@ export default function AdminPanel() {
                                   <td className="py-4.5 px-6 text-left">
                                     <span className="font-heading font-black text-yellow-500 font-mono tracking-wider block">{item.studentId}</span>
                                     <span className="text-white font-extrabold uppercase mt-1 block">{item.studentName}</span>
+                                    {item.schoolName && <span className="text-yellow-500/80 text-[10px] font-semibold mt-0.5 block">School: {item.schoolName}</span>}
                                     {item.parentPhone && <span className="text-zinc-500 text-[10px] mt-0.5 block">Phone: {item.parentPhone}</span>}
                                     {item.coachName && <span className="text-zinc-500 text-[10px] mt-0.5 block">Coach: {item.coachName}</span>}
                                   </td>

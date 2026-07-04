@@ -25,6 +25,7 @@ export interface Admission {
   branch?: string;        // Selected Karate Training Branch
   coachName?: string;     // Automated assigned coach based on branch selection
   feesStatus?: 'Paid' | 'Unpaid'; // Track student fee status
+  schoolName?: string;    // School / college / institution name
 }
 
 export interface BranchInfoStatic {
@@ -148,6 +149,7 @@ export interface ExamRegistration {
   venueDetails?: string;
   grade?: string;
   remarks?: string;
+  schoolName?: string;
   createdAt: number;
   updatedAt: number;
 }

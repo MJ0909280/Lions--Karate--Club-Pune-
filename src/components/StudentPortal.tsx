@@ -426,6 +426,7 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
   const [parentPhone, setParentPhone] = useState('');
   const [branch, setBranch] = useState('');
   const [coachName, setCoachName] = useState('');
+  const [schoolName, setSchoolName] = useState('');
   const [feesStatus, setFeesStatus] = useState<'Paid' | 'Pending'>('Pending');
   const [formLoading, setFormLoading] = useState(false);
   const [formSuccess, setFormSuccess] = useState(false);
@@ -585,6 +586,7 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
         setParentName(studentData.parentName || '');
         setParentPhone(studentData.phone || '');
         setBranch(studentData.branch || DOJO_BRANCHES[0].name);
+        setSchoolName(studentData.schoolName || '');
 
         // Intelligently guess the next belt rank for the student
         const studentBeltLevel = studentData.beltLevel || '';
@@ -722,7 +724,8 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
           createdAt: Date.now(),
           approvedAt: Date.now(),
           isDirectExamRegistration: true,
-          branch: branch
+          branch: branch,
+          schoolName: schoolName.trim()
         };
 
         await addDoc(collection(db, 'admissions'), admissionPayload);
@@ -747,6 +750,7 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
         examScheduleId: selectedScheduleId || '',
         examDate: selectedSched ? selectedSched.examDate : '',
         venueDetails: selectedSched ? selectedSched.venueDetails : '',
+        schoolName: schoolName.trim(),
         createdAt: Date.now(),
         updatedAt: Date.now()
       };
@@ -766,6 +770,7 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
         createdAt: Date.now(),
         updatedAt: Date.now(),
         dob: '',
+        schoolName: schoolName.trim(),
         gender: 'other',
         whatsApp: parentPhone.trim(),
         email: '',
@@ -1567,7 +1572,19 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
                         value={parentPhone}
                         onChange={(e) => setParentPhone(e.target.value)}
                         placeholder="Phone Number"
-                        className="w-full bg-slate-950 border border-zinc-300 text-zinc-300 text-xs px-3.5 py-2.5 rounded-lg focus:outline-none"
+                        className="w-full bg-slate-950 border border-zinc-850 text-zinc-300 text-xs px-3.5 py-2.5 rounded-lg focus:outline-none focus:border-yellow-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-zinc-400 text-[9px] uppercase tracking-wider font-bold mb-1.5 block">School / Academic Institution Name *</label>
+                      <input 
+                        type="text" 
+                        required 
+                        value={schoolName}
+                        onChange={(e) => setSchoolName(e.target.value)}
+                        placeholder="e.g. Podar International School, Pune"
+                        className="w-full bg-slate-950 border border-zinc-850 text-zinc-300 text-xs px-3.5 py-2.5 rounded-lg focus:outline-none focus:border-yellow-500"
                       />
                     </div>
                   </div>
