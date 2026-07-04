@@ -38,7 +38,11 @@ import {
   CheckSquare,
   Bell,
   Info,
-  Download
+  Download,
+  Trophy,
+  Flame,
+  Star,
+  Sparkles
 } from 'lucide-react';
 
 const playKarateBell = () => {
@@ -146,6 +150,19 @@ interface ExamRecord {
   grade?: string;
   remarks?: string;
   createdAt: number;
+}
+
+interface BadgeDef {
+  id: string;
+  name: string;
+  icon: React.ComponentType<any>;
+  color: string;
+  borderColor: string;
+  bgColor: string;
+  textColor: string;
+  description: string;
+  progressText: string;
+  isUnlocked: boolean;
 }
 
 function KarateBeltGraphic({ beltName }: { beltName: string }) {
@@ -418,6 +435,95 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
   const [showExamForm, setShowExamForm] = useState(false);
   const [selectedCert, setSelectedCert] = useState<ExamRecord | null>(null);
   const [downloadingCert, setDownloadingCert] = useState(false);
+
+  // Dynamic automated badge calculations with zero overhead
+  const getStudentBadges = (): BadgeDef[] => {
+    if (!activeStudent) return [];
+    
+    const hasPassedExam = registeredExams.some(e => e.status === 'passed');
+    const hasHighScore = registeredExams.some(e => 
+      e.status === 'passed' && 
+      e.grade && 
+      ['A', 'A+', 'Outstanding', 'Distinction', 'Excellent', 'A GRADE', 'OUTSTANDING'].includes(e.grade.trim().toUpperCase())
+    );
+    const isPastWhite = activeStudent.beltLevel.toLowerCase() !== 'white belt' && 
+                        !activeStudent.beltLevel.toLowerCase().includes('white');
+
+    return [
+      {
+        id: 'first-step',
+        name: 'First Step',
+        icon: Sparkles,
+        color: 'text-sky-400',
+        borderColor: 'border-sky-500/20',
+        bgColor: 'bg-sky-500/10',
+        textColor: 'text-sky-300',
+        description: 'Attended your first offline karate training session. Welcome to the Dojo!',
+        progressText: attendanceCount >= 1 ? 'Unlocked!' : '0 / 1 Class',
+        isUnlocked: attendanceCount >= 1
+      },
+      {
+        id: 'loyal-lion',
+        name: 'Dedicated Lion',
+        icon: Flame,
+        color: 'text-amber-500',
+        borderColor: 'border-amber-500/20',
+        bgColor: 'bg-amber-500/10',
+        textColor: 'text-amber-300',
+        description: 'Completed 15 classes of high-intensity training. True consistency!',
+        progressText: `${Math.min(attendanceCount, 15)} / 15 Classes`,
+        isUnlocked: attendanceCount >= 15
+      },
+      {
+        id: 'perfect-attendance',
+        name: 'Perfect Attendance',
+        icon: Clock,
+        color: 'text-emerald-400',
+        borderColor: 'border-emerald-500/20',
+        bgColor: 'bg-emerald-500/10',
+        textColor: 'text-emerald-300',
+        description: 'Completed 30 or more training sessions. Unstoppable dedication!',
+        progressText: `${Math.min(attendanceCount, 30)} / 30 Classes`,
+        isUnlocked: attendanceCount >= 30
+      },
+      {
+        id: 'resilient-warrior',
+        name: 'Resilient Warrior',
+        icon: ShieldCheck,
+        color: 'text-indigo-400',
+        borderColor: 'border-indigo-500/20',
+        bgColor: 'bg-indigo-500/10',
+        textColor: 'text-indigo-300',
+        description: 'Successfully promoted past White Belt rank. No longer a beginner!',
+        progressText: isPastWhite ? 'Unlocked!' : 'Reach Yellow Belt+',
+        isUnlocked: isPastWhite
+      },
+      {
+        id: 'first-promo',
+        name: 'First Promotion',
+        icon: GraduationCap,
+        color: 'text-purple-400',
+        borderColor: 'border-purple-500/20',
+        bgColor: 'bg-purple-500/10',
+        textColor: 'text-purple-300',
+        description: 'Challenged the senseis and successfully passed your first promotion exam!',
+        progressText: hasPassedExam ? 'Unlocked!' : '0 / 1 Passed Exam',
+        isUnlocked: hasPassedExam
+      },
+      {
+        id: 'kata-master',
+        name: 'Kata Master',
+        icon: Star,
+        color: 'text-yellow-400',
+        borderColor: 'border-yellow-500/20',
+        bgColor: 'bg-yellow-500/10',
+        textColor: 'text-yellow-300',
+        description: "Achieved an 'A' grade or Outstanding performance on a belt grading test.",
+        progressText: hasHighScore ? 'Unlocked!' : 'Grade A in any Exam',
+        isUnlocked: hasHighScore
+      }
+    ];
+  };
 
   const parseColorValues = (str: string): number[] => {
     const matches = str.match(/[-+]?[0-9]*\.?[0-9]+%?/g);
@@ -1637,6 +1743,30 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
                     <Calendar className="w-3 h-3 text-zinc-650" />
                     JOINED: {formatDate(activeStudent.joiningDate || activeStudent.approvedAt || activeStudent.createdAt)}
                   </p>
+
+                  {/* Dynamic automated mini skill badges display */}
+                  {(() => {
+                    const unlocked = getStudentBadges().filter(b => b.isUnlocked);
+                    if (unlocked.length === 0) return null;
+                    return (
+                      <div className="flex flex-wrap items-center gap-1.5 mt-3 select-none">
+                        <span className="text-[8px] uppercase font-black text-zinc-500 tracking-wider mr-0.5">Badges:</span>
+                        {unlocked.map(badge => {
+                          const BadgeIcon = badge.icon;
+                          return (
+                            <div 
+                              key={badge.id}
+                              title={`${badge.name}: ${badge.description}`}
+                              className={`inline-flex items-center space-x-1 px-2 py-0.5 rounded-full border ${badge.borderColor} ${badge.bgColor} ${badge.textColor} text-[8.5px] font-heading font-black uppercase tracking-wide cursor-help shadow-sm transition-all hover:scale-105`}
+                            >
+                              <BadgeIcon className="w-2.5 h-2.5 shrink-0" />
+                              <span>{badge.name}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
 
@@ -2211,6 +2341,80 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
                 })}
               </div>
             </div>
+            )}
+
+            {/* DIGITAL ACHIEVEMENT BADGES (AUTOMATED CRITERIA) */}
+            {activeTab === 'progress' && (
+              <div className="bg-slate-900/40 border border-zinc-900/80 p-6 sm:p-8 rounded-2xl space-y-6 animate-fade-in">
+                <div className="flex items-center justify-between border-b border-zinc-900/60 pb-3">
+                  <h4 className="font-heading text-sm sm:text-base font-black text-white uppercase tracking-wider flex items-center gap-2">
+                    <Trophy className="w-5 h-5 text-yellow-500 shrink-0" />
+                    Automated Achievement Badges
+                  </h4>
+                  <span className="text-[10px] font-mono font-bold text-yellow-500 uppercase tracking-widest bg-yellow-500/5 px-2.5 py-1 rounded border border-yellow-500/20 shadow-sm">
+                    {getStudentBadges().filter(b => b.isUnlocked).length} / 6 EARNED
+                  </span>
+                </div>
+
+                <p className="text-[11px] text-zinc-400 font-sans leading-relaxed text-left max-w-2xl">
+                  Your child earns these special **Digital Skill Badges** automatically on their profile as they attend daily training sessions and challenge belt promotion tests!
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {getStudentBadges().map(badge => {
+                    const BadgeIcon = badge.icon;
+                    return (
+                      <div 
+                        key={badge.id}
+                        className={`relative p-5 rounded-2xl border text-left flex flex-col justify-between transition-all duration-300 ${
+                          badge.isUnlocked 
+                            ? `border-zinc-850 bg-slate-950/40 shadow-md hover:scale-[1.02] hover:border-zinc-700/80`
+                            : 'border-zinc-900 bg-zinc-950/20 opacity-40'
+                        }`}
+                      >
+                        <div className="space-y-3">
+                          {/* Badge Icon circle & Unlocked tag */}
+                          <div className="flex items-center justify-between">
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${
+                              badge.isUnlocked 
+                                ? `${badge.borderColor} ${badge.bgColor} ${badge.color}`
+                                : 'border-zinc-800/40 bg-zinc-900/20 text-zinc-650'
+                            }`}>
+                              <BadgeIcon className="w-5 h-5" />
+                            </div>
+
+                            <span className={`text-[8px] font-heading font-black uppercase tracking-widest px-2 py-0.5 rounded ${
+                              badge.isUnlocked 
+                                ? 'bg-yellow-500/15 text-yellow-500 border border-yellow-500/10'
+                                : 'bg-zinc-900/45 text-zinc-500 border border-zinc-850/40'
+                            }`}>
+                              {badge.isUnlocked ? 'Unlocked 🏆' : 'Locked 🔒'}
+                            </span>
+                          </div>
+
+                          {/* Badge Name & Details */}
+                          <div>
+                            <h5 className={`font-heading text-xs font-black uppercase tracking-wider ${badge.isUnlocked ? 'text-white' : 'text-zinc-500'}`}>
+                              {badge.name}
+                            </h5>
+                            <p className="text-[10px] text-zinc-450 font-sans leading-relaxed mt-1.5">
+                              {badge.description}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Progress Indicator */}
+                        <div className="mt-4 pt-3 border-t border-zinc-950/50 flex items-center justify-between text-[9px] font-mono">
+                          <span className="text-zinc-550 uppercase">Progress:</span>
+                          <span className={`font-bold ${badge.isUnlocked ? badge.textColor : 'text-zinc-500'}`}>
+                            {badge.progressText}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             )}
 
             {/* EXAMS & BELT GRADING HISTORICAL TIMELINE REGISTER LOGS */}
