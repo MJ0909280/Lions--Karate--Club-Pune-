@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { initializeFirestore, doc, getDocFromServer } from 'firebase/firestore';
+import { initializeFirestore, doc, getDoc } from 'firebase/firestore';
 
 // Embedded Firebase credentials so the ZIP download & Vercel deployment work instantly
 const metaEnv = (import.meta as any).env || {};
@@ -27,9 +27,12 @@ export const db = initializeFirestore(app, {
 export const auth = getAuth();
 
 export async function checkFirestoreConnection(): Promise<boolean> {
+  if (typeof navigator !== 'undefined' && !navigator.onLine) {
+    return false;
+  }
   try {
-    // Attempting to read a public document path. 
-    await getDocFromServer(doc(db, 'settings', 'connection_ping_test'));
+    // Attempting to read a public document path with getDoc (seamless offline fallback support)
+    await getDoc(doc(db, 'settings', 'connection_ping_test'));
     return true;
   } catch (error: any) {
     // If we get permission-denied or similar, the client successfully reached Firestore!

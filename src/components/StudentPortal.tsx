@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import html2pdf from 'html2pdf.js';
+import confetti from 'canvas-confetti';
 import { 
   collection, 
   query, 
@@ -683,6 +684,7 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
   const [feesStatus, setFeesStatus] = useState<'Paid' | 'Pending'>('Pending');
   const [formLoading, setFormLoading] = useState(false);
   const [formSuccess, setFormSuccess] = useState(false);
+  const [successInfo, setSuccessInfo] = useState<{ studentName: string; targetBelt: string } | null>(null);
   const [formError, setFormError] = useState('');
 
   // New School Student registration states (No pre-existing ID)
@@ -1037,6 +1039,10 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
       setActiveStudent(newStudentData);
       setStudentIdInput(studentId);
 
+      setSuccessInfo({
+        studentName: studentName,
+        targetBelt: targetBelt
+      });
       setFormSuccess(true);
       setShowExamForm(false);
       
@@ -1045,6 +1051,42 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
       setSelectedScheduleId('');
       setCoachName('');
       setFeesStatus('Pending');
+
+      // Trigger beautiful sound effect & confetti celebrations
+      try {
+        playKarateBell();
+      } catch (soundErr) {
+        console.error("Sound play issue:", soundErr);
+      }
+
+      try {
+        confetti({
+          particleCount: 150,
+          spread: 80,
+          origin: { y: 0.6 },
+          zIndex: 10000
+        });
+
+        const duration = 2.5 * 1000;
+        const animationEnd = Date.now() + duration;
+        const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 10000 };
+
+        const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
+
+        const interval: any = setInterval(function() {
+          const timeLeft = animationEnd - Date.now();
+
+          if (timeLeft <= 0) {
+            return clearInterval(interval);
+          }
+
+          const particleCount = 40 * (timeLeft / duration);
+          confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } }));
+          confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } }));
+        }, 250);
+      } catch (confettiErr) {
+        console.error("Confetti issue:", confettiErr);
+      }
     } catch (err: any) {
       console.error("Failed to register exam:", err);
       setFormError(err.message || 'Verification failed. Please try again.');
@@ -1612,7 +1654,7 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
 
             {/* NEW EXAMS REGISTRATION FORM COMPONENT (Sleek Accordion) */}
             <AnimatePresence>
-              {(showExamForm || activeTab === 'exam') && (
+              {(showExamForm || activeTab === 'exam') && !formSuccess && (
                 <form 
                   onSubmit={handleRegisterExam}
                   className="bg-slate-900/60 border border-zinc-850 p-6 sm:p-8 rounded-2xl relative shadow-xl space-y-5"
@@ -1902,16 +1944,71 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
               )}
             </AnimatePresence>
 
-            {formSuccess && (
-              <div className="bg-emerald-500/10 border border-emerald-500/20 p-5 rounded-2xl flex items-center space-x-4 text-emerald-400 text-xs shadow-lg animate-fade-in">
-                <CheckCircle className="w-8 h-8 text-emerald-500 shrink-0" />
-                <div>
-                  <h5 className="font-heading font-extrabold text-sm uppercase text-white mb-0.5">Exam Registration Submitted!</h5>
-                  <p className="text-zinc-400 leading-relaxed">
-                    The registration entry has been added successfully. Once payment or eligibility is verified by the Senseis, your status will turn to **Approved**.
-                  </p>
+            {formSuccess && successInfo && (
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="bg-gradient-to-br from-amber-500/10 via-slate-900 to-slate-950 border border-amber-500/30 p-6 sm:p-8 rounded-2xl relative shadow-2xl animate-fade-in text-center overflow-hidden max-w-xl mx-auto my-6 text-zinc-100"
+              >
+                {/* Decorative glow */}
+                <div className="absolute -top-12 -left-12 w-24 h-24 bg-amber-500/10 rounded-full blur-2xl pointer-events-none" />
+                <div className="absolute -bottom-12 -right-12 w-24 h-24 bg-red-500/10 rounded-full blur-2xl pointer-events-none" />
+
+                <div className="mx-auto w-16 h-16 bg-amber-500/10 rounded-full flex items-center justify-center border border-amber-500/30 mb-4 animate-bounce">
+                  <Award className="w-8 h-8 text-amber-500" />
                 </div>
-              </div>
+
+                <div className="space-y-4">
+                  <span className="font-heading font-black text-xs sm:text-sm uppercase text-amber-500 tracking-[0.15em] block">
+                    🥋 RESPECT. DISCIPLINE. PERSEVERANCE.
+                  </span>
+                  
+                  <h4 className="font-title text-xl sm:text-2xl font-black text-white uppercase tracking-tight">
+                    Registration Confirmed!
+                  </h4>
+
+                  <p className="text-zinc-350 text-xs sm:text-sm leading-relaxed max-w-md mx-auto">
+                    Thank you, Parent! <strong className="text-amber-400 font-bold">{successInfo.studentName}</strong> is now officially registered to challenge the <span className="bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded font-bold font-mono text-[11px] sm:text-xs">{successInfo.targetBelt}</span> standard. We are honored to accompany them on this sacred journey of self-improvement.
+                  </p>
+
+                  <div className="bg-slate-950/80 p-4 border border-zinc-900/60 rounded-xl space-y-2 max-w-sm mx-auto text-left text-[11px] text-zinc-400 font-sans">
+                    <div className="flex justify-between">
+                      <span className="text-zinc-500">Student Name:</span>
+                      <strong className="text-zinc-200">{successInfo.studentName}</strong>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-zinc-500">Target Level:</span>
+                      <strong className="text-amber-500">{successInfo.targetBelt}</strong>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-zinc-500">Status:</span>
+                      <strong className="text-yellow-500 uppercase tracking-wider">Pending Verification</strong>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 flex flex-col sm:flex-row justify-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFormSuccess(false);
+                        setSuccessInfo(null);
+                      }}
+                      className="bg-amber-600 hover:bg-amber-500 text-white font-heading font-black text-[10px] uppercase tracking-widest px-6 py-2.5 rounded-lg shadow-lg hover:shadow-amber-500/10 transition-all cursor-pointer w-full sm:w-auto"
+                    >
+                      Awesome, Thank You
+                    </button>
+                    <a
+                      href={`https://wa.me/919049688172?text=${encodeURIComponent(`🥋 Lions Karate Club: registered ${successInfo.studentName} for the ${successInfo.targetBelt} Belt Exam!`)}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="bg-emerald-600 hover:bg-emerald-500 text-white font-heading font-black text-[10px] uppercase tracking-widest px-6 py-2.5 rounded-lg shadow-lg hover:shadow-emerald-500/10 transition-all cursor-pointer inline-flex items-center justify-center gap-1.5 w-full sm:w-auto"
+                    >
+                      <MessageCircle className="w-3.5 h-3.5" />
+                      Notify on WhatsApp
+                    </a>
+                  </div>
+                </div>
+              </motion.div>
             )}
 
             {/* AUTOMATED ELIGIBILITY ALERT CARD */}
