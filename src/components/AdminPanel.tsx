@@ -1614,6 +1614,75 @@ export default function AdminPanel() {
     });
   };
 
+  const handleDownloadExamsCSV = () => {
+    const filteredExams = exams.filter(item => {
+      const sQuery = examSearch.toLowerCase();
+      const matchQuery = item.studentId.toLowerCase().includes(sQuery) || item.studentName.toLowerCase().includes(sQuery);
+      const matchStatus = examStatusFilter === 'all' || item.status === examStatusFilter;
+      return matchQuery && matchStatus;
+    });
+
+    if (filteredExams.length === 0) {
+      alert("No student registration records found to download.");
+      return;
+    }
+
+    // Define CSV headers
+    const headers = [
+      "Student Roll ID",
+      "Student Name",
+      "School Name",
+      "Branch/Center",
+      "Parent Name",
+      "Parent Phone",
+      "Current Belt",
+      "Target Belt",
+      "Coach Assigned",
+      "Exam Date",
+      "Venue Details",
+      "Fees Status",
+      "Approval/Registry State",
+      "Grade/Kyu Rank",
+      "Sensei Remarks & Message"
+    ];
+
+    // Map each item to CSV row format
+    const rows = filteredExams.map(item => [
+      item.studentId || '',
+      item.studentName || '',
+      item.schoolName || '',
+      item.branch || '',
+      item.parentName || '',
+      item.parentPhone || '',
+      item.currentBelt ? item.currentBelt.split(' (')[0] : '',
+      item.targetBelt ? item.targetBelt.split(' (')[0] : '',
+      item.coachName || '',
+      item.examDate || '',
+      item.venueDetails || '',
+      item.feesStatus || 'Pending',
+      item.status || 'pending',
+      item.grade || '',
+      item.remarks ? item.remarks.replace(/"/g, '""') : ''
+    ]);
+
+    // Build CSV string with UTF-8 BOM to preserve any Hindi or special characters correctly in Excel
+    const csvContent = "\uFEFF" + [
+      headers.join(","),
+      ...rows.map(row => row.map(val => `"${String(val).replace(/"/g, '""')}"`).join(","))
+    ].join("\n");
+
+    // Create a blob and trigger download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `Lions_Karate_Belt_Exam_Registrations_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const openCreateScheduleModal = () => {
     setEditingSched(null);
     setSchedDate('');
@@ -3294,19 +3363,30 @@ export default function AdminPanel() {
                     />
                   </div>
 
-                  <div className="flex items-center space-x-3 w-full md:w-auto">
-                    <span className="text-[10px] text-zinc-500 uppercase font-bold shrink-0 font-mono">STATUS FILTER:</span>
-                    <select
-                      value={examStatusFilter}
-                      onChange={(e: any) => setExamStatusFilter(e.target.value)}
-                      className="bg-slate-950 border border-zinc-850 py-2 px-3 rounded-lg text-xs font-medium text-zinc-350 focus:outline-none w-full md:w-auto hover:border-zinc-800"
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
+                    <div className="flex items-center space-x-3">
+                      <span className="text-[10px] text-zinc-500 uppercase font-bold shrink-0 font-mono">STATUS:</span>
+                      <select
+                        value={examStatusFilter}
+                        onChange={(e: any) => setExamStatusFilter(e.target.value)}
+                        className="bg-slate-950 border border-zinc-850 py-2 px-3 rounded-lg text-xs font-medium text-zinc-350 focus:outline-none hover:border-zinc-800"
+                      >
+                        <option value="all">All Submissions</option>
+                        <option value="pending">Review Pending</option>
+                        <option value="approved">Slot Approved</option>
+                        <option value="passed">Completed Passed</option>
+                        <option value="failed">Requires Review</option>
+                      </select>
+                    </div>
+
+                    <button
+                      onClick={handleDownloadExamsCSV}
+                      className="bg-yellow-500/10 hover:bg-yellow-500 text-yellow-500 hover:text-slate-950 border border-yellow-500/20 px-4.5 py-2 rounded-lg text-xs font-heading font-black uppercase tracking-wider transition-all flex items-center justify-center space-x-2 cursor-pointer"
+                      title="Download the currently filtered list as an Excel/CSV Sheet"
                     >
-                      <option value="all">All Submissions</option>
-                      <option value="pending">Review Pending</option>
-                      <option value="approved">Slot Approved</option>
-                      <option value="passed">Completed Passed</option>
-                      <option value="failed">Requires Review</option>
-                    </select>
+                      <Download className="w-4 h-4" />
+                      <span>Download Sheet</span>
+                    </button>
                   </div>
                 </div>
 
@@ -3545,29 +3625,46 @@ export default function AdminPanel() {
                           </div>
 
                           {/* Direct Parent Registration Link Sharer */}
-                          <div className="mt-4 bg-zinc-950/40 p-3.5 border border-zinc-900 rounded-xl space-y-2 text-left">
+                          <div className="mt-4 bg-zinc-950/40 p-3.5 border border-zinc-900 rounded-xl space-y-2.5 text-left">
                             <div className="flex justify-between items-center">
                               <span className="text-[9px] uppercase font-extrabold text-yellow-500/80 tracking-wider">Exam Registration Sharer</span>
                               <span className="text-[9px] text-zinc-500 font-mono">#belt-exam</span>
                             </div>
-                            <button
-                              onClick={() => handleCopyExamRegistrationLink(sched.id)}
-                              className="w-full bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 hover:text-yellow-400 border border-yellow-500/25 py-2 px-3 rounded-lg flex items-center justify-center space-x-2 text-xs font-bold transition-all cursor-pointer"
-                            >
-                              {copiedSchedId === sched.id ? (
-                                <>
-                                  <Check className="w-4 h-4 text-emerald-400 stroke-[3px]" />
-                                  <span className="text-emerald-400">Direct Link Copied!</span>
-                                </>
-                              ) : (
-                                <>
-                                  <Copy className="w-3.5 h-3.5" />
-                                  <span>Copy Registration Link</span>
-                                </>
-                              )}
-                            </button>
+                            
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                              <button
+                                onClick={() => handleCopyExamRegistrationLink(sched.id)}
+                                className="w-full bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 hover:text-yellow-400 border border-yellow-500/25 py-2 px-3 rounded-lg flex items-center justify-center space-x-2 text-xs font-bold transition-all cursor-pointer"
+                              >
+                                {copiedSchedId === sched.id ? (
+                                  <>
+                                    <Check className="w-4 h-4 text-emerald-400 stroke-[3px]" />
+                                    <span className="text-emerald-400">Copied!</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Copy className="w-3.5 h-3.5" />
+                                    <span>Copy Link</span>
+                                  </>
+                                )}
+                              </button>
+
+                              <button
+                                onClick={() => {
+                                  const directLink = `${window.location.origin}${window.location.pathname}#belt-exam`;
+                                  const msg = `🥋 *LIONS KARATE CLUB - BELT EXAM REGISTRATION* \n\nDear Parent,\nRegistration is now open for the upcoming Belt Grading Examination!\n\n📅 *Exam Date:* ${sched.examDate}\n📍 *Venue Details:* ${sched.venueDetails || "Main Dojo Gym"}\n🎯 *Target:* ${sched.beltLevel}\n\n👉 *Please tap the link below to register your child online instantly:* \n${directLink}\n\n_Note: Please make sure to fill in the School Name correctly on the registration form so we can print the official standardized Kyu grade certificates with accurate details!_`;
+                                  window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
+                                }}
+                                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white border border-emerald-500/20 py-2 px-3 rounded-lg flex items-center justify-center space-x-2 text-xs font-bold transition-all cursor-pointer"
+                                title="Share registration link directly on WhatsApp"
+                              >
+                                <Share2 className="w-3.5 h-3.5 text-emerald-100" />
+                                <span>Share on WhatsApp</span>
+                              </button>
+                            </div>
+
                             <p className="text-[9px] text-zinc-500 leading-normal text-center">
-                              Send this link to parents on WhatsApp/SMS. They will land directly on the Registration Form!
+                              Send this direct registration form link to parents. They can register online from their phone!
                             </p>
                           </div>
                         </div>

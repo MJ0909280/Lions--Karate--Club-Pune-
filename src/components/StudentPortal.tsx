@@ -2133,6 +2133,11 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
                   <p className="text-[7px] sm:text-[9px] text-zinc-500 mt-1 font-sans">
                     Student ID: <strong className="text-zinc-800">{selectedCert.studentId}</strong> • Exam Roll No: <strong className="text-zinc-800">{selectedCert.id.substring(0, 8).toUpperCase()}</strong>
                   </p>
+                  {selectedCert.schoolName && (
+                    <p className="text-[8px] sm:text-[10px] text-amber-800 mt-1 font-sans">
+                      Academic Institution: <strong className="text-zinc-900 font-bold">{selectedCert.schoolName}</strong>
+                    </p>
+                  )}
                 </div>
 
                 {/* Beautiful Engaging Karate Journey Note */}
