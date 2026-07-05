@@ -863,7 +863,9 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
     const originalStyles = new Map<HTMLElement, string>();
     const tempStyles: HTMLStyleElement[] = [];
     let clonedElement: HTMLElement | null = null;
+    let wrapper: HTMLElement | null = null;
     
+    const originalGetComputedStyle = window.getComputedStyle;
     const originalGetPropertyValue = CSSStyleDeclaration.prototype.getPropertyValue;
     const cssRulesDescriptor = Object.getOwnPropertyDescriptor(CSSStyleSheet.prototype, 'cssRules');
     
@@ -873,6 +875,32 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
         console.error("Printable certificate element not found");
         return;
       }
+
+      window.getComputedStyle = function (elt, pseudoElt) {
+        const style = originalGetComputedStyle(elt, pseudoElt);
+        return new Proxy(style, {
+          get(target, prop) {
+            if (prop === 'getPropertyValue') {
+              return function (propertyName: string) {
+                const val = target.getPropertyValue(propertyName);
+                if (typeof val === 'string' && (val.toLowerCase().includes('oklch') || val.toLowerCase().includes('oklab'))) {
+                  return convertUnsupportedColors(val);
+                }
+                return val;
+              };
+            }
+            
+            const value = Reflect.get(target, prop);
+            if (typeof value === 'function') {
+              return value.bind(target);
+            }
+            if (typeof value === 'string' && (value.toLowerCase().includes('oklch') || value.toLowerCase().includes('oklab'))) {
+              return convertUnsupportedColors(value);
+            }
+            return value;
+          }
+        });
+      };
 
       CSSStyleDeclaration.prototype.getPropertyValue = function (property: string) {
         const value = originalGetPropertyValue.call(this, property);
@@ -976,18 +1004,24 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
         jsPDF:        { unit: 'mm' as const, format: 'a4' as const, orientation: 'landscape' as const }
       };
 
+      // Create a hidden wrapper container with 0 dimensions so it doesn't disrupt user flow,
+      // but keeps the clone fully present in the DOM so styles can be resolved correctly.
+      wrapper = document.createElement('div');
+      wrapper.id = 'pdf-download-wrapper';
+      wrapper.style.position = 'absolute';
+      wrapper.style.left = '0px';
+      wrapper.style.top = '0px';
+      wrapper.style.width = '0px';
+      wrapper.style.height = '0px';
+      wrapper.style.overflow = 'hidden';
+      document.body.appendChild(wrapper);
+
       clonedElement = element.cloneNode(true) as HTMLElement;
       
-      // Force high-resolution layout inside visible coordinates but hidden behind other overlays
-      clonedElement.style.position = 'fixed';
-      clonedElement.style.left = '0px';
-      clonedElement.style.top = '0px';
+      // Force high-resolution layout inside the wrapper (relative style so html2canvas computes it normally)
+      clonedElement.style.position = 'relative';
       clonedElement.style.width = '1120px';
       clonedElement.style.height = '792px';
-      clonedElement.style.zIndex = '-9999';
-      clonedElement.style.opacity = '1';
-      clonedElement.style.pointerEvents = 'none';
-      clonedElement.style.overflow = 'hidden';
       clonedElement.style.display = 'flex';
       clonedElement.style.flexDirection = 'column';
       clonedElement.style.justifyContent = 'space-between';
@@ -1012,7 +1046,7 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
         }
       });
 
-      document.body.appendChild(clonedElement);
+      wrapper.appendChild(clonedElement);
 
       // Watermark symbol
       const watermark = clonedElement.querySelector('.absolute.inset-0.flex') as HTMLElement;
@@ -1284,7 +1318,11 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
       if (clonedElement && clonedElement.parentNode) {
         clonedElement.parentNode.removeChild(clonedElement);
       }
+      if (wrapper && wrapper.parentNode) {
+        wrapper.parentNode.removeChild(wrapper);
+      }
 
+      window.getComputedStyle = originalGetComputedStyle;
       CSSStyleDeclaration.prototype.getPropertyValue = originalGetPropertyValue;
       if (cssRulesDescriptor) {
         Object.defineProperty(CSSStyleSheet.prototype, 'cssRules', cssRulesDescriptor);
