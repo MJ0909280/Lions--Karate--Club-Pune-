@@ -45,6 +45,8 @@ import {
   Sparkles
 } from 'lucide-react';
 
+const DEFAULT_STUDENT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='%23111'><rect width='100' height='100' fill='%231a1a1a'/><circle cx='50' cy='35' r='14' fill='%23c9a96e'/><path d='M50 50 L35 75 L30 73 L42 53 L38 50 L30 55 L28 50 L40 42 Z' fill='%23fff'/><path d='M50 50 L65 80 L72 82 L58 55 L65 48 L75 52 L78 47 L60 40 Z' fill='%23fff'/><path d='M42 45 H58 V49 H42 Z' fill='%239B1B20'/></svg>";
+
 const playKarateBell = () => {
   try {
     const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
@@ -586,14 +588,282 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
     return convertUnsupportedColors(css);
   };
 
+  const handlePrintCertificate = () => {
+    const element = document.getElementById('printable-certificate-el');
+    if (!element) return;
+
+    // Create a hidden iframe
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow?.document || iframe.contentDocument;
+    if (!doc) return;
+
+    doc.open();
+    doc.write(`
+      <html>
+        <head>
+          <title>Lions Karate Club Certificate</title>
+          <style>
+            @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&family=Inter:wght@400;700;900&display=swap');
+            @page {
+              size: A4 landscape;
+              margin: 0;
+            }
+            body {
+              margin: 0;
+              padding: 0;
+              width: 297mm;
+              height: 210mm;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              background-color: #ffffff;
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+              box-sizing: border-box;
+            }
+            .printable-certificate {
+              width: 297mm;
+              height: 210mm;
+              background-color: #fffbeb !important;
+              color: #0c0a09 !important;
+              border: 16px double #b45309 !important;
+              border-radius: 16px;
+              padding: 12mm 16mm;
+              box-sizing: border-box;
+              display: flex;
+              flex-direction: column;
+              justify-content: space-between;
+              font-family: Georgia, serif;
+              position: relative;
+              text-align: center;
+            }
+            /* Style children elements to render exactly like preview */
+            .matches-header {
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: center;
+            }
+            .matches-header img {
+              width: 80px;
+              height: 80px;
+              margin-bottom: 8px;
+              border-radius: 9999px;
+              background-color: #ffffff;
+              padding: 2px;
+              border: 1px solid #fcd34d;
+            }
+            .matches-header h4 {
+              font-size: 24px;
+              letter-spacing: 0.25em;
+              line-height: 1.2;
+              color: #FF3B3F;
+              font-weight: 900;
+              text-transform: uppercase;
+              text-align: center;
+              margin: 0;
+            }
+            .matches-header p {
+              font-size: 12px;
+              letter-spacing: 0.1em;
+              color: #52525b;
+              text-transform: uppercase;
+              font-weight: 800;
+              margin-top: 6px;
+            }
+            h2 {
+              font-size: 34px;
+              font-weight: 850;
+              color: #78350f;
+              letter-spacing: 0.05em;
+              text-transform: uppercase;
+              font-style: italic;
+              margin: 0;
+            }
+            .line-divider {
+              width: 180px;
+              height: 3px;
+              background-color: #d97706;
+              margin: 8px auto 0;
+            }
+            .statement-body {
+              margin-top: 20px;
+              margin-bottom: 20px;
+              line-height: 1.6;
+            }
+            .statement-body p:first-child {
+              font-size: 15px;
+              font-style: italic;
+              color: #71717a;
+            }
+            .student-name {
+              font-size: 28px;
+              font-weight: 800;
+              color: #0c0a09;
+              text-transform: uppercase;
+              letter-spacing: 0.05em;
+              border-bottom: 1px solid #e4e4e7;
+              padding-bottom: 6px;
+              max-width: 550px;
+              margin: 10px auto;
+            }
+            .promo-text {
+              font-size: 13.5px;
+              line-height: 1.6;
+              max-width: 780px;
+              margin: 12px auto;
+              color: #27272a;
+              font-style: italic;
+            }
+            .belt-promo {
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: center;
+            }
+            .belt-text {
+              font-size: 22px;
+              font-weight: 900;
+              color: #b45309;
+              text-transform: uppercase;
+              letter-spacing: 0.1em;
+              margin: 0;
+            }
+            .grade-badge {
+              font-size: 13px;
+              font-weight: bold;
+              color: #15803d;
+              background-color: #f0fdf4;
+              padding: 4px 12px;
+              border-radius: 4px;
+              border: 1px solid #bbf7d0;
+              margin-top: 8px;
+              display: inline-block;
+            }
+            .student-id {
+              font-size: 10px;
+              color: #71717a;
+              margin-top: 10px;
+            }
+            .institution {
+              font-size: 13px;
+              color: #92400e;
+              margin-top: 8px;
+              font-weight: bold;
+            }
+            .journey-note {
+              margin-top: 20px;
+              padding: 12px 24px;
+              max-width: 700px;
+              background-color: rgba(254, 243, 199, 0.4);
+              border: 1px solid rgba(251, 191, 36, 0.5);
+              border-radius: 8px;
+              margin: 20px auto 0;
+            }
+            .journey-note p {
+              font-size: 11.5px;
+              line-height: 1.5;
+              color: #4b5563;
+              font-style: italic;
+              margin: 0;
+            }
+            .signature-grid {
+              display: grid;
+              grid-template-columns: repeat(2, minmax(0, 1fr));
+              gap: 80px;
+              margin-top: 40px;
+              padding-top: 10px;
+              width: 100%;
+            }
+            .sig-col {
+              text-align: center;
+            }
+            .sig-line {
+              font-size: 14px;
+              font-style: italic;
+              font-weight: 600;
+              color: #4b5563;
+              border-bottom: 1px solid #e4e4e7;
+              padding: 0 10px 4px;
+              display: inline-block;
+            }
+            .sig-title {
+              font-size: 11px;
+              font-weight: bold;
+              color: #71717a;
+              margin-top: 6px;
+              text-transform: uppercase;
+              letter-spacing: 0.05em;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="printable-certificate">
+            ${element.innerHTML}
+          </div>
+          <script>
+            // Add custom styles to replicate exactly
+            const watermark = document.querySelector('.absolute.inset-0.flex');
+            if (watermark) {
+              watermark.style.opacity = '0.04';
+              const svg = watermark.querySelector('svg');
+              if (svg) {
+                svg.style.width = '350px';
+                svg.style.height = '350px';
+              }
+            }
+            // Ensure images have crossorigin
+            const imgs = document.querySelectorAll('img');
+            let loadedCount = 0;
+            if (imgs.length === 0) {
+              triggerPrint();
+            } else {
+              imgs.forEach(img => {
+                if (img.complete) {
+                  checkAllLoaded();
+                } else {
+                  img.onload = checkAllLoaded;
+                  img.onerror = checkAllLoaded;
+                }
+              });
+            }
+            function checkAllLoaded() {
+              loadedCount++;
+              if (loadedCount >= imgs.length) {
+                triggerPrint();
+              }
+            }
+            function triggerPrint() {
+              setTimeout(function() {
+                window.print();
+                setTimeout(function() {
+                  window.frameElement.parentNode.removeChild(window.frameElement);
+                }, 1000);
+              }, 500);
+            }
+          </script>
+        </body>
+      </html>
+    `);
+    doc.close();
+  };
+
   const handleDownloadCertificatePDF = async () => {
     if (!selectedCert) return;
     setDownloadingCert(true);
     
     const originalStyles = new Map<HTMLElement, string>();
     const tempStyles: HTMLStyleElement[] = [];
+    let clonedElement: HTMLElement | null = null;
     
-    const originalGetComputedStyle = window.getComputedStyle;
     const originalGetPropertyValue = CSSStyleDeclaration.prototype.getPropertyValue;
     const cssRulesDescriptor = Object.getOwnPropertyDescriptor(CSSStyleSheet.prototype, 'cssRules');
     
@@ -603,32 +873,6 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
         console.error("Printable certificate element not found");
         return;
       }
-
-      window.getComputedStyle = function (elt, pseudoElt) {
-        const style = originalGetComputedStyle(elt, pseudoElt);
-        return new Proxy(style, {
-          get(target, prop) {
-            if (prop === 'getPropertyValue') {
-              return function (propertyName: string) {
-                const val = target.getPropertyValue(propertyName);
-                if (typeof val === 'string' && (val.toLowerCase().includes('oklch') || val.toLowerCase().includes('oklab'))) {
-                  return convertUnsupportedColors(val);
-                }
-                return val;
-              };
-            }
-            
-            const value = Reflect.get(target, prop);
-            if (typeof value === 'function') {
-              return value.bind(target);
-            }
-            if (typeof value === 'string' && (value.toLowerCase().includes('oklch') || value.toLowerCase().includes('oklab'))) {
-              return convertUnsupportedColors(value);
-            }
-            return value;
-          }
-        });
-      };
 
       CSSStyleDeclaration.prototype.getPropertyValue = function (property: string) {
         const value = originalGetPropertyValue.call(this, property);
@@ -725,21 +969,301 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
       }
 
       const opt = {
-        margin:       10,
+        margin:       0,
         filename:     `LKC_Certificate_${selectedCert.studentName.replace(/\s+/g, '_')}.pdf`,
-        image:        { type: 'jpeg' as const, quality: 0.98 },
+        image:        { type: 'jpeg' as const, quality: 1.0 },
         html2canvas:  { scale: 2.5, useCORS: true, logging: false, letterRendering: true },
         jsPDF:        { unit: 'mm' as const, format: 'a4' as const, orientation: 'landscape' as const }
       };
 
-      const clonedElement = element.cloneNode(true) as HTMLElement;
-      clonedElement.style.display = 'block';
+      clonedElement = element.cloneNode(true) as HTMLElement;
+      
+      // Force high-resolution layout inside visible coordinates but hidden behind other overlays
+      clonedElement.style.position = 'fixed';
+      clonedElement.style.left = '0px';
+      clonedElement.style.top = '0px';
+      clonedElement.style.width = '1120px';
+      clonedElement.style.height = '792px';
+      clonedElement.style.zIndex = '-9999';
+      clonedElement.style.opacity = '1';
+      clonedElement.style.pointerEvents = 'none';
+      clonedElement.style.overflow = 'hidden';
+      clonedElement.style.display = 'flex';
+      clonedElement.style.flexDirection = 'column';
+      clonedElement.style.justifyContent = 'space-between';
+      clonedElement.style.padding = '50px 70px';
+      clonedElement.style.boxSizing = 'border-box';
       clonedElement.style.background = '#fffbeb';
       clonedElement.style.color = '#0c0a09';
-      clonedElement.style.margin = '0 auto';
-      clonedElement.style.padding = '35px';
-      clonedElement.style.maxWidth = '1000px';
-      
+      clonedElement.style.border = '16px double #b45309';
+      clonedElement.style.borderRadius = '16px';
+      clonedElement.style.fontFamily = 'Georgia, serif';
+
+      // Ensure all images inside the clone have crossorigin and cache buster
+      const clonedImages = Array.from(clonedElement.querySelectorAll('img'));
+      clonedImages.forEach((img) => {
+        img.setAttribute('crossorigin', 'anonymous');
+        try {
+          const url = new URL(img.src);
+          url.searchParams.set('cors', 'true');
+          img.src = url.toString();
+        } catch (e) {
+          // Fallback if not a valid full URL
+        }
+      });
+
+      document.body.appendChild(clonedElement);
+
+      // Watermark symbol
+      const watermark = clonedElement.querySelector('.absolute.inset-0.flex') as HTMLElement;
+      if (watermark) {
+        watermark.style.position = 'absolute';
+        watermark.style.inset = '0';
+        watermark.style.display = 'flex';
+        watermark.style.alignItems = 'center';
+        watermark.style.justifyContent = 'center';
+        watermark.style.opacity = '0.04';
+        watermark.style.pointerEvents = 'none';
+        const svgAward = watermark.querySelector('svg') as unknown as HTMLElement;
+        if (svgAward) {
+          svgAward.style.width = '350px';
+          svgAward.style.height = '350px';
+          svgAward.style.color = '#78350f';
+        }
+      }
+
+      // Elegant Pass Stamp Badge
+      const passStamp = clonedElement.querySelector('.absolute.top-3.right-3, .absolute.top-5.right-6') as HTMLElement;
+      if (passStamp) {
+        passStamp.style.position = 'absolute';
+        passStamp.style.top = '30px';
+        passStamp.style.right = '40px';
+        passStamp.style.zIndex = '20';
+        const innerBadge = passStamp.firstElementChild as HTMLElement;
+        if (innerBadge) {
+          innerBadge.style.borderWidth = '2px';
+          innerBadge.style.borderColor = '#059669';
+          innerBadge.style.color = '#059669';
+          innerBadge.style.backgroundColor = '#ecfdf5';
+          innerBadge.style.borderRadius = '4px';
+          innerBadge.style.padding = '4px 12px';
+          innerBadge.style.fontSize = '14px';
+          innerBadge.style.fontWeight = '900';
+          innerBadge.style.letterSpacing = '0.15em';
+          innerBadge.style.textTransform = 'uppercase';
+          innerBadge.style.transform = 'rotate(12deg)';
+        }
+      }
+
+      // Top Header with official Club Logo
+      const headerDiv = clonedElement.querySelector('.matches-header') as HTMLElement;
+      if (headerDiv) {
+        headerDiv.style.position = 'relative';
+        headerDiv.style.zIndex = '10';
+        headerDiv.style.display = 'flex';
+        headerDiv.style.flexDirection = 'column';
+        headerDiv.style.alignItems = 'center';
+        headerDiv.style.justifyContent = 'center';
+        
+        const logoImg = headerDiv.querySelector('img') as HTMLElement;
+        if (logoImg) {
+          logoImg.style.width = '80px';
+          logoImg.style.height = '80px';
+          logoImg.style.marginBottom = '8px';
+          logoImg.style.borderRadius = '9999px';
+          logoImg.style.backgroundColor = '#ffffff';
+          logoImg.style.padding = '2px';
+          logoImg.style.border = '1px solid #fcd34d';
+        }
+
+        const titleText = headerDiv.querySelector('h4') as HTMLElement;
+        if (titleText) {
+          titleText.style.fontSize = '24px';
+          titleText.style.letterSpacing = '0.25em';
+          titleText.style.lineHeight = '1.2';
+          titleText.style.color = '#FF3B3F';
+          titleText.style.fontWeight = '900';
+          titleText.style.textTransform = 'uppercase';
+          titleText.style.textAlign = 'center';
+        }
+
+        const subtitleText = titleText?.nextElementSibling as HTMLElement;
+        if (subtitleText) {
+          subtitleText.style.fontSize = '12px';
+          subtitleText.style.letterSpacing = '0.1em';
+          subtitleText.style.color = '#52525b';
+          subtitleText.style.textTransform = 'uppercase';
+          subtitleText.style.fontWeight = '800';
+          subtitleText.style.marginTop = '6px';
+        }
+      }
+
+      // Main Title
+      const titleContainer = clonedElement.querySelector('h2')?.parentElement as HTMLElement;
+      if (titleContainer) {
+        titleContainer.style.marginTop = '15px';
+        titleContainer.style.marginBottom = '15px';
+        titleContainer.style.position = 'relative';
+        titleContainer.style.zIndex = '10';
+
+        const mainTitleHeader = titleContainer.querySelector('h2') as HTMLElement;
+        if (mainTitleHeader) {
+          mainTitleHeader.style.fontSize = '34px';
+          mainTitleHeader.style.fontWeight = '850';
+          mainTitleHeader.style.color = '#78350f';
+          mainTitleHeader.style.letterSpacing = '0.05em';
+          mainTitleHeader.style.textTransform = 'uppercase';
+          mainTitleHeader.style.fontStyle = 'italic';
+        }
+
+        const underline = mainTitleHeader?.nextElementSibling as HTMLElement;
+        if (underline) {
+          underline.style.width = '180px';
+          underline.style.height = '3px';
+          underline.style.backgroundColor = '#d97706';
+          underline.style.margin = '8px auto 0';
+        }
+      }
+
+      // Statement body elements
+      const statementDiv = clonedElement.querySelector('.space-y-2\\.5, .space-y-3\\.5') as HTMLElement;
+      if (statementDiv) {
+        statementDiv.style.marginTop = '20px';
+        statementDiv.style.marginBottom = '20px';
+        statementDiv.style.position = 'relative';
+        statementDiv.style.zIndex = '10';
+        statementDiv.style.lineHeight = '1.6';
+        
+        const certTexts = Array.from(statementDiv.children) as HTMLElement[];
+        if (certTexts.length >= 1) {
+          certTexts[0].style.fontSize = '15px';
+          certTexts[0].style.fontStyle = 'italic';
+          certTexts[0].style.color = '#71717a';
+        }
+        if (certTexts.length >= 2) {
+          certTexts[1].style.fontSize = '28px';
+          certTexts[1].style.fontWeight = '800';
+          certTexts[1].style.color = '#0c0a09';
+          certTexts[1].style.textTransform = 'uppercase';
+          certTexts[1].style.letterSpacing = '0.05em';
+          certTexts[1].style.borderBottom = '1px solid #e4e4e7';
+          certTexts[1].style.paddingBottom = '6px';
+          certTexts[1].style.maxWidth = '550px';
+          certTexts[1].style.margin = '10px auto';
+        }
+        if (certTexts.length >= 3) {
+          certTexts[2].style.fontSize = '13.5px';
+          certTexts[2].style.lineHeight = '1.6';
+          certTexts[2].style.maxWidth = '780px';
+          certTexts[2].style.margin = '12px auto';
+          certTexts[2].style.color = '#27272a';
+          certTexts[2].style.fontStyle = 'italic';
+        }
+        
+        const beltPromoDiv = statementDiv.querySelector('.flex-col') as HTMLElement;
+        if (beltPromoDiv) {
+          beltPromoDiv.style.display = 'flex';
+          beltPromoDiv.style.flexDirection = 'column';
+          beltPromoDiv.style.alignItems = 'center';
+          beltPromoDiv.style.justifyContent = 'center';
+
+          const beltText = beltPromoDiv.firstElementChild as HTMLElement;
+          if (beltText) {
+            beltText.style.fontSize = '22px';
+            beltText.style.fontWeight = '900';
+            beltText.style.color = '#b45309';
+            beltText.style.textTransform = 'uppercase';
+            beltText.style.letterSpacing = '0.1em';
+          }
+          const gradeBadge = beltPromoDiv.lastElementChild as HTMLElement;
+          if (gradeBadge && gradeBadge !== beltText) {
+            gradeBadge.style.fontSize = '13px';
+            gradeBadge.style.fontWeight = 'bold';
+            gradeBadge.style.color = '#15803d';
+            gradeBadge.style.backgroundColor = '#f0fdf4';
+            gradeBadge.style.padding = '4px 12px';
+            gradeBadge.style.borderRadius = '4px';
+            gradeBadge.style.border = '1px solid #bbf7d0';
+            gradeBadge.style.marginTop = '8px';
+            gradeBadge.style.display = 'inline-block';
+          }
+        }
+
+        const allPTags = Array.from(statementDiv.querySelectorAll('p')) as HTMLElement[];
+        allPTags.forEach((p) => {
+          if (p.textContent?.includes('Student ID:')) {
+            p.style.fontSize = '10px';
+            p.style.color = '#71717a';
+            p.style.marginTop = '10px';
+          }
+          if (p.textContent?.includes('Academic Institution:')) {
+            p.style.fontSize = '13px';
+            p.style.color = '#92400e';
+            p.style.marginTop = '8px';
+            p.style.fontWeight = 'bold';
+          }
+        });
+      }
+
+      // Journey Note
+      const journeyNote = clonedElement.querySelector('.bg-amber-100\\/40') as HTMLElement;
+      if (journeyNote) {
+        journeyNote.style.marginTop = '20px';
+        journeyNote.style.padding = '12px 24px';
+        journeyNote.style.maxWidth = '700px';
+        journeyNote.style.backgroundColor = 'rgba(254, 243, 199, 0.4)';
+        journeyNote.style.border = '1px solid rgba(251, 191, 36, 0.5)';
+        journeyNote.style.borderRadius = '8px';
+        journeyNote.style.margin = '20px auto 0';
+        journeyNote.style.position = 'relative';
+        journeyNote.style.zIndex = '10';
+
+        const journeyText = journeyNote.querySelector('p') as HTMLElement;
+        if (journeyText) {
+          journeyText.style.fontSize = '11.5px';
+          journeyText.style.lineHeight = '1.5';
+          journeyText.style.color = '#4b5563';
+          journeyText.style.fontStyle = 'italic';
+        }
+      }
+
+      // Signature section
+      const signatureGrid = clonedElement.querySelector('.grid-cols-2') as HTMLElement;
+      if (signatureGrid) {
+        signatureGrid.style.display = 'grid';
+        signatureGrid.style.gridTemplateColumns = 'repeat(2, minmax(0, 1fr))';
+        signatureGrid.style.gap = '80px';
+        signatureGrid.style.marginTop = '40px';
+        signatureGrid.style.paddingTop = '10px';
+        signatureGrid.style.width = '100%';
+        signatureGrid.style.position = 'relative';
+        signatureGrid.style.zIndex = '10';
+        
+        const signCols = Array.from(signatureGrid.children) as HTMLElement[];
+        signCols.forEach((col, cIdx) => {
+          col.style.textAlign = 'center';
+          const nameSpan = col.querySelector('.border-b') as HTMLElement;
+          if (nameSpan) {
+            nameSpan.style.fontSize = '14px';
+            nameSpan.style.fontStyle = 'italic';
+            nameSpan.style.fontWeight = '600';
+            nameSpan.style.color = cIdx === 0 ? '#4b5563' : '#d97706';
+            nameSpan.style.borderBottom = '1px solid #e4e4e7';
+            nameSpan.style.padding = '0 10px 4px';
+            nameSpan.style.display = 'inline-block';
+          }
+          const titleDiv = col.querySelector('.pt-1, .text-\\[8px\\]') as HTMLElement;
+          if (titleDiv) {
+            titleDiv.style.fontSize = '11px';
+            titleDiv.style.fontWeight = 'bold';
+            titleDiv.style.color = '#71717a';
+            titleDiv.style.marginTop = '6px';
+            titleDiv.style.textTransform = 'uppercase';
+            titleDiv.style.letterSpacing = '0.05em';
+          }
+        });
+      }
+
       const allClonedElements = [clonedElement, ...Array.from(clonedElement.querySelectorAll('*'))] as HTMLElement[];
       allClonedElements.forEach((el) => {
         if (el.style) {
@@ -757,7 +1281,10 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
     } catch (err) {
       console.error("Error generating PDF:", err);
     } finally {
-      window.getComputedStyle = originalGetComputedStyle;
+      if (clonedElement && clonedElement.parentNode) {
+        clonedElement.parentNode.removeChild(clonedElement);
+      }
+
       CSSStyleDeclaration.prototype.getPropertyValue = originalGetPropertyValue;
       if (cssRulesDescriptor) {
         Object.defineProperty(CSSStyleSheet.prototype, 'cssRules', cssRulesDescriptor);
@@ -1085,7 +1612,7 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
           address: '',
           batch: 'School Student Batch',
           beltLevel: currentBeltVal,
-          photoUrl: '', // standard avatar / blank
+          photoUrl: DEFAULT_STUDENT_AVATAR,
           termsAccepted: true,
           status: 'approved',
           createdAt: Date.now(),
@@ -1143,7 +1670,7 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
         email: '',
         address: '',
         batch: 'School Student Batch',
-        photoUrl: '',
+        photoUrl: DEFAULT_STUDENT_AVATAR,
         age: 10
       };
 
@@ -1718,20 +2245,14 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
             {/* Student Header row */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/30 border border-zinc-900/80 p-5 rounded-2xl">
               <div className="flex items-center space-x-4">
-                {activeStudent.photoUrl ? (
-                  <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-yellow-500/20 bg-slate-950 shadow-md flex-shrink-0">
-                    <img 
-                      src={activeStudent.photoUrl} 
-                      alt={activeStudent.fullName} 
-                      className="w-full h-full object-cover object-center"
-                      referrerPolicy="no-referrer"
-                    />
-                  </div>
-                ) : (
-                  <div className="w-16 h-16 rounded-full bg-slate-950 border border-zinc-800 flex items-center justify-center text-zinc-650 flex-shrink-0">
-                    <User className="w-8 h-8" />
-                  </div>
-                )}
+                <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-yellow-500/20 bg-slate-950 shadow-md flex-shrink-0">
+                  <img 
+                    src={activeStudent.photoUrl || DEFAULT_STUDENT_AVATAR} 
+                    alt={activeStudent.fullName} 
+                    className="w-full h-full object-cover object-center"
+                    referrerPolicy="no-referrer"
+                  />
+                </div>
                 <div>
                   <div className="flex items-center space-x-2">
                     <span className="font-heading font-black text-xs text-yellow-500 font-mono select-all tracking-wider">
@@ -2349,79 +2870,7 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
             </div>
             )}
 
-            {/* DIGITAL ACHIEVEMENT BADGES (AUTOMATED CRITERIA) */}
-            {activeTab === 'progress' && (
-              <div className="bg-slate-900/40 border border-zinc-900/80 p-6 sm:p-8 rounded-2xl space-y-6 animate-fade-in">
-                <div className="flex items-center justify-between border-b border-zinc-900/60 pb-3">
-                  <h4 className="font-heading text-sm sm:text-base font-black text-white uppercase tracking-wider flex items-center gap-2">
-                    <Trophy className="w-5 h-5 text-yellow-500 shrink-0" />
-                    Automated Achievement Badges
-                  </h4>
-                  <span className="text-[10px] font-mono font-bold text-yellow-500 uppercase tracking-widest bg-yellow-500/5 px-2.5 py-1 rounded border border-yellow-500/20 shadow-sm">
-                    {getStudentBadges().filter(b => b.isUnlocked).length} / 6 EARNED
-                  </span>
-                </div>
 
-                <p className="text-[11px] text-zinc-400 font-sans leading-relaxed text-left max-w-2xl">
-                  Your child earns these special **Digital Skill Badges** automatically on their profile as they attend daily training sessions and challenge belt promotion tests!
-                </p>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {getStudentBadges().map(badge => {
-                    const BadgeIcon = badge.icon;
-                    return (
-                      <div 
-                        key={badge.id}
-                        className={`relative p-5 rounded-2xl border text-left flex flex-col justify-between transition-all duration-300 ${
-                          badge.isUnlocked 
-                            ? `border-zinc-850 bg-slate-950/40 shadow-md hover:scale-[1.02] hover:border-zinc-700/80`
-                            : 'border-zinc-900 bg-zinc-950/20 opacity-40'
-                        }`}
-                      >
-                        <div className="space-y-3">
-                          {/* Badge Icon circle & Unlocked tag */}
-                          <div className="flex items-center justify-between">
-                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${
-                              badge.isUnlocked 
-                                ? `${badge.borderColor} ${badge.bgColor} ${badge.color}`
-                                : 'border-zinc-800/40 bg-zinc-900/20 text-zinc-650'
-                            }`}>
-                              <BadgeIcon className="w-5 h-5" />
-                            </div>
-
-                            <span className={`text-[8px] font-heading font-black uppercase tracking-widest px-2 py-0.5 rounded ${
-                              badge.isUnlocked 
-                                ? 'bg-yellow-500/15 text-yellow-500 border border-yellow-500/10'
-                                : 'bg-zinc-900/45 text-zinc-500 border border-zinc-850/40'
-                            }`}>
-                              {badge.isUnlocked ? 'Unlocked 🏆' : 'Locked 🔒'}
-                            </span>
-                          </div>
-
-                          {/* Badge Name & Details */}
-                          <div>
-                            <h5 className={`font-heading text-xs font-black uppercase tracking-wider ${badge.isUnlocked ? 'text-white' : 'text-zinc-500'}`}>
-                              {badge.name}
-                            </h5>
-                            <p className="text-[10px] text-zinc-450 font-sans leading-relaxed mt-1.5">
-                              {badge.description}
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* Progress Indicator */}
-                        <div className="mt-4 pt-3 border-t border-zinc-950/50 flex items-center justify-between text-[9px] font-mono">
-                          <span className="text-zinc-550 uppercase">Progress:</span>
-                          <span className={`font-bold ${badge.isUnlocked ? badge.textColor : 'text-zinc-500'}`}>
-                            {badge.progressText}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
 
             {/* EXAMS & BELT GRADING HISTORICAL TIMELINE REGISTER LOGS */}
             {activeTab === 'progress' && (
@@ -2677,10 +3126,11 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
                 {/* Top Header with official Club Logo */}
                 <div className="relative z-10 flex flex-col items-center justify-center space-y-1.5 matches-header">
                   <img
-                    src="https://res.cloudinary.com/dlzdagymx/image/upload/q_auto/f_auto/v1781585562/logo_new_t7ctxo.jpg"
+                    src="https://res.cloudinary.com/dlzdagymx/image/upload/q_auto/f_auto/v1781350907/logo_new_bgwsw9.jpg"
                     alt="Lions Karate Club Logo"
                     className="w-12 h-12 sm:w-16 sm:h-16 object-contain rounded-full bg-white p-0.5 border border-amber-350 shadow-md mb-0.5"
                     referrerPolicy="no-referrer"
+                    crossOrigin="anonymous"
                   />
                   <div>
                     <h4 className="text-xs sm:text-sm md:text-base font-sans tracking-[0.2em] text-[#FF3B3F] font-black uppercase text-center leading-none">
@@ -2740,7 +3190,7 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
                 <div className="grid grid-cols-2 gap-8 sm:gap-16 mt-4 sm:mt-8 pt-3 relative z-10 text-[9px] sm:text-[11px] text-zinc-700 font-sans">
                   <div className="text-center">
                     <div className="h-5 flex items-end justify-center">
-                      <span className="font-serif italic font-semibold text-zinc-600 border-b border-zinc-200 px-4">Sensei Maruti Jadhav</span>
+                      <span className="font-serif italic font-semibold text-zinc-600 border-b border-zinc-200 px-4">Sensei Maruti Jadhav & Sensei Shivraj Jejure</span>
                     </div>
                     <div className="pt-1 mt-1 text-[8px] uppercase tracking-wider font-bold text-zinc-500">
                       Karate Coach / Examiner
@@ -2751,7 +3201,7 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
                       <span className="font-serif italic text-amber-600 font-black">OFFICIAL SEAL</span>
                     </div>
                     <div className="pt-1 mt-1 text-[8px] uppercase tracking-wider font-bold text-zinc-500">
-                      Lions Karate Club
+                      LIONS KARATE CLUB PUNE
                     </div>
                   </div>
                 </div>
@@ -2768,7 +3218,7 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
                 </button>
                 <button
                   type="button"
-                  onClick={() => window.print()}
+                  onClick={handlePrintCertificate}
                   className="bg-amber-600 hover:bg-amber-500 text-white text-[10px] font-heading font-black uppercase tracking-widest px-4.5 py-2 rounded-lg flex items-center space-x-1.5 shadow-lg hover:shadow-amber-500/10 transition-all cursor-pointer"
                   title="Open standard browser print dialog"
                 >

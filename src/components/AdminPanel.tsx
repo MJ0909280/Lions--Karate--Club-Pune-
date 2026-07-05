@@ -69,6 +69,8 @@ import html2pdf from 'html2pdf.js';
 // Required Admin check email literal configuration
 const AUTHORIZED_ADMIN_EMAIL = "writingandreserching18@gmail.com";
 
+const DEFAULT_STUDENT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='%23111'><rect width='100' height='100' fill='%231a1a1a'/><circle cx='50' cy='35' r='14' fill='%23c9a96e'/><path d='M50 50 L35 75 L30 73 L42 53 L38 50 L30 55 L28 50 L40 42 Z' fill='%23fff'/><path d='M50 50 L65 80 L72 82 L58 55 L65 48 L75 52 L78 47 L60 40 Z' fill='%23fff'/><path d='M42 45 H58 V49 H42 Z' fill='%239B1B20'/></svg>";
+
 function AdmissionsTableSkeleton() {
   return (
     <div className="animate-pulse w-full">
@@ -1442,7 +1444,7 @@ export default function AdminPanel() {
         address: mAddress.trim() || 'Pune, Maharashtra',
         batch: mBatch,
         beltLevel: mBeltLevel,
-        photoUrl: mPhotoUrl || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=120&auto=format&fit=crop&q=60',
+        photoUrl: mPhotoUrl || DEFAULT_STUDENT_AVATAR,
         status: 'approved',
         createdAt: joiningTimestamp,
         updatedAt: Date.now(),
@@ -2907,7 +2909,7 @@ export default function AdminPanel() {
                       <td className="py-4 px-6">
                         <div className="flex items-center space-x-3">
                           <div className="w-10 h-10 rounded-md overflow-hidden bg-neutral-900 border border-zinc-800 shrink-0">
-                            <img src={student.photoUrl || "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=80&fit=crop"} alt="Portrait" className="w-full h-full object-cover" />
+                            <img src={student.photoUrl || DEFAULT_STUDENT_AVATAR} alt="Portrait" className="w-full h-full object-cover" />
                           </div>
                           <span className="font-mono text-xs font-bold text-zinc-100">{student.studentId}</span>
                         </div>
@@ -4383,7 +4385,7 @@ export default function AdminPanel() {
               <div className="flex flex-col sm:flex-row gap-6 items-start sm:items-center">
                 {/* Profile Photo */}
                 <div className="w-24 h-24 rounded-lg overflow-hidden border border-zinc-800 bg-zinc-950 shrink-0 mx-auto sm:mx-0">
-                  <img src={selectedAdmission.photoUrl || "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=80&fit=crop"} alt="Student" className="w-full h-full object-cover object-top" />
+                  <img src={selectedAdmission.photoUrl || DEFAULT_STUDENT_AVATAR} alt="Student" className="w-full h-full object-cover object-top" />
                 </div>
                 {/* Visual Metadata banner */}
                 <div className="text-center sm:text-left space-y-1.5 flex-grow">
@@ -4756,7 +4758,7 @@ export default function AdminPanel() {
                       <div key={st.id} className="py-3 flex items-center justify-between gap-4 text-xs">
                         <div className="flex items-center space-x-3.5">
                           <div className="w-9 h-9 rounded-md overflow-hidden bg-neutral-900 border border-zinc-800 shrink-0">
-                            <img src={st.photoUrl || "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=80&fit=crop"} alt={st.fullName} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                            <img src={st.photoUrl || DEFAULT_STUDENT_AVATAR} alt={st.fullName} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                           </div>
                           <div>
                             <span className="font-bold text-zinc-150 block">{st.fullName}</span>

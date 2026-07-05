@@ -3,6 +3,8 @@ import { Admission } from '../types';
 import { Printer, Download, CheckCircle2, Trophy, Award, Landmark, Volume2 } from 'lucide-react';
 import { motion } from 'motion/react';
 
+const DEFAULT_STUDENT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='%23111'><rect width='100' height='100' fill='%231a1a1a'/><circle cx='50' cy='35' r='14' fill='%23c9a96e'/><path d='M50 50 L35 75 L30 73 L42 53 L38 50 L30 55 L28 50 L40 42 Z' fill='%23fff'/><path d='M50 50 L65 80 L72 82 L58 55 L65 48 L75 52 L78 47 L60 40 Z' fill='%23fff'/><path d='M42 45 H58 V49 H42 Z' fill='%239B1B20'/></svg>";
+
 interface IDCardProps {
   admission: Admission;
   showSuccessBanner?: boolean;
@@ -298,7 +300,12 @@ export default function IDCard({ admission, showSuccessBanner = false, hideDownl
         qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=350x350&data=${encodeURIComponent(qrDataString)}`;
       };
       
-      studentImg.src = admission.photoUrl;
+      studentImg.onerror = () => {
+        if (studentImg.src !== DEFAULT_STUDENT_AVATAR) {
+          studentImg.src = DEFAULT_STUDENT_AVATAR;
+        }
+      };
+      studentImg.src = admission.photoUrl || DEFAULT_STUDENT_AVATAR;
     };
 
     logoImg.onload = proceedWithDrawing;
@@ -479,7 +486,7 @@ export default function IDCard({ admission, showSuccessBanner = false, hideDownl
         {/* Photo Frame containing Portrait Grayscale Image */}
         <div className="w-40 h-[190px] bg-zinc-100 border-2 border-black mx-auto mt-3 overflow-hidden relative flex items-center justify-center select-none shadow">
           <img 
-            src={admission.photoUrl || "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=150&auto=format&fit=crop"} 
+            src={admission.photoUrl || DEFAULT_STUDENT_AVATAR} 
             alt="Student Portrait Pass"
             className="w-full h-full object-cover filter grayscale contrast-110"
             referrerPolicy="no-referrer"
