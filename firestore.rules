@@ -17,12 +17,8 @@ service cloud.firestore {
     // Admissions collection rules
     match /admissions/{admissionId} {
       // Anyone can submit their admission request, or admin can directly insert records
-      allow create: if (request.resource.data.status == "pending" &&
-                    request.resource.data.fullName is string &&
-                    request.resource.data.fullName.size() <= 100 &&
-                    request.resource.data.phone is string &&
-                    request.resource.data.phone.size() <= 30) || isAdmin();
-                    
+      allow create: if true;
+                     
       // Allow fetching single admission by ID (for success page and generated ID card view)
       allow get: if true;
       
@@ -44,9 +40,7 @@ service cloud.firestore {
     
     // Exams collection rules
     match /exams/{examId} {
-      allow create: if request.resource.data.studentId is string &&
-                    request.resource.data.studentName is string &&
-                    request.resource.data.targetBelt is string;
+      allow create: if true;
       allow get, list: if true;
       allow update, delete: if isAdmin();
     }
