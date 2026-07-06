@@ -720,9 +720,9 @@ Thank you.`;
                           st.fullName.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           st.studentId.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           (st.phone && st.phone.includes(searchQuery))
-                        ).slice(0, 5).map(st => (
+                        ).slice(0, 5).map((st, idx) => (
                           <div
-                            key={st.studentId}
+                            key={st.id || `${st.studentId}-${idx}`}
                             onClick={() => {
                               setSearchQuery(st.fullName);
                               setIsAutocompleteOpen(false);
@@ -1123,7 +1123,7 @@ Thank you.`);
                   const phone = student.whatsApp || student.phone || 'N/A';
                   return (
                     <div 
-                      key={student.studentId}
+                      key={student.id || `${student.studentId}-${idx}`}
                       className={`p-3 rounded-xl border transition-all flex items-center justify-between ${
                         isSent 
                           ? 'bg-slate-950/40 border-emerald-500/10 opacity-70' 
