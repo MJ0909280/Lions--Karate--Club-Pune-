@@ -136,6 +136,12 @@ export default function AttendanceTracker() {
   const [messageType, setMessageType] = useState<'fees' | 'notice' | 'custom'>('fees');
   const [customText, setCustomText] = useState('');
 
+  // Semi-Automated Bulk Dispatcher state
+  const [showBulkModal, setShowBulkModal] = useState(false);
+  const [bulkQueue, setBulkQueue] = useState<Admission[]>([]);
+  const [dispatchedSet, setDispatchedSet] = useState<Set<string>>(new Set());
+  const [bulkMessageType, setBulkMessageType] = useState<'fees' | 'notice'>('fees');
+
   // Save coach to local storage when changed
   useEffect(() => {
     localStorage.setItem('lkcp_active_coach', selectedCoach);
@@ -377,6 +383,53 @@ Thank you.`;
     setShowMessageModal(false);
   };
 
+  // Triggers WhatsApp direct link opening for a single student in bulk queue
+  const handleBulkSendSingle = (student: Admission) => {
+    let rawPhone = student.whatsApp || student.phone || '';
+    let cleanPhone = rawPhone.replace(/\D/g, '');
+    
+    if (cleanPhone.length === 10) {
+      cleanPhone = `91${cleanPhone}`;
+    }
+
+    if (!cleanPhone) {
+      alert(`Parent phone number/WhatsApp missing or invalid for ${student.fullName}!`);
+      return;
+    }
+
+    const currentMonth = new Date().toLocaleString('en-US', { month: 'long' });
+    const currentYear = new Date().getFullYear();
+    
+    let text = '';
+    if (bulkMessageType === 'fees') {
+      text = `[Reminder from LIONS KARATE CLUB Website]
+[Auto-generated Message]
+
+Dear Parent,
+
+A gentle reminder to pay the karate monthly fees of 700 Rs for ${student.fullName} for the month of ${currentMonth} ${currentYear}.
+
+📞 Sensei Maruti Jadhav
+9049688172
+
+Thank you.`;
+    } else {
+      text = `Dear Parent, this is Sensei ${selectedCoach.split(' Sir')[0]} from Lions Karate Club Pune. Important Notice for ${student.fullName}: Please note that we have special karate practice sessions this week. Kindly ensure they attend on time. Thank you!`;
+    }
+
+    const encodedText = encodeURIComponent(text);
+    const url = `https://wa.me/${cleanPhone}?text=${encodedText}`;
+    
+    window.open(url, '_blank', 'noopener,noreferrer');
+    
+    // Add to dispatched set to update the UI
+    setDispatchedSet(prev => {
+      const next = new Set(prev);
+      next.add(student.studentId);
+      return next;
+    });
+  };
+
   // Helper to format displaying date beautifully
   const displayReadableDate = (dateStr: string) => {
     if (!dateStr) return '';
@@ -594,6 +647,19 @@ Thank you.`;
                   >
                     <X className="w-3 h-3" />
                     <span>All Absent</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setBulkQueue(filteredStudents);
+                      setDispatchedSet(new Set());
+                      setShowBulkModal(true);
+                    }}
+                    className="flex items-center space-x-1.5 bg-yellow-500/10 hover:bg-yellow-500 text-yellow-550 hover:text-slate-950 border border-yellow-500/20 rounded px-2.5 py-1 text-[10px] font-heading font-black uppercase tracking-wider transition-all cursor-pointer"
+                    title="Open Semi-Automated Bulk Dispatcher"
+                  >
+                    <MessageCircle className="w-3 h-3 text-yellow-550 group-hover:text-slate-950" />
+                    <span>Bulk Dispatcher</span>
                   </button>
                 </div>
               )}
@@ -952,6 +1018,165 @@ Thank you.`);
                 <Send className="w-3.5 h-3.5" />
                 <span>Dispatch Message</span>
               </button>
+
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* SEMI-AUTOMATED BULK DISPATCHER DIALOG MODAL */}
+      <AnimatePresence>
+        {showBulkModal && bulkQueue.length > 0 && (
+          <div className="fixed inset-0 z-55 flex items-center justify-center p-4">
+            
+            {/* Backdrop Blur */}
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowBulkModal(false)}
+              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+            />
+
+            {/* Modal Card content */}
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              className="bg-slate-900 border border-zinc-800 rounded-2xl w-full max-w-2xl p-6 relative overflow-hidden z-20 shadow-2xl space-y-4 text-left max-h-[90vh] flex flex-col"
+            >
+              <div className="flex items-center justify-between border-b border-zinc-950 pb-3 shrink-0">
+                <div className="flex items-center space-x-2 text-yellow-500">
+                  <MessageCircle className="w-5 h-5" />
+                  <span className="font-heading font-black text-sm uppercase tracking-wider">Semi-Automated Bulk Dispatcher</span>
+                </div>
+                <button
+                  onClick={() => setShowBulkModal(false)}
+                  className="text-zinc-500 hover:text-white transition-colors"
+                >
+                  <X className="w-4.5 h-4.5" />
+                </button>
+              </div>
+
+              {/* Progress and instructions */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-950 p-4 rounded-xl border border-zinc-900 shrink-0">
+                <div className="space-y-1">
+                  <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest block font-bold">SENDING PROGRESS</span>
+                  <div className="flex items-center space-x-2">
+                    <div className="flex-1 bg-zinc-850 h-2 rounded-full overflow-hidden">
+                      <div 
+                        className="bg-yellow-500 h-full transition-all duration-300"
+                        style={{ width: `${(dispatchedSet.size / bulkQueue.length) * 100}%` }}
+                      />
+                    </div>
+                    <span className="font-mono text-xs text-white font-bold">{dispatchedSet.size} / {bulkQueue.length}</span>
+                  </div>
+                  <span className="text-[10px] text-zinc-400 block leading-relaxed">
+                    Opening each will load the pre-filled message in WhatsApp. Click send, then return here to proceed.
+                  </span>
+                </div>
+
+                <div className="space-y-1.5">
+                  <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest block font-bold">DISPATCH CAMPAIGN TYPE</span>
+                  <div className="flex bg-slate-900 p-0.5 rounded-lg w-full gap-1 border border-zinc-850">
+                    <button
+                      type="button"
+                      onClick={() => setBulkMessageType('fees')}
+                      className={`flex-1 py-1 text-center text-[9px] font-black uppercase tracking-wider rounded transition-all ${
+                        bulkMessageType === 'fees'
+                          ? 'bg-yellow-500 text-slate-950 font-black'
+                          : 'text-zinc-500 hover:text-white'
+                      }`}
+                    >
+                      Fees (700 Rs)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setBulkMessageType('notice')}
+                      className={`flex-1 py-1 text-center text-[9px] font-black uppercase tracking-wider rounded transition-all ${
+                        bulkMessageType === 'notice'
+                          ? 'bg-emerald-500 text-white font-black'
+                          : 'text-zinc-500 hover:text-white'
+                      }`}
+                    >
+                      Class Notice
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Campaign Message Template Preview block */}
+              <div className="bg-slate-950 p-3 rounded-lg border border-zinc-900 shrink-0">
+                <span className="text-[8.5px] font-mono text-zinc-650 uppercase tracking-widest block font-black mb-1">Active Message Template Preview:</span>
+                <p className="text-[10.5px] text-zinc-400 font-mono line-clamp-3 leading-relaxed">
+                  {bulkMessageType === 'fees' 
+                    ? `[Reminder from LIONS KARATE CLUB Website] ... A gentle reminder to pay the karate monthly fees of 700 Rs for [Student Name] for the month of ${new Date().toLocaleString('en-US', { month: 'long' })}.`
+                    : `Dear Parent, this is Sensei ${selectedCoach.split(' Sir')[0]} ... Important Notice for [Student Name]: Please note that we have special karate practice sessions...`
+                  }
+                </p>
+              </div>
+
+              {/* Queue Student List scrollbox */}
+              <div className="flex-1 overflow-y-auto space-y-2 pr-1 min-h-[200px]">
+                {bulkQueue.map((student, idx) => {
+                  const isSent = dispatchedSet.has(student.studentId);
+                  const phone = student.whatsApp || student.phone || 'N/A';
+                  return (
+                    <div 
+                      key={student.studentId}
+                      className={`p-3 rounded-xl border transition-all flex items-center justify-between ${
+                        isSent 
+                          ? 'bg-slate-950/40 border-emerald-500/10 opacity-70' 
+                          : 'bg-slate-950 border-zinc-850 hover:border-zinc-700'
+                      }`}
+                    >
+                      <div className="flex items-center space-x-3 text-left">
+                        <div className="w-7 h-7 rounded-full bg-slate-900 border border-zinc-800 flex items-center justify-center font-mono text-[10px] text-zinc-400">
+                          {idx + 1}
+                        </div>
+                        <div>
+                          <span className="text-xs font-black text-white block uppercase">{student.fullName}</span>
+                          <span className="text-[9.5px] text-zinc-550 font-mono">
+                            {student.studentId} • Parent: {student.parentName || 'Self'} ({phone})
+                          </span>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleBulkSendSingle(student)}
+                        className={`px-3 py-1.5 rounded-lg font-heading font-black text-[10px] uppercase tracking-wider transition-all flex items-center space-x-1 cursor-pointer ${
+                          isSent 
+                            ? 'bg-emerald-500/10 hover:bg-emerald-500 text-emerald-400 hover:text-white border border-emerald-500/20'
+                            : 'bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-black shadow-md'
+                        }`}
+                      >
+                        {isSent ? (
+                          <>
+                            <Check className="w-3 h-3" />
+                            <span>Resend</span>
+                          </>
+                        ) : (
+                          <>
+                            <Send className="w-3 h-3" />
+                            <span>Dispatch</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="pt-2 border-t border-zinc-950 shrink-0 text-right">
+                <button
+                  type="button"
+                  onClick={() => setShowBulkModal(false)}
+                  className="px-4 py-2 bg-zinc-950 hover:bg-zinc-900 border border-zinc-850 hover:border-zinc-700 text-zinc-400 hover:text-white rounded-lg font-heading font-black text-[10px] uppercase tracking-widest transition-all cursor-pointer"
+                >
+                  Close Dispatcher
+                </button>
+              </div>
 
             </motion.div>
           </div>
