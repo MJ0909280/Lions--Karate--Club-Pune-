@@ -337,7 +337,7 @@ export default function AttendanceTracker() {
 
 Dear Parent,
 
-A gentle reminder that the karate monthly fees of 700 Rs for ${student.fullName} for the month of ${currentMonth} ${currentYear} are pending. Kindly clear the dues at the earliest.
+A gentle reminder to pay the karate monthly fees of 700 Rs for ${student.fullName} for the month of ${currentMonth} ${currentYear}.
 
 📞 Sensei Maruti Jadhav
 9049688172
@@ -896,7 +896,7 @@ Thank you.`;
 
 Dear Parent,
 
-A gentle reminder that the karate monthly fees of 700 Rs for ${messageTarget.fullName} for the month of ${currentMonth} ${currentYear} are pending. Kindly clear the dues at the earliest.
+A gentle reminder to pay the karate monthly fees of 700 Rs for ${messageTarget.fullName} for the month of ${currentMonth} ${currentYear}.
 
 📞 Sensei Maruti Jadhav
 9049688172
