@@ -21,6 +21,7 @@ import {
 import { db, auth, handleFirestoreError, OperationType, checkFirestoreConnection } from '../firebase';
 import { Admission, BatchInfo, BATCH_TIMINGS, DOJO_BRANCHES, BELT_LEVELS, Receipt, ReceiptItem, ParentQuery } from '../types';
 import IDCard from './IDCard';
+import ProgressCard from './ProgressCard';
 import SEOVisibilityConsole from './SEOVisibilityConsole';
 import { 
   ShieldCheck, 
@@ -712,6 +713,7 @@ export default function AdminPanel() {
   // Detail Modal view
   const [selectedAdmission, setSelectedAdmission] = useState<Admission | null>(null);
   const [viewingIDCard, setViewingIDCard] = useState<Admission | null>(null);
+  const [viewingProgressCard, setViewingProgressCard] = useState<Admission | null>(null);
 
   // Custom modal-dialog state to replace native window.confirm (which gets blocked inside iframe environments)
   const [confirmDialog, setConfirmDialog] = useState<{
@@ -3003,6 +3005,14 @@ export default function AdminPanel() {
                           </button>
 
                           <button
+                            onClick={() => setViewingProgressCard(student)}
+                            className="p-2 rounded bg-emerald-500/10 hover:bg-emerald-500 text-emerald-400 hover:text-slate-950 transition-all border border-emerald-500/10 cursor-pointer"
+                            title="Progress Card"
+                          >
+                            <Award className="w-4 h-4" />
+                          </button>
+
+                          <button
                             onClick={() => deleteAdmissionRecord(student.id)}
                             className="p-2 rounded bg-red-500/10 hover:bg-red-650 text-red-500 hover:text-white transition-all border border-red-500/10 cursor-pointer"
                             title="Erase Entry"
@@ -4566,6 +4576,46 @@ export default function AdminPanel() {
               <button
                 type="button"
                 onClick={() => setViewingIDCard(null)}
+                className="w-full sm:w-auto px-6 py-3 border border-zinc-850 hover:border-zinc-700 bg-zinc-950 hover:bg-zinc-900 text-zinc-400 hover:text-white rounded-lg text-[10px] font-heading font-black uppercase tracking-widest transition-all cursor-pointer flex items-center justify-center gap-2"
+              >
+                <X className="w-4 h-4 stroke-[2.5px]" />
+                <span>Close Terminal & Return</span>
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 2.5: Shareable Progress Card generation popup panel */}
+      {viewingProgressCard && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/95 backdrop-blur-md flex justify-center items-start p-2 sm:p-4 md:p-6">
+          <div className="w-full max-w-5xl bg-slate-900 border border-zinc-850 rounded-2xl overflow-hidden p-4 sm:p-6 relative my-2 sm:my-8">
+            
+            {/* Header / Nav */}
+            <div className="flex justify-between items-center mb-6 pb-4 border-b border-zinc-850/60 uppercase">
+              <div className="flex items-center space-x-2">
+                <Award className="w-5 h-5 text-emerald-400 animate-pulse" />
+                <span className="font-heading font-bold text-sm text-zinc-100 uppercase tracking-widest block">Shareable Progress Card Terminal</span>
+              </div>
+              <button 
+                type="button"
+                onClick={() => setViewingProgressCard(null)}
+                className="bg-[#FF3B3F] hover:bg-rose-600 text-white font-heading font-black text-[10px] uppercase tracking-widest px-4 py-2 rounded-lg transition-all duration-150 flex items-center gap-1.5 shadow-md active:scale-95 cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5 text-white stroke-[3px]" />
+                <span>CLOSE</span>
+              </button>
+            </div>
+
+            {/* Passes */}
+            <ProgressCard admission={viewingProgressCard} onClose={() => setViewingProgressCard(null)} />
+
+            {/* Bottom close helper to guarantee ease of use */}
+            <div className="mt-8 pt-4 border-t border-zinc-850/60 flex justify-center">
+              <button
+                type="button"
+                onClick={() => setViewingProgressCard(null)}
                 className="w-full sm:w-auto px-6 py-3 border border-zinc-850 hover:border-zinc-700 bg-zinc-950 hover:bg-zinc-900 text-zinc-400 hover:text-white rounded-lg text-[10px] font-heading font-black uppercase tracking-widest transition-all cursor-pointer flex items-center justify-center gap-2"
               >
                 <X className="w-4 h-4 stroke-[2.5px]" />
