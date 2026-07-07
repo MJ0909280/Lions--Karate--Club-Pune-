@@ -110,6 +110,7 @@ const ACHIEVEMENT_TYPES = [
 ];
 
 const SENSEI_SIGNATURES = [
+  "Sensei Maruti Jadhav",
   "Sensei Shivraj Jejure",
   "Sensei Shital Samindar"
 ];
