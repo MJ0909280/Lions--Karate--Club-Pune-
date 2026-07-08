@@ -1531,7 +1531,7 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
 
         // Intelligently guess the next belt rank for the student
         const studentBeltLevel = studentData.beltLevel || '';
-        const currentIdx = BELT_LEVELS.findIndex(b => b.name && studentBeltLevel && studentBeltLevel.includes(b.name.split(' (')[0]));
+        const currentIdx = BELT_LEVELS.findIndex(b => b.name && studentBeltLevel && (studentBeltLevel.trim().toLowerCase() === b.name.toLowerCase() || studentBeltLevel.toLowerCase().includes(b.name.toLowerCase())));
         if (currentIdx !== -1 && currentIdx < BELT_LEVELS.length - 1) {
           setTargetBelt(BELT_LEVELS[currentIdx + 1].name);
         } else {
@@ -1642,34 +1642,79 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
       let currentBeltVal = '';
 
       if (isNew) {
-        studentId = await generateUniqueStudentId();
-        studentName = newStudentName.trim();
-        currentBeltVal = newStudentCurrentBelt;
+        // Cross-check if student with the exact same name and/or same phone is already in admissions
+        const trimmedName = newStudentName.trim().toLowerCase();
+        const trimmedPhone = parentPhone.trim();
+        
+        let foundAdmission: Admission | null = null;
+        
+        // 1. Query by phone first (highly reliable matching within family/student)
+        if (trimmedPhone) {
+          try {
+            const qPhone = query(collection(db, 'admissions'), where('phone', '==', trimmedPhone));
+            const snapPhone = await getDocs(qPhone);
+            const match = snapPhone.docs.find(d => {
+              const dName = (d.data().fullName || '').trim().toLowerCase();
+              return dName === trimmedName;
+            });
+            if (match) {
+              foundAdmission = { id: match.id, ...match.data() } as Admission;
+            }
+          } catch (phoneErr) {
+            console.warn("Phone lookup check failed: ", phoneErr);
+          }
+        }
+        
+        // 2. If not found by phone, query by name exact matches
+        if (!foundAdmission && trimmedName) {
+          try {
+            const qName = query(collection(db, 'admissions'), where('fullName', '==', newStudentName.trim()));
+            const snapName = await getDocs(qName);
+            if (!snapName.empty) {
+              foundAdmission = { id: snapName.docs[0].id, ...snapName.docs[0].data() } as Admission;
+            }
+          } catch (nameErr) {
+            console.warn("Name lookup check failed: ", nameErr);
+          }
+        }
 
-        // Automatically create an approved student admission record in the backend
-        const admissionPayload = {
-          studentId: studentId,
-          fullName: studentName,
-          dob: '',
-          gender: 'other',
-          parentName: parentName.trim(),
-          phone: parentPhone.trim(),
-          whatsApp: parentPhone.trim(),
-          email: '',
-          address: '',
-          batch: 'School Student Batch',
-          beltLevel: currentBeltVal,
-          photoUrl: DEFAULT_STUDENT_AVATAR,
-          termsAccepted: true,
-          status: 'approved',
-          createdAt: Date.now(),
-          approvedAt: Date.now(),
-          isDirectExamRegistration: true,
-          branch: branch,
-          schoolName: schoolName.trim()
-        };
+        if (foundAdmission) {
+          // AUTOMATIC MATCH! We found their existing roll ID! Avoid double entries.
+          studentId = foundAdmission.studentId;
+          studentName = foundAdmission.fullName;
+          currentBeltVal = foundAdmission.beltLevel || newStudentCurrentBelt;
+          console.log(`Matched existing student ID automatically: ${studentId}`);
+        } else {
+          // Standard brand-new student path
+          studentId = await generateUniqueStudentId();
+          studentName = newStudentName.trim();
+          currentBeltVal = newStudentCurrentBelt;
 
-        await addDoc(collection(db, 'admissions'), admissionPayload);
+          // Automatically create an approved student admission record in the backend
+          const admissionPayload = {
+            studentId: studentId,
+            fullName: studentName,
+            dob: '',
+            gender: 'other',
+            parentName: parentName.trim(),
+            phone: parentPhone.trim(),
+            whatsApp: parentPhone.trim(),
+            email: '',
+            address: '',
+            batch: 'School Student Batch',
+            beltLevel: currentBeltVal,
+            photoUrl: DEFAULT_STUDENT_AVATAR,
+            termsAccepted: true,
+            status: 'approved',
+            createdAt: Date.now(),
+            approvedAt: Date.now(),
+            isDirectExamRegistration: true,
+            branch: branch,
+            schoolName: schoolName.trim()
+          };
+
+          await addDoc(collection(db, 'admissions'), admissionPayload);
+        }
       } else {
         if (!activeStudent) throw new Error('Active student context missing');
         studentId = activeStudent.studentId;
