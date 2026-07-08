@@ -116,28 +116,37 @@ const playKarateBell = () => {
 const getRequiredClassesForCurrentBelt = (beltLevel: string): { required: number; nextBelt: string } => {
   const currentClean = (beltLevel || '').toLowerCase();
   
-  if (currentClean.includes('white') || currentClean.includes('10th kyu')) {
-    return { required: 15, nextBelt: 'Yellow Belt (9th & 8th Kyu)' };
+  if (currentClean.includes('white to yellow')) {
+    return { required: 20, nextBelt: 'Yellow to Orange' };
   }
-  if (currentClean.includes('yellow') || currentClean.includes('9th') || currentClean.includes('8th')) {
-    return { required: 20, nextBelt: 'Orange Belt (7th Kyu)' };
+  if (currentClean.includes('yellow to orange')) {
+    return { required: 25, nextBelt: 'Orange to Green' };
   }
-  if (currentClean.includes('orange') || currentClean.includes('7th')) {
-    return { required: 25, nextBelt: 'Green Belt (6th Kyu)' };
+  if (currentClean.includes('orange to green')) {
+    return { required: 30, nextBelt: 'Green to Blue' };
   }
-  if (currentClean.includes('green') || currentClean.includes('6th')) {
-    return { required: 30, nextBelt: 'Blue Belt (5th Kyu)' };
+  if (currentClean.includes('green to blue')) {
+    return { required: 35, nextBelt: 'Blue to Purple' };
   }
-  if (currentClean.includes('blue') || currentClean.includes('5th')) {
-    return { required: 35, nextBelt: 'Purple Belt (4th Kyu)' };
+  if (currentClean.includes('blue to purple')) {
+    return { required: 40, nextBelt: 'Purple to Red' };
   }
-  if (currentClean.includes('purple') || currentClean.includes('4th')) {
-    return { required: 40, nextBelt: 'Brown Belt (3rd to 1st Kyu)' };
+  if (currentClean.includes('purple to red')) {
+    return { required: 45, nextBelt: 'Red to Brown' };
   }
-  if (currentClean.includes('brown') || currentClean.includes('3rd') || currentClean.includes('1st')) {
-    return { required: 45, nextBelt: 'Black Belt (1st Dan +)' };
+  if (currentClean.includes('red to brown')) {
+    return { required: 50, nextBelt: 'Brown to Brown 1+2' };
   }
-  return { required: 50, nextBelt: 'Higher Dan Grade' };
+  if (currentClean.includes('brown to brown 1+2')) {
+    return { required: 55, nextBelt: 'Brown 1+2 to Brown 3+4' };
+  }
+  if (currentClean.includes('brown 1+2 to brown 3+4')) {
+    return { required: 60, nextBelt: 'Black 1st Dan' };
+  }
+  if (currentClean.includes('white') || currentClean.includes('beginner')) {
+    return { required: 15, nextBelt: 'White to Yellow' };
+  }
+  return { required: 60, nextBelt: 'Black 1st Dan' };
 };
 
 interface ExamRecord {
