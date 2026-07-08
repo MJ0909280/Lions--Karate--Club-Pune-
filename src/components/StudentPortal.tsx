@@ -1642,48 +1642,43 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
       let currentBeltVal = '';
 
       if (isNew) {
-        // Cross-check if student with the exact same name and/or same phone is already in admissions
+        // Cross-check if student with the exact same name (case-insensitive) is already in admissions
         const trimmedName = newStudentName.trim().toLowerCase();
-        const trimmedPhone = parentPhone.trim();
         
         let foundAdmission: Admission | null = null;
         
-        // 1. Query by phone first (highly reliable matching within family/student)
-        if (trimmedPhone) {
+        // 1. Query by exact name first
+        try {
+          const qName = query(collection(db, 'admissions'), where('fullName', '==', newStudentName.trim()));
+          const snapName = await getDocs(qName);
+          if (!snapName.empty) {
+            foundAdmission = { id: snapName.docs[0].id, ...snapName.docs[0].data() } as Admission;
+          }
+        } catch (nameErr) {
+          console.warn("Name lookup query failed: ", nameErr);
+        }
+
+        // 2. Case-insensitive lookup as fallback across all admissions for complete safety
+        if (!foundAdmission) {
           try {
-            const qPhone = query(collection(db, 'admissions'), where('phone', '==', trimmedPhone));
-            const snapPhone = await getDocs(qPhone);
-            const match = snapPhone.docs.find(d => {
+            const admissionsSnap = await getDocs(collection(db, 'admissions'));
+            const match = admissionsSnap.docs.find(d => {
               const dName = (d.data().fullName || '').trim().toLowerCase();
               return dName === trimmedName;
             });
             if (match) {
               foundAdmission = { id: match.id, ...match.data() } as Admission;
             }
-          } catch (phoneErr) {
-            console.warn("Phone lookup check failed: ", phoneErr);
-          }
-        }
-        
-        // 2. If not found by phone, query by name exact matches
-        if (!foundAdmission && trimmedName) {
-          try {
-            const qName = query(collection(db, 'admissions'), where('fullName', '==', newStudentName.trim()));
-            const snapName = await getDocs(qName);
-            if (!snapName.empty) {
-              foundAdmission = { id: snapName.docs[0].id, ...snapName.docs[0].data() } as Admission;
-            }
-          } catch (nameErr) {
-            console.warn("Name lookup check failed: ", nameErr);
+          } catch (scanErr) {
+            console.warn("Admissions list lookup failed: ", scanErr);
           }
         }
 
         if (foundAdmission) {
-          // AUTOMATIC MATCH! We found their existing roll ID! Avoid double entries.
-          studentId = foundAdmission.studentId;
-          studentName = foundAdmission.fullName;
-          currentBeltVal = foundAdmission.beltLevel || newStudentCurrentBelt;
-          console.log(`Matched existing student ID automatically: ${studentId}`);
+          // RESTRICT DUPLICATE: Notify the parent that the student is already registered, showing their existing Student ID
+          setFormError(`You are an existing student. Your Student ID is: ${foundAdmission.studentId}. Please login using your Student ID in the "Existing Student" tab to register for exams.`);
+          setFormLoading(false);
+          return;
         } else {
           // Standard brand-new student path
           studentId = await generateUniqueStudentId();

@@ -190,6 +190,17 @@ export default function AdmissionForm({ preselectedBatch = "", onSuccess }: Admi
     setLoading(true);
 
     try {
+      // Check if student's mobile/contact number already exists in Firestore 'admissions'
+      const admissionsRef = collection(db, 'admissions');
+      const qPhone = query(admissionsRef, where('phone', '==', phone.trim()));
+      const snapPhone = await getDocs(qPhone);
+      if (!snapPhone.empty) {
+        const existingStudent = snapPhone.docs[0].data();
+        setErrorMess(`A student (${existingStudent.fullName || 'with this number'}) is already registered with this contact number: ${phone.trim()}.`);
+        setLoading(false);
+        return;
+      }
+
       const studentId = await generateStudentId();
       const currentTimestamp = Date.now();
 

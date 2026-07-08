@@ -21,7 +21,10 @@ const app = initializeApp(firebaseConfig);
 // Initialize Firestore with Database ID from configuration, long polling and disabled fetch streams for iframe compatibility
 export const db = initializeFirestore(app, {
   experimentalForceLongPolling: true,
-  useFetchStreams: false
+  useFetchStreams: false,
+  experimentalLongPollingOptions: {
+    useFetchStreams: false
+  }
 } as any, firebaseConfig.firestoreDatabaseId);
 
 export const auth = getAuth();

@@ -105,6 +105,7 @@ export default function Batches({ onSelectBatch }: BatchesProps) {
   const [celebrationName, setCelebrationName] = useState('');
   const [celebrationDocId, setCelebrationDocId] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [errorMess, setErrorMess] = useState('');
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [particles, setParticles] = useState<{ id: number; char: string; left: number; duration: number; delay: number; size: number }[]>([]);
 
@@ -175,8 +176,22 @@ ${customMsg ? `- Additional Request: ${customMsg}` : ''}`;
     if (e) e.preventDefault();
     if (!childName.trim() || !cardSelectedTime) return;
 
+    setErrorMess('');
     setSubmitting(true);
     try {
+      // Check if student's mobile number already exists in Firestore 'admissions'
+      if (phone.trim()) {
+        const admissionsRef = collection(db, 'admissions');
+        const qPhone = query(admissionsRef, where('phone', '==', phone.trim()));
+        const snapPhone = await getDocs(qPhone);
+        if (!snapPhone.empty) {
+          const existingStudent = snapPhone.docs[0].data();
+          setErrorMess(`A student (${existingStudent.fullName || 'with this number'}) is already registered with this contact number: ${phone.trim()}.`);
+          setSubmitting(false);
+          return;
+        }
+      }
+
       const studentId = await generateStudentId();
       const currentTimestamp = Date.now();
       const data = classesData[innerActiveAge];
@@ -753,6 +768,13 @@ ${customMsg ? `- Additional Request: ${customMsg}` : ''}`;
                         className="overflow-hidden"
                       >
                         <form onSubmit={handleQuickRegisterSubmit} className="pt-5 border-t border-stone-900 space-y-4">
+                          {errorMess && (
+                            <div className="bg-red-950/40 border border-red-500/20 text-red-400 p-3.5 rounded-lg flex items-start space-x-2 text-xs font-sans">
+                              <span className="shrink-0 text-red-500 font-bold mt-0.5">⚠️</span>
+                              <span>{errorMess}</span>
+                            </div>
+                          )}
+
                           <div className="space-y-1">
                             <label className="block text-xs font-semibold text-stone-300 uppercase tracking-wide">
                               Child's Full Name <span className="text-[#9B1B20]">*</span>
