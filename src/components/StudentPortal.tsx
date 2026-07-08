@@ -2129,7 +2129,17 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
                     <select
                       required
                       value={newStudentCurrentBelt}
-                      onChange={(e) => setNewStudentCurrentBelt(e.target.value)}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setNewStudentCurrentBelt(val);
+                        // Automatically select the next belt below it
+                        const idx = BELT_LEVELS.findIndex(b => b.name === val);
+                        if (idx !== -1 && idx < BELT_LEVELS.length - 1) {
+                          setTargetBelt(BELT_LEVELS[idx + 1].name);
+                        } else if (idx === BELT_LEVELS.length - 1) {
+                          setTargetBelt(BELT_LEVELS[idx].name);
+                        }
+                      }}
                       className="w-full bg-slate-950 border border-zinc-850 text-zinc-300 text-xs px-3.5 py-2.5 rounded-lg focus:outline-none focus:border-red-500"
                     >
                       {BELT_LEVELS.map(belt => (
