@@ -114,37 +114,37 @@ const playKarateBell = () => {
 };
 
 const getRequiredClassesForCurrentBelt = (beltLevel: string): { required: number; nextBelt: string } => {
-  const currentClean = (beltLevel || '').toLowerCase();
+  const currentClean = (beltLevel || '').toLowerCase().trim();
   
-  if (currentClean.includes('white to yellow')) {
-    return { required: 20, nextBelt: 'Yellow to Orange' };
+  if (currentClean === 'yellow' || currentClean.includes('yellow')) {
+    return { required: 20, nextBelt: 'Orange' };
   }
-  if (currentClean.includes('yellow to orange')) {
-    return { required: 25, nextBelt: 'Orange to Green' };
+  if (currentClean === 'orange' || currentClean.includes('orange')) {
+    return { required: 25, nextBelt: 'Green' };
   }
-  if (currentClean.includes('orange to green')) {
-    return { required: 30, nextBelt: 'Green to Blue' };
+  if (currentClean === 'green' || currentClean.includes('green')) {
+    return { required: 30, nextBelt: 'Blue' };
   }
-  if (currentClean.includes('green to blue')) {
-    return { required: 35, nextBelt: 'Blue to Purple' };
+  if (currentClean === 'blue' || currentClean.includes('blue')) {
+    return { required: 35, nextBelt: 'Purple' };
   }
-  if (currentClean.includes('blue to purple')) {
-    return { required: 40, nextBelt: 'Purple to Red' };
+  if (currentClean === 'purple' || currentClean.includes('purple')) {
+    return { required: 40, nextBelt: 'Red' };
   }
-  if (currentClean.includes('purple to red')) {
-    return { required: 45, nextBelt: 'Red to Brown' };
+  if (currentClean === 'red' || currentClean.includes('red')) {
+    return { required: 45, nextBelt: 'Brown' };
   }
-  if (currentClean.includes('red to brown')) {
-    return { required: 50, nextBelt: 'Brown to Brown 1+2' };
+  if (currentClean === 'brown' || currentClean.trim() === 'brown') {
+    return { required: 50, nextBelt: 'Brown 1+2' };
   }
-  if (currentClean.includes('brown to brown 1+2')) {
-    return { required: 55, nextBelt: 'Brown 1+2 to Brown 3+4' };
+  if (currentClean.includes('brown 1+2') || currentClean.includes('brown 1 + 2')) {
+    return { required: 55, nextBelt: 'Brown 3+4' };
   }
-  if (currentClean.includes('brown 1+2 to brown 3+4')) {
+  if (currentClean.includes('brown 3+4') || currentClean.includes('brown 3 + 4')) {
     return { required: 60, nextBelt: 'Black 1st Dan' };
   }
   if (currentClean.includes('white') || currentClean.includes('beginner')) {
-    return { required: 15, nextBelt: 'White to Yellow' };
+    return { required: 15, nextBelt: 'Yellow' };
   }
   return { required: 60, nextBelt: 'Black 1st Dan' };
 };

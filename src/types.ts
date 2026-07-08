@@ -74,15 +74,15 @@ export interface CoachInfo {
 
 export const BELT_LEVELS = [
   { name: 'White Belt', color: 'border-slate-300 text-slate-300 bg-slate-900', bgClass: '#ffffff' },
-  { name: 'White to Yellow', color: 'border-yellow-400 text-yellow-400 bg-slate-900', bgClass: '#facc15' },
-  { name: 'Yellow to Orange', color: 'border-orange-500 text-orange-500 bg-slate-900', bgClass: '#f97316' },
-  { name: 'Orange to Green', color: 'border-emerald-500 text-emerald-500 bg-slate-900', bgClass: '#10b981' },
-  { name: 'Green to Blue', color: 'border-blue-500 text-blue-500 bg-slate-900', bgClass: '#3b82f6' },
-  { name: 'Blue to Purple', color: 'border-purple-500 text-purple-500 bg-slate-900', bgClass: '#a855f7' },
-  { name: 'Purple to Red', color: 'border-red-500 text-red-500 bg-slate-900', bgClass: '#ef4444' },
-  { name: 'Red to Brown', color: 'border-amber-700 text-amber-700 bg-slate-900', bgClass: '#b45309' },
-  { name: 'Brown to Brown 1+2', color: 'border-amber-800 text-amber-800 bg-slate-900', bgClass: '#92400e' },
-  { name: 'Brown 1+2 to Brown 3+4', color: 'border-amber-900 text-amber-900 bg-slate-900', bgClass: '#78350f' },
+  { name: 'Yellow', color: 'border-yellow-400 text-yellow-400 bg-slate-900', bgClass: '#facc15' },
+  { name: 'Orange', color: 'border-orange-500 text-orange-500 bg-slate-900', bgClass: '#f97316' },
+  { name: 'Green', color: 'border-emerald-500 text-emerald-500 bg-slate-900', bgClass: '#10b981' },
+  { name: 'Blue', color: 'border-blue-500 text-blue-500 bg-slate-900', bgClass: '#3b82f6' },
+  { name: 'Purple', color: 'border-purple-500 text-purple-500 bg-slate-900', bgClass: '#a855f7' },
+  { name: 'Red', color: 'border-red-500 text-red-500 bg-slate-900', bgClass: '#ef4444' },
+  { name: 'Brown', color: 'border-amber-700 text-amber-700 bg-slate-900', bgClass: '#b45309' },
+  { name: 'Brown 1+2', color: 'border-amber-800 text-amber-800 bg-slate-900', bgClass: '#92400e' },
+  { name: 'Brown 3+4', color: 'border-amber-900 text-amber-900 bg-slate-900', bgClass: '#78350f' },
   { name: 'Black 1st Dan', color: 'border-red-600 text-red-600 bg-black', bgClass: '#000000' }
 ] as const;
 
