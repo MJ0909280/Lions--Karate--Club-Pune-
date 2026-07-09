@@ -60,7 +60,43 @@ export default function AdmissionForm({ preselectedBatch = "", onSuccess }: Admi
   const [isDragOver, setIsDragOver] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMess, setErrorMess] = useState('');
+  const [phoneChecking, setPhoneChecking] = useState(false);
+  const [phoneWarning, setPhoneWarning] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Debounced check for duplicate phone numbers
+  useEffect(() => {
+    const trimmed = phone.trim();
+    if (trimmed.length < 5) {
+      setPhoneWarning('');
+      return;
+    }
+
+    const checkDuplicatePhone = async () => {
+      setPhoneChecking(true);
+      try {
+        const admissionsRef = collection(db, 'admissions');
+        const qPhone = query(admissionsRef, where('phone', '==', trimmed));
+        const snapPhone = await getDocs(qPhone);
+        if (!snapPhone.empty) {
+          const existingStudent = snapPhone.docs[0].data();
+          setPhoneWarning(`A student named "${existingStudent.fullName || 'Unknown'}" is already registered with this mobile number.`);
+        } else {
+          setPhoneWarning('');
+        }
+      } catch (err) {
+        console.warn("Inline duplicate phone check failed:", err);
+      } finally {
+        setPhoneChecking(false);
+      }
+    };
+
+    const delayDebounce = setTimeout(() => {
+      checkDuplicatePhone();
+    }, 600);
+
+    return () => clearTimeout(delayDebounce);
+  }, [phone]);
 
   // Hook to calculate age based on Date of Birth
   const handleDobChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -437,14 +473,29 @@ export default function AdmissionForm({ preselectedBatch = "", onSuccess }: Admi
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
               <label className="block text-xs font-semibold text-stone-400 uppercase tracking-wide mb-1">Student Phone *</label>
-              <input 
-                type="tel" 
-                placeholder="e.g. 9049688172"
-                required
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className="w-full bg-[#1c1917]/50 border border-stone-850 text-stone-100 rounded-lg px-3.5 py-3 text-xs focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-all font-sans outline-none placeholder:text-stone-600"
-              />
+              <div className="relative">
+                <input 
+                  type="tel" 
+                  placeholder="e.g. 9049688172"
+                  required
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className={`w-full bg-[#1c1917]/50 border text-stone-100 rounded-lg px-3.5 py-3 text-xs focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-all font-sans outline-none placeholder:text-stone-600 ${
+                    phoneWarning ? 'border-red-500/50' : 'border-stone-850'
+                  }`}
+                />
+                {phoneChecking && (
+                  <div className="absolute right-3.5 top-3 flex items-center">
+                    <RefreshCw className="w-3.5 h-3.5 text-amber-500 animate-spin" />
+                  </div>
+                )}
+              </div>
+              {phoneWarning && (
+                <p className="mt-1.5 text-[10px] text-red-400 font-sans leading-normal flex items-start gap-1">
+                  <span className="shrink-0 text-red-500 mt-0.5">⚠️</span>
+                  <span>{phoneWarning}</span>
+                </p>
+              )}
             </div>
 
             <div>
