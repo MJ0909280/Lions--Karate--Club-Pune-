@@ -1099,6 +1099,39 @@ ${customMsg ? `- Additional Request: ${customMsg}` : ''}`;
                     </div>
                   </div>
 
+                  {/* Sunday Session & Short Course Program Block */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-zinc-850/60">
+                    <div className="bg-yellow-500/5 border border-yellow-500/10 rounded-lg p-3">
+                      <h4 className="text-[10px] font-mono font-bold text-yellow-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-pulse"></span>
+                        Sunday Physical Check-In
+                      </h4>
+                      <p className="text-[11px] text-zinc-400 leading-normal">
+                        Every <strong className="text-white">Sunday</strong>, join our physical Club session at the Dojo. Our Senseis will review your forms, stances, and conduct strength-building drills in person.
+                      </p>
+                    </div>
+
+                    <div className="bg-zinc-900/40 border border-zinc-850/60 rounded-lg p-3">
+                      <h4 className="text-[10px] font-mono font-bold text-amber-500 uppercase tracking-wider mb-1.5">
+                        Course Program (What You Get)
+                      </h4>
+                      <ul className="text-[11px] text-zinc-400 space-y-1.5 leading-normal">
+                        <li className="flex items-start gap-1">
+                          <span className="text-yellow-500 shrink-0 mt-0.5">✓</span> 
+                          <span><strong>Shotokan Kata</strong>: Posture & forms</span>
+                        </li>
+                        <li className="flex items-start gap-1">
+                          <span className="text-yellow-500 shrink-0 mt-0.5">✓</span> 
+                          <span><strong>Self-Defense</strong>: Core combat drills</span>
+                        </li>
+                        <li className="flex items-start gap-1">
+                          <span className="text-yellow-500 shrink-0 mt-0.5">✓</span> 
+                          <span><strong>Physical Power</strong>: Stamina & tone</span>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+
                   {onlineBatch && (
                     <div className="pt-4 border-t border-zinc-850/80 flex items-center justify-end">
                       <button
