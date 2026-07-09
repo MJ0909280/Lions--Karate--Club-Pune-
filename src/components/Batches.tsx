@@ -63,9 +63,9 @@ export default function Batches({ onSelectBatch }: BatchesProps) {
   const [activeTab, setActiveTab] = useState<'club' | 'online'>('club');
 
   // Custom scheduling interactive state for Online Mentor Tab
-  const [prefDays, setPrefDays] = useState('3 Days a week');
-  const [prefTime, setPrefTime] = useState('05:00 PM - 06:00 PM');
-  const [studentAgeGroup, setStudentAgeGroup] = useState('Kids (Ages 4-7)');
+  const [prefDays, setPrefDays] = useState('Flexible Customized Days');
+  const [prefTime, setPrefTime] = useState('Morning Flexible Slot');
+  const [studentAgeGroup, setStudentAgeGroup] = useState('Adults & Ladies Self-Defense');
   const [customMsg, setCustomMsg] = useState('');
 
   // Interactive quick age filter selected by Parent for In-Club tab
@@ -144,14 +144,14 @@ export default function Batches({ onSelectBatch }: BatchesProps) {
 
   // Trigger custom drop text trigger on WhatsApp
   const handleDropTextWhatsApp = () => {
-    const defaultText = `Hi Lions Karate Club Pune, I am interested in joining your Online Mentor program! Here are my preferred options:
-- Selected Batch: ${studentAgeGroup}
+    const defaultText = `Hi Lions Karate Club Pune, I am interested in joining your Online 1-on-1 Program! Here are my preferred options:
+- Selected Bracket: ${studentAgeGroup}
 - Preferred Days: ${prefDays}
 - Preferred Time: ${prefTime}
 ${customMsg ? `- Additional Request: ${customMsg}` : ''}`;
     
     const encodedText = encodeURIComponent(defaultText);
-    const whatsappUrl = `https://wa.me/919049688172?text=${encodedText}`;
+    const whatsappUrl = `https://api.whatsapp.com/send?phone=919049688172&text=${encodedText}`;
     window.open(whatsappUrl, '_blank');
   };
 
@@ -350,7 +350,7 @@ ${customMsg ? `- Additional Request: ${customMsg}` : ''}`;
                   : 'text-zinc-400 hover:text-white'
               }`}
             >
-              💻 Online Mentor Training
+              💻 Online 1-on-1 Training
             </button>
           </div>
         </div>
@@ -1058,17 +1058,17 @@ ${customMsg ? `- Additional Request: ${customMsg}` : ''}`;
                 <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-yellow-500 to-amber-500" />
                 
                 {/* Visual Banner info */}
-                <div className="lg:col-span-7 space-y-6">
+                <div id="online-1on1-banner" className="lg:col-span-7 space-y-6">
                   <div>
                     <span className="inline-flex items-center space-x-1.5 bg-yellow-500/10 text-yellow-500 text-[10px] font-bold font-mono tracking-widest px-2.5 py-1 rounded-full uppercase border border-yellow-500/20 mb-3">
                       <Laptop className="w-3 h-3" />
-                      <span>Online Mentor Program</span>
+                      <span>Online 1-on-1 Program</span>
                     </span>
                     <h3 className="font-heading text-2xl sm:text-3xl font-black text-white uppercase tracking-tight">
-                      FLEXIBLE LIVE MENTORSHIP
+                      DEDICATED ONLINE 1-ON-1 TRAINING
                     </h3>
                     <p className="text-zinc-400 text-xs sm:text-sm mt-3 leading-relaxed">
-                      Can't make it to physical classes? Or looking for hyper-personalized schedule flexibility? Our <strong>Online Mentor Training</strong> connects you directly with expert Senseis for 1-on-1 virtual mentoring sessions structured around your calendar.
+                      Looking for high-privacy, highly personalized scheduling? Or perhaps a comfortable adult learning environment? Our <strong>Online 1-on-1 Program</strong> connects adults (including women looking for safe-space self-defense) and kids directly with expert Senseis for dedicated one-on-one virtual coaching. Perfect for anyone who prefers private attention or has unique/flexible schedules.
                     </p>
                   </div>
 
@@ -1076,19 +1076,25 @@ ${customMsg ? `- Additional Request: ${customMsg}` : ''}`;
                     <div className="flex items-start space-x-3 text-zinc-300">
                       <ShieldCheck className="w-4 h-4 text-yellow-500 shrink-0 mt-1" />
                       <div className="text-xs">
-                        <strong className="text-white">Custom Timings</strong>: Set up morning or evening sessions based entirely on your timezone and day choices.
+                        <strong className="text-white">Flexible Timing Slots (Morning & Evening)</strong>: Set up sessions that perfectly align with your professional schedule, busy family hours, or personal preferences, running throughout mornings and evenings.
                       </div>
                     </div>
                     <div className="flex items-start space-x-3 text-zinc-300">
                       <ShieldCheck className="w-4 h-4 text-yellow-500 shrink-0 mt-1" />
                       <div className="text-xs">
-                        <strong className="text-white">One-on-One Live Adjustments</strong>: Live real-time visual coaching with detailed posture & breathing adjustments.
+                        <strong className="text-white">Safe-Space Adult Self-Defense</strong>: Tailored sessions crafted with physical safety, combat posture, breathing techniques, and personal self-preservation drills to build bulletproof confidence.
                       </div>
                     </div>
                     <div className="flex items-start space-x-3 text-zinc-300">
                       <ShieldCheck className="w-4 h-4 text-yellow-500 shrink-0 mt-1" />
                       <div className="text-xs">
-                        <strong className="text-white">Official Belt Progression</strong>: Record kata demonstrations and undergo virtual exams qualified globally.
+                        <strong className="text-white">One-on-One Custom Feedback</strong>: Interactive real-time audio-visual adjustments directly from world-certified head coaches.
+                      </div>
+                    </div>
+                    <div className="flex items-start space-x-3 text-zinc-300">
+                      <ShieldCheck className="w-4 h-4 text-yellow-500 shrink-0 mt-1" />
+                      <div className="text-xs">
+                        <strong className="text-white">Full Belt Certification</strong>: Complete standard Shotokan kata, fitness drills, and qualify for world-certified rank promotions virtually.
                       </div>
                     </div>
                   </div>
@@ -1096,10 +1102,11 @@ ${customMsg ? `- Additional Request: ${customMsg}` : ''}`;
                   {onlineBatch && (
                     <div className="pt-4 border-t border-zinc-850/80 flex items-center justify-end">
                       <button
+                        id="register-online-1on1-btn"
                         onClick={() => onSelectBatch(onlineBatch.name)}
                         className="w-full sm:w-auto text-center font-heading font-extrabold text-[11px] uppercase tracking-wider bg-yellow-500 hover:bg-yellow-400 text-slate-950 px-5 py-3 rounded shadow-md transition-all cursor-pointer"
                       >
-                        REGISTER ONLINE PROGRAM
+                        REGISTER FOR ONLINE 1-ON-1
                       </button>
                     </div>
                   )}
@@ -1121,9 +1128,10 @@ ${customMsg ? `- Additional Request: ${customMsg}` : ''}`;
                         onChange={(e) => setStudentAgeGroup(e.target.value)}
                         className="w-full bg-slate-900 border border-zinc-800 text-zinc-300 text-xs px-3 py-2 rounded focus:outline-none focus:border-yellow-500"
                       >
+                        <option value="Adults & Ladies Self-Defense">Adults & Ladies Self-Defense</option>
+                        <option value="Teens & Adults (15+)">Teens & Adults (15+)</option>
                         <option value="Kids (Ages 4-7)">Kids (Ages 4-7)</option>
                         <option value="Youth (Ages 8-14)">Youth (Ages 8-14)</option>
-                        <option value="Teens & Adults (15+)">Teens & Adults (15+)</option>
                       </select>
                     </div>
 
@@ -1135,10 +1143,10 @@ ${customMsg ? `- Additional Request: ${customMsg}` : ''}`;
                         onChange={(e) => setPrefDays(e.target.value)}
                         className="w-full bg-slate-900 border border-zinc-800 text-zinc-300 text-xs px-3 py-2 rounded focus:outline-none focus:border-yellow-500"
                       >
+                        <option value="Flexible Customized Days">Flexible / Customized Days</option>
                         <option value="3 Days a week">3 Days a week</option>
                         <option value="Weekends Only">Weekends Only</option>
                         <option value="Daily (Monday - Saturday)">Daily (6 Days a week)</option>
-                        <option value="Flexible Customized Days">Flexible / Customized Days</option>
                       </select>
                     </div>
 
@@ -1150,10 +1158,11 @@ ${customMsg ? `- Additional Request: ${customMsg}` : ''}`;
                         onChange={(e) => setPrefTime(e.target.value)}
                         className="w-full bg-slate-900 border border-zinc-800 text-zinc-300 text-xs px-3 py-2 rounded focus:outline-none focus:border-yellow-500"
                       >
+                        <option value="Morning Flexible Slot">Morning Flexible Slot</option>
+                        <option value="Evening Flexible Slot">Evening Flexible Slot</option>
                         <option value="05:00 PM - 06:00 PM">05:00 PM - 06:00 PM</option>
                         <option value="06:00 PM - 07:00 PM">06:00 PM - 07:00 PM</option>
                         <option value="07:00 PM - 08:00 PM">07:00 PM - 08:00 PM</option>
-                        <option value="Morning Flexible Slot">Morning Flexible Slot</option>
                         <option value="Other / Custom Slot">Other / Custom Slot</option>
                       </select>
                     </div>

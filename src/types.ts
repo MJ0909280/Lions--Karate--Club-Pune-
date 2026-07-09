@@ -116,11 +116,11 @@ export const BATCH_TIMINGS: BatchInfo[] = [
   },
   {
     id: 'online-mentor',
-    name: 'Online Mentor Training',
-    ageGroup: 'All Ages (Flexible Time)',
-    timing: 'Flexible / Customized Timing',
+    name: 'Online 1-on-1 Program',
+    ageGroup: 'Adults & Kids (Flexible Time)',
+    timing: 'Custom Morning & Evening Slots',
     days: 'Choose or Drop Text for Custom Slots',
-    focus: '1-on-1 live mentoring, online belt tests, tailored fitness, and personalized feedback.',
+    focus: 'Dedicated 1-on-1 private coaching, adult self-defense, and flexible virtual Shotokan belt promotions.',
     price: '$120/month'
   }
 ];
