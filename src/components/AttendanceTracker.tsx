@@ -364,14 +364,11 @@ Thank you.`;
     
     let rawPhone = messageTarget.whatsApp || messageTarget.phone || '';
     // Clean phone number from non-numeric characters for safety
-    let cleanPhone = rawPhone.replace(/\D/g, '');
+    let cleanPhone = rawPhone.replace(/\D/g, '').replace(/^0+/, '');
     
-    if (cleanPhone.startsWith('0')) {
-      cleanPhone = cleanPhone.substring(1);
-    }
-    
-    // Format to international Indian format if 10 numbers are entered
-    if (cleanPhone.length === 10) {
+    if (cleanPhone.startsWith('910') && cleanPhone.length === 13) {
+      cleanPhone = '91' + cleanPhone.substring(3);
+    } else if (cleanPhone.length === 10) {
       cleanPhone = `91${cleanPhone}`;
     }
 
@@ -381,7 +378,7 @@ Thank you.`;
     }
 
     const encodedText = encodeURIComponent(customText);
-    const url = `https://wa.me/${cleanPhone}?text=${encodedText}`;
+    const url = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodedText}`;
     
     window.open(url, '_blank', 'noopener,noreferrer');
     setShowMessageModal(false);
@@ -390,13 +387,11 @@ Thank you.`;
   // Triggers WhatsApp direct link opening for a single student in bulk queue
   const handleBulkSendSingle = (student: Admission) => {
     let rawPhone = student.whatsApp || student.phone || '';
-    let cleanPhone = rawPhone.replace(/\D/g, '');
+    let cleanPhone = rawPhone.replace(/\D/g, '').replace(/^0+/, '');
     
-    if (cleanPhone.startsWith('0')) {
-      cleanPhone = cleanPhone.substring(1);
-    }
-    
-    if (cleanPhone.length === 10) {
+    if (cleanPhone.startsWith('910') && cleanPhone.length === 13) {
+      cleanPhone = '91' + cleanPhone.substring(3);
+    } else if (cleanPhone.length === 10) {
       cleanPhone = `91${cleanPhone}`;
     }
 
@@ -426,7 +421,7 @@ Thank you.`;
     }
 
     const encodedText = encodeURIComponent(text);
-    const url = `https://wa.me/${cleanPhone}?text=${encodedText}`;
+    const url = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodedText}`;
     
     window.open(url, '_blank', 'noopener,noreferrer');
     

@@ -4699,17 +4699,17 @@ export default function AdminPanel() {
                   <div>
                     <span className="text-zinc-550 uppercase tracking-widest text-[9px] block">WhatsApp Contact</span>
                     {(() => {
-                      let cleanPhone = (selectedAdmission.whatsApp || '').replace(/\D/g, '');
-                      if (cleanPhone.startsWith('0')) {
-                        cleanPhone = cleanPhone.substring(1);
-                      }
-                      if (cleanPhone.length === 10) {
+                      let rawPhone = selectedAdmission.whatsApp || selectedAdmission.phone || '';
+                      let cleanPhone = rawPhone.replace(/\D/g, '').replace(/^0+/, '');
+                      if (cleanPhone.startsWith('910') && cleanPhone.length === 13) {
+                        cleanPhone = '91' + cleanPhone.substring(3);
+                      } else if (cleanPhone.length === 10) {
                         cleanPhone = `91${cleanPhone}`;
                       }
                       return (
-                        <a href={`https://wa.me/${cleanPhone}`} target="_blank" rel="noreferrer" className="text-yellow-500 hover:underline mt-0.5 flex items-center space-x-1.5">
+                        <a href={`https://api.whatsapp.com/send?phone=${cleanPhone}`} target="_blank" rel="noreferrer" className="text-yellow-500 hover:underline mt-0.5 flex items-center space-x-1.5">
                           <Phone className="w-3.5 h-3.5 shrink-0" />
-                          <span>{selectedAdmission.whatsApp}</span>
+                          <span>{selectedAdmission.whatsApp || selectedAdmission.phone}</span>
                         </a>
                       );
                     })()}
