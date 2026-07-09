@@ -2883,17 +2883,28 @@ export default function AdminPanel() {
                           </a>
 
                           {/* Precompiled Reply on WhatsApp */}
-                          <a
-                            href={`https://wa.me/${selectedQuery.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
-                              `Hello ${selectedQuery.parentName}, this is Shihan Maruti Jadhav Sir from Lions Karate Club Pune. Thank you for your inquiry about ${selectedQuery.queryType}. We would love to invite you and ${selectedQuery.childName || 'your child'} for a free trial session at our Dojo branch! Let us know what time works best.`
-                            )}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-heading font-black uppercase tracking-wider px-4 py-2.5 rounded-lg flex items-center gap-2 transition-colors cursor-pointer"
-                          >
-                            <MessageSquare className="w-3.5 h-3.5" />
-                            <span>WhatsApp Reply</span>
-                          </a>
+                          {(() => {
+                            let cleanPhone = (selectedQuery.phone || '').replace(/\D/g, '');
+                            if (cleanPhone.startsWith('0')) {
+                              cleanPhone = cleanPhone.substring(1);
+                            }
+                            if (cleanPhone.length === 10) {
+                              cleanPhone = `91${cleanPhone}`;
+                            }
+                            return (
+                              <a
+                                href={`https://wa.me/${cleanPhone}?text=${encodeURIComponent(
+                                  `Hello ${selectedQuery.parentName}, this is Shihan Maruti Jadhav Sir from Lions Karate Club Pune. Thank you for your inquiry about ${selectedQuery.queryType}. We would love to invite you and ${selectedQuery.childName || 'your child'} for a free trial session at our Dojo branch! Let us know what time works best.`
+                                )}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-heading font-black uppercase tracking-wider px-4 py-2.5 rounded-lg flex items-center gap-2 transition-colors cursor-pointer"
+                              >
+                                <MessageSquare className="w-3.5 h-3.5" />
+                                <span>WhatsApp Reply</span>
+                              </a>
+                            );
+                          })()}
 
                           <div className="ml-auto">
                             <button
@@ -4687,10 +4698,21 @@ export default function AdminPanel() {
                   </div>
                   <div>
                     <span className="text-zinc-550 uppercase tracking-widest text-[9px] block">WhatsApp Contact</span>
-                    <a href={`https://wa.me/${selectedAdmission.whatsApp}`} target="_blank" rel="noreferrer" className="text-yellow-500 hover:underline mt-0.5 flex items-center space-x-1.5">
-                      <Phone className="w-3.5 h-3.5 shrink-0" />
-                      <span>{selectedAdmission.whatsApp}</span>
-                    </a>
+                    {(() => {
+                      let cleanPhone = (selectedAdmission.whatsApp || '').replace(/\D/g, '');
+                      if (cleanPhone.startsWith('0')) {
+                        cleanPhone = cleanPhone.substring(1);
+                      }
+                      if (cleanPhone.length === 10) {
+                        cleanPhone = `91${cleanPhone}`;
+                      }
+                      return (
+                        <a href={`https://wa.me/${cleanPhone}`} target="_blank" rel="noreferrer" className="text-yellow-500 hover:underline mt-0.5 flex items-center space-x-1.5">
+                          <Phone className="w-3.5 h-3.5 shrink-0" />
+                          <span>{selectedAdmission.whatsApp}</span>
+                        </a>
+                      );
+                    })()}
                   </div>
                   <div>
                     <span className="text-zinc-550 uppercase tracking-widest text-[9px] block">Email Identifier</span>

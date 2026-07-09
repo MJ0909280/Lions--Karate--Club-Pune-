@@ -366,6 +366,10 @@ Thank you.`;
     // Clean phone number from non-numeric characters for safety
     let cleanPhone = rawPhone.replace(/\D/g, '');
     
+    if (cleanPhone.startsWith('0')) {
+      cleanPhone = cleanPhone.substring(1);
+    }
+    
     // Format to international Indian format if 10 numbers are entered
     if (cleanPhone.length === 10) {
       cleanPhone = `91${cleanPhone}`;
@@ -387,6 +391,10 @@ Thank you.`;
   const handleBulkSendSingle = (student: Admission) => {
     let rawPhone = student.whatsApp || student.phone || '';
     let cleanPhone = rawPhone.replace(/\D/g, '');
+    
+    if (cleanPhone.startsWith('0')) {
+      cleanPhone = cleanPhone.substring(1);
+    }
     
     if (cleanPhone.length === 10) {
       cleanPhone = `91${cleanPhone}`;

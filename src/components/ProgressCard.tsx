@@ -360,7 +360,17 @@ export default function ProgressCard({ admission, onClose }: ProgressCardProps) 
 
   const handleShareWhatsApp = () => {
     const text = `Hi Parent! Proudly sharing the weekly achievement card for our karate star *${admission.fullName}*! 🥋⭐\n\n_${achievementType}_: "${compliment}"\n\nLog in to our student portal to check daily attendance and class notifications! https://lionskarate.co`;
-    const link = `https://wa.me/${admission.phone || admission.whatsApp || ''}?text=${encodeURIComponent(text)}`;
+    
+    let rawPhone = admission.phone || admission.whatsApp || '';
+    let cleanPhone = rawPhone.replace(/\D/g, '');
+    if (cleanPhone.startsWith('0')) {
+      cleanPhone = cleanPhone.substring(1);
+    }
+    if (cleanPhone.length === 10) {
+      cleanPhone = `91${cleanPhone}`;
+    }
+    
+    const link = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`;
     window.open(link, '_blank');
     setShareSuccess(true);
     setTimeout(() => setShareSuccess(false), 3000);
