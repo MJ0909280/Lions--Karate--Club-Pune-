@@ -39,7 +39,7 @@ export default function About() {
   ];
 
   return (
-    <section id="about" className="py-20 sm:py-28 bg-slate-950 border-t border-zinc-900 relative overflow-hidden">
+    <div className="relative overflow-hidden py-4">
       {/* Decorative vertical background kanji with heritage red watermark */}
       <div className="absolute top-10 left-10 opacity-[0.08] hidden xl:block select-none pointer-events-none text-left">
         <div className="font-kanji text-[10rem] leading-none text-[#FF2A35] font-black tracking-widest writing-vertical">
@@ -47,7 +47,7 @@ export default function About() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      <div className="w-full relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
           
           {/* LEFT: Video & Rotating Orbits Column - 6 Columns wrapped in a premium charcoal black compartment */}
@@ -283,6 +283,6 @@ export default function About() {
         </div>
 
       </div>
-    </section>
+    </div>
   );
 }

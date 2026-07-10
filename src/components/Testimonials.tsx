@@ -30,7 +30,7 @@ export default function Testimonials() {
   ];
 
   return (
-    <section id="testimonials" className="py-20 sm:py-28 bg-[#111010] border-t border-zinc-900/60 relative overflow-hidden">
+    <div className="relative overflow-hidden py-4">
       {/* Decorative vertical alignment typography Kanji */}
       <div className="absolute top-10 right-10 opacity-[0.03] hidden xl:block select-none pointer-events-none text-right">
         <div className="font-kanji text-[10rem] leading-none text-yellow-500 font-extrabold tracking-widest writing-vertical">
@@ -38,22 +38,9 @@ export default function Testimonials() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      <div className="w-full relative z-10">
         
-        {/* Section Header */}
-        <div className="text-center max-w-2xl mx-auto mb-16">
-          <div className="inline-flex items-center gap-2 mb-3">
-            <div className="h-[1px] w-6 bg-red-500"></div>
-            <span className="text-red-500 font-heading text-xs font-bold uppercase tracking-[0.25em] block">STUDENT MOTIVATIONS</span>
-            <div className="h-[1px] w-6 bg-red-500"></div>
-          </div>
-          <h2 className="font-heading text-4xl sm:text-6xl font-black text-white tracking-tight uppercase leading-none mb-4">
-            DOJO STORIES
-          </h2>
-          <p className="text-zinc-400 text-xs sm:text-sm font-body">
-            Read and watch how training at LIONS KARATE develops robust posture, physical protection triggers, and mind discipline inside and outside the ring.
-          </p>
-        </div>
+
 
         {/* 2-Column Bento Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
@@ -138,6 +125,6 @@ export default function Testimonials() {
         </div>
 
       </div>
-    </section>
+    </div>
   );
 }

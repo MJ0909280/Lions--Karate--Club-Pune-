@@ -309,26 +309,10 @@ ${customMsg ? `- Additional Request: ${customMsg}` : ''}`;
   ) || BATCH_TIMINGS.find(b => b.id === 'online-mentor');
 
   return (
-    <section id="batches" className="py-14 sm:py-20 bg-zinc-950 border-t border-zinc-900/60 relative">
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-red-500/20 to-transparent" />
+    <div className="relative">
       
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="w-full">
         
-        {/* Section Title */}
-        <div className="text-center max-w-2xl mx-auto mb-8 sm:mb-12">
-          <div className="mb-4 inline-flex items-center gap-2 justify-center">
-            <div className="h-[1px] w-8 bg-red-500"></div>
-            <span className="text-red-500 uppercase tracking-[0.3em] text-[10px] font-extrabold">TRAINING ATELIER</span>
-            <div className="h-[1px] w-8 bg-red-500"></div>
-          </div>
-          <h2 className="font-heading text-3xl sm:text-5xl font-black text-white uppercase tracking-tighter mb-4">
-            CHOOSE YOUR <span className="text-transparent font-kanji" style={{ WebkitTextStroke: '1.5px #FF2A35', color: 'transparent' }}>BATCH</span>
-          </h2>
-          <p className="text-zinc-400 text-xs sm:text-sm max-w-xl mx-auto leading-relaxed">
-            Simple training times, high safety, and flexible hours designed with parents' daily busy lives in mind. Starting from Age 4 up to mature adults.
-          </p>
-        </div>
-
         {/* Dynamic Nav Tabs */}
         <div className="flex justify-center mb-6">
           <div className="inline-flex bg-slate-900 border border-zinc-850 p-1.5 rounded-xl shadow-inner shadow-black/80">
@@ -1342,6 +1326,6 @@ ${customMsg ? `- Additional Request: ${customMsg}` : ''}`;
         )}
 
       </div>
-    </section>
+    </div>
   );
 }

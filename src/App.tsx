@@ -7,12 +7,7 @@ import { motion } from 'motion/react';
 // Importing Custom Reusable UI Components
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
-import About from './components/About';
-import Batches from './components/Batches';
-import Coaches from './components/Coaches';
-import Gallery from './components/Gallery';
-import Testimonials from './components/Testimonials';
-import Contact from './components/Contact';
+import DojoExplorer from './components/DojoExplorer';
 import SEOConfig from './components/SEOConfig';
 import AdmissionForm from './components/AdmissionForm';
 import IDCard from './components/IDCard';
@@ -197,64 +192,14 @@ export default function App() {
           {/* Hero header Banner with call triggers */}
           <Hero onNavigate={(v) => navigateTo(v as ViewType)} />
           
-          {/* Lineage principles information */}
+          {/* Interactive Dojo Explorer Hub (wraps all sections to reduce scrolling & boost engagement) */}
           <motion.div
             initial={{ opacity: 0, y: 35 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-120px" }}
             transition={{ duration: 0.75, ease: [0.19, 1, 0.22, 1] }}
           >
-            <About />
-          </motion.div>
-
-          {/* Training batches with selected batch apply triggers */}
-          <motion.div
-            initial={{ opacity: 0, y: 35 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-120px" }}
-            transition={{ duration: 0.75, ease: [0.19, 1, 0.22, 1] }}
-          >
-            <Batches onSelectBatch={(bName) => navigateTo('admission', { batchName: bName })} />
-          </motion.div>
-
-          {/* Profile Senseis showcase */}
-          <motion.div
-            initial={{ opacity: 0, y: 35 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-120px" }}
-            transition={{ duration: 0.75, ease: [0.19, 1, 0.22, 1] }}
-          >
-            <Coaches />
-          </motion.div>
-
-          {/* Interactive photo grids */}
-          <motion.div
-            initial={{ opacity: 0, y: 35 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-120px" }}
-            transition={{ duration: 0.75, ease: [0.19, 1, 0.22, 1] }}
-          >
-            <Gallery />
-          </motion.div>
-
-          {/* Parent transformations testimonials */}
-          <motion.div
-            initial={{ opacity: 0, y: 35 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-120px" }}
-            transition={{ duration: 0.75, ease: [0.19, 1, 0.22, 1] }}
-          >
-            <Testimonials />
-          </motion.div>
-
-          {/* Map details, times schedule, and direct contacts */}
-          <motion.div
-            initial={{ opacity: 0, y: 35 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-120px" }}
-            transition={{ duration: 0.75, ease: [0.19, 1, 0.22, 1] }}
-          >
-            <Contact />
+            <DojoExplorer onSelectBatch={(bName) => navigateTo('admission', { batchName: bName })} />
           </motion.div>
 
           {/* Floating Action Button for direct WhatsApp inquiries */}

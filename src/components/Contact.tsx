@@ -148,19 +148,8 @@ export default function Contact() {
   }, []);
 
   return (
-    <section id="contact" className="py-14 sm:py-20 bg-zinc-950 border-t border-zinc-900/60 relative">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
-        {/* Section Header */}
-        <div className="text-center max-w-2xl mx-auto mb-12">
-          <span className="text-yellow-500 font-heading text-xs font-bold uppercase tracking-[0.25em] block mb-3 font-mono">GET IN TOUCH</span>
-          <h2 className="font-title text-3xl sm:text-5xl font-extrabold text-white tracking-tight mb-4">
-            START YOUR <span className="gradient-text-gold">JOURNEY</span>
-          </h2>
-          <p className="text-zinc-400 text-sm font-sans">
-            Reach out to our administrators or enroll online today. LIONS KARATE CLUB PUNE provides top-tier Shotokan martial arts and self-defense coaching.
-          </p>
-        </div>
+    <div className="relative py-4">
+      <div className="w-full">
 
         {/* Info Grid: Center contact workspace */}
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch pt-4 mb-16">
@@ -463,6 +452,6 @@ export default function Contact() {
         </div>
 
       </div>
-    </section>
+    </div>
   );
 }
