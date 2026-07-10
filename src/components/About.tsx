@@ -166,6 +166,47 @@ export default function About() {
 
         </div>
 
+        {/* --- STUDENT KATA SHOWCASE --- */}
+        <div id="kata-showcase" className="mt-20 pt-16 border-t border-zinc-900">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+            
+            {/* Left Column: Description */}
+            <div className="lg:col-span-5 space-y-5">
+              <div className="inline-flex items-center gap-2">
+                <div className="h-[1.5px] w-8 bg-yellow-500"></div>
+                <span className="text-yellow-500 font-heading font-extrabold text-xs uppercase tracking-[0.2em]">Practice Excellence</span>
+              </div>
+              <h3 className="font-heading text-3xl sm:text-5xl font-black text-white uppercase tracking-tighter leading-none">
+                STUDENT KATA <br />
+                <span className="text-yellow-500 font-kanji font-black">SHOWCASE</span>
+              </h3>
+              <p className="text-zinc-300 text-xs sm:text-sm leading-relaxed font-body font-light">
+                Watch our dedicated young karatekas perfect their stances, speed, and precision through continuous, repetitive Kata drills. This looping focus allows parents and families to observe authentic forms, posture alignments, and student focus in real time.
+              </p>
+            </div>
+
+            {/* Right Column: Video Container */}
+            <div className="lg:col-span-7 flex justify-center">
+              <div className="relative w-full max-w-[340px] aspect-[9/16] rounded-2xl border-4 border-zinc-900 bg-black overflow-hidden shadow-[0_12px_40px_rgba(0,0,0,0.65)] group">
+                <video
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  className="w-full h-full object-cover object-center filter brightness-105 contrast-[1.03] transition-all duration-1000 group-hover:scale-102"
+                  src="https://res.cloudinary.com/dlzdagymx/video/upload/v1783699434/Kata_hcvwxf.mp4"
+                />
+                
+                {/* Floating subtle badge */}
+                <div className="absolute top-4 left-4 bg-slate-950/90 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-yellow-500/30 text-yellow-500 font-heading text-[9px] uppercase tracking-wider font-bold">
+                  • kata practice loop
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
         {/* --- PUNE REGIONAL COVERAGE & FLEXIBLE ONLINE CLASSES --- */}
         <div className="mt-20 pt-16 border-t border-zinc-900">
           <div className="text-center max-w-3xl mx-auto mb-12">
