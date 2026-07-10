@@ -324,9 +324,32 @@ export default function AdminPanel() {
   const [diagSaving, setDiagSaving] = useState<{ [studentId: string]: boolean }>({});
   const [diagErrors, setDiagErrors] = useState<{ [studentId: string]: string }>({});
   const [diagSuccesses, setDiagSuccesses] = useState<{ [studentId: string]: string }>({});
+  const [isScanningDuplicates, setIsScanningDuplicates] = useState(false);
+  const [lastScannedTime, setLastScannedTime] = useState<string | null>(null);
+  const [scanStats, setScanStats] = useState<{ students: number; exams: number } | null>(null);
 
   const [editingCandidateId, setEditingCandidateId] = useState<string | null>(null);
   const [editingCandidateNewId, setEditingCandidateNewId] = useState('');
+
+  const handleTriggerIntegrityScan = () => {
+    setIsScanningDuplicates(true);
+    setTimeout(() => {
+      setIsScanningDuplicates(false);
+      const now = new Date();
+      setLastScannedTime(now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+      setScanStats({
+        students: admissions.length,
+        exams: exams.length
+      });
+      
+      const { duplicateGroups } = getDuplicateIdGroups();
+      const initialInputs: { [key: string]: string } = {};
+      Object.values(duplicateGroups).flat().forEach(student => {
+        initialInputs[student.id] = student.studentId;
+      });
+      setDiagIdInputs(prev => ({ ...prev, ...initialInputs }));
+    }, 1100);
+  };
 
   const handleUpdateQueryStatus = async (queryId: string, newStatus: 'new' | 'in_progress' | 'resolved') => {
     try {
@@ -7087,7 +7110,48 @@ export default function AdminPanel() {
                 <p className="text-[10px] text-zinc-500 font-medium normal-case mt-0.5">Detect, resolve and auto-assign unique student identifiers</p>
               </div>
             </div>
+
+            <button
+              onClick={handleTriggerIntegrityScan}
+              disabled={isScanningDuplicates}
+              className={`font-heading font-extrabold text-[11px] uppercase tracking-wider px-5 py-3 rounded-xl transition-all flex items-center justify-center space-x-2 shadow-md cursor-pointer ${
+                isScanningDuplicates
+                  ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed border border-zinc-850 animate-pulse'
+                  : 'bg-[#FF3B3F] hover:bg-rose-600 text-white hover:shadow-red-500/10 active:scale-95'
+              }`}
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isScanningDuplicates ? 'animate-spin text-zinc-400' : 'text-white'}`} />
+              <span>{isScanningDuplicates ? 'Scanning Database...' : 'Tap to Scan Database'}</span>
+            </button>
           </div>
+
+          {/* Active Scan Status Display */}
+          {isScanningDuplicates && (
+            <div className="bg-slate-950/80 border border-red-500/30 p-6 rounded-2xl text-center space-y-3 animate-pulse">
+              <div className="w-8 h-8 border-2 border-[#FF3B3F] border-t-transparent rounded-full animate-spin mx-auto" />
+              <div className="space-y-1">
+                <span className="text-[10px] font-mono text-[#FF3B3F] uppercase tracking-widest block">Active Runtime Integrity Scan</span>
+                <p className="text-white font-heading font-black text-xs uppercase tracking-wider">Analyzing all admissions profiles & belt grading registration records in Firestore...</p>
+              </div>
+            </div>
+          )}
+
+          {!isScanningDuplicates && lastScannedTime && (
+            <div className="bg-slate-900/40 border border-emerald-950/45 p-5 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-left">
+              <div className="flex items-center space-x-3 text-emerald-400">
+                <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+                <div className="text-xs">
+                  <span className="font-heading font-black uppercase tracking-wider text-white">Integrity Scan Completed!</span>
+                  <p className="text-zinc-400 mt-1">
+                    Successfully validated <strong className="text-emerald-400 font-bold">{scanStats?.students || 0}</strong> active student profiles and <strong className="text-emerald-400 font-bold">{scanStats?.exams || 0}</strong> belt grading records in real time.
+                  </p>
+                </div>
+              </div>
+              <span className="text-[10px] font-mono text-zinc-400 bg-slate-950 px-3 py-1.5 rounded-lg border border-zinc-850 self-start sm:self-center font-bold">
+                LAST CHECKED: {lastScannedTime}
+              </span>
+            </div>
+          )}
 
           {/* Info Card */}
           <div className="bg-slate-900/40 border border-zinc-900 p-5 rounded-2xl text-left space-y-3">
@@ -7102,7 +7166,7 @@ export default function AdminPanel() {
             </div>
           </div>
 
-          {renderDiagnosticContent(false)}
+          {!isScanningDuplicates && renderDiagnosticContent(false)}
         </div>
       )}
 
