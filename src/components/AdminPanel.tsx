@@ -3560,12 +3560,12 @@ export default function AdminPanel() {
                       <table className="w-full text-left whitespace-nowrap">
                         <thead>
                           <tr className="bg-slate-950 text-zinc-450 text-[10px] uppercase font-bold tracking-wider font-mono border-b border-zinc-900">
-                            <th className="py-4 px-6">Student details</th>
-                            <th className="py-4 px-6">Dojo training Branch</th>
-                            <th className="py-4 px-6">Current & Target Belt</th>
-                            <th className="py-4 px-6">Registry state</th>
-                            <th className="py-4 px-6">Score & Comments</th>
-                            <th className="py-4 px-6 text-right">Actions</th>
+                            <th className="py-4 px-6 min-w-[220px]">Student details</th>
+                            <th className="py-4 px-6 min-w-[180px]">Dojo training Branch</th>
+                            <th className="py-4 px-6 min-w-[160px]">Current & Target Belt</th>
+                            <th className="py-4 px-6 min-w-[150px]">Registry state</th>
+                            <th className="py-4 px-6 min-w-[150px]">Score & Comments</th>
+                            <th className="py-4 pl-6 pr-8 text-right min-w-[240px]">Actions</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-zinc-900/40 text-xs">
@@ -3579,7 +3579,7 @@ export default function AdminPanel() {
                             .map((item) => {
                               return (
                                 <tr key={item.id} className="hover:bg-slate-900/15 transition-colors">
-                                  <td className="py-4.5 px-6 text-left">
+                                  <td className="py-4.5 px-6 text-left min-w-[220px]">
                                     {editingCandidateId === item.id ? (
                                       <div className="space-y-1.5 mt-1">
                                         <input
@@ -3627,14 +3627,14 @@ export default function AdminPanel() {
                                     {item.parentPhone && <span className="text-zinc-500 text-[10px] mt-0.5 block">Phone: {item.parentPhone}</span>}
                                     {item.coachName && <span className="text-zinc-500 text-[10px] mt-0.5 block">Coach: {item.coachName}</span>}
                                   </td>
-                                  <td className="py-4.5 px-6 text-zinc-400 font-medium text-left">
+                                  <td className="py-4.5 px-6 text-zinc-400 font-medium text-left min-w-[180px]">
                                     {item.branch}
                                   </td>
-                                  <td className="py-4.5 px-6 text-left font-mono">
+                                  <td className="py-4.5 px-6 text-left font-mono min-w-[160px]">
                                     <span className="text-zinc-550 block">Current: {item.currentBelt.split(' (')[0]}</span>
                                     <span className="text-emerald-400 font-semibold block mt-1">Target: {item.targetBelt.split(' (')[0]}</span>
                                   </td>
-                                  <td className="py-4.5 px-6 text-left">
+                                  <td className="py-4.5 px-6 text-left min-w-[150px]">
                                     <div className="space-y-1.5">
                                       {item.status === 'pending' && (
                                         <span className="inline-block bg-yellow-500/10 text-yellow-550 border border-yellow-500/20 text-[9px] font-heading font-black px-2 py-0.5 rounded uppercase tracking-wider">
@@ -3668,7 +3668,7 @@ export default function AdminPanel() {
                                       </div>
                                     </div>
                                   </td>
-                                  <td className="py-4.5 px-6 text-left">
+                                  <td className="py-4.5 px-6 text-left min-w-[150px]">
                                     {item.grade ? (
                                       <div>
                                         <span className="text-white font-bold block">Grade: {item.grade}</span>
@@ -3678,7 +3678,7 @@ export default function AdminPanel() {
                                       <span className="text-zinc-650 italic">Not graded yet</span>
                                     )}
                                   </td>
-                                  <td className="py-4.5 px-6 text-right">
+                                  <td className="py-4.5 pl-6 pr-8 text-right min-w-[240px]">
                                     <div className="flex items-center justify-end space-x-2">
                                       {item.status === 'pending' && (
                                         <button
@@ -4581,15 +4581,15 @@ export default function AdminPanel() {
 
             {/* Content Body */}
             <div className="p-6 space-y-6">
-              <div className="flex flex-col sm:flex-row gap-6 items-start sm:items-center">
+              <div className="flex flex-row gap-4 items-center">
                 {/* Profile Photo */}
-                <div className="w-24 h-24 rounded-lg overflow-hidden border border-zinc-800 bg-zinc-950 shrink-0 mx-auto sm:mx-0">
+                <div className="w-16 h-16 sm:w-24 sm:h-24 rounded-lg overflow-hidden border border-zinc-800 bg-zinc-950 shrink-0">
                   <img src={selectedAdmission.photoUrl || DEFAULT_STUDENT_AVATAR} alt="Student" className="w-full h-full object-cover object-top" />
                 </div>
                 {/* Visual Metadata banner */}
-                <div className="text-center sm:text-left space-y-1.5 flex-grow">
-                  <h4 className="font-title text-lg font-bold text-white uppercase tracking-wider">{selectedAdmission.fullName}</h4>
-                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 text-xs text-zinc-500 font-mono">
+                <div className="text-left space-y-1 flex-grow">
+                  <h4 className="font-title text-base sm:text-lg font-bold text-white uppercase tracking-wider">{selectedAdmission.fullName}</h4>
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] sm:text-xs text-zinc-550 font-mono">
                     <span className="flex items-center gap-1.5">
                       <span>ID: {selectedAdmission.studentId}</span>
                       <button 
@@ -4649,105 +4649,117 @@ export default function AdminPanel() {
                     </div>
                   )}
 
-                  <div className="pt-1.5 flex flex-wrap items-center justify-center sm:justify-start gap-2">
-                    <span className="text-[10px] uppercase font-bold text-yellow-500 bg-yellow-500/10 px-2.5 py-0.5 rounded border border-yellow-500/10 whitespace-nowrap">
+                  <div className="pt-1 flex flex-wrap items-center gap-1.5">
+                    <span className="text-[9px] sm:text-[10px] uppercase font-bold text-yellow-500 bg-yellow-500/10 px-2 py-0.5 rounded border border-yellow-500/10 whitespace-nowrap">
                       {selectedAdmission.beltLevel.split(' ')[0]} Belt
                     </span>
-                    <span className="text-[10px] uppercase font-bold text-zinc-400 bg-zinc-900 px-2.5 py-0.5 rounded whitespace-nowrap">
+                    <span className="text-[9px] sm:text-[10px] uppercase font-bold text-zinc-400 bg-zinc-900 px-2 py-0.5 rounded whitespace-nowrap">
                       Batch: {selectedAdmission.batch}
                     </span>
-                    <span className="text-[10px] uppercase font-bold text-sky-400 bg-sky-500/5 border border-sky-500/15 px-2.5 py-0.5 rounded whitespace-nowrap">
+                    <span className="text-[9px] sm:text-[10px] uppercase font-bold text-sky-400 bg-sky-500/5 border border-sky-500/15 px-2 py-0.5 rounded whitespace-nowrap">
                       Branch: {selectedAdmission.branch || 'Manaji Nagar Branch'}
                     </span>
                   </div>
                 </div>
               </div>
 
-              {/* Comprehensive parameters list grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-b border-zinc-850/60 py-5 text-xs">
-                <div className="space-y-3">
-                  <div>
-                    <span className="text-zinc-550 uppercase tracking-widest text-[9px] block">DOB / Age</span>
-                    <span className="text-zinc-300 font-medium mt-0.5 block">{selectedAdmission.dob} / {selectedAdmission.age} yrs</span>
-                  </div>
-                  <div>
-                    <span className="text-zinc-550 uppercase tracking-widest text-[9px] block">Guardian Name</span>
-                    <span className="text-zinc-300 font-medium mt-0.5 block">{selectedAdmission.parentName || 'Self / Legal Guardian'}</span>
-                  </div>
-                  <div>
-                    <span className="text-zinc-550 uppercase tracking-widest text-[9px] block">Physical Address</span>
-                    <span className="text-zinc-300 font-medium mt-0.5 block leading-relaxed">{selectedAdmission.address}</span>
-                  </div>
-                  <div className="pt-1.5 border-t border-zinc-850/30">
-                    <span className="text-zinc-550 uppercase tracking-widest text-[9px] block">Training Branch</span>
-                    <span className="text-yellow-500 font-bold mt-0.5 block">{selectedAdmission.branch || 'Manaji Nagar Branch'}</span>
-                  </div>
-                  <div>
-                    <span className="text-zinc-550 uppercase tracking-widest text-[9px] block">Designated Coach</span>
-                    <span className="text-zinc-400 font-medium mt-0.5 block leading-tight">{selectedAdmission.coachName || 'Maruti Jadhav Sir 2nd dan Black Belt'}</span>
+              {/* Comprehensive parameters list grid - optimized for mobile 2-column view */}
+              <div className="grid grid-cols-2 gap-x-5 gap-y-3.5 border-t border-b border-zinc-850/60 py-4.5 text-xs">
+                {/* DOB / Age */}
+                <div>
+                  <span className="text-zinc-550 uppercase tracking-widest text-[9px] block">DOB / Age</span>
+                  <span className="text-zinc-300 font-medium mt-0.5 block">{selectedAdmission.dob} / {selectedAdmission.age} yrs</span>
+                </div>
+
+                {/* Guardian Name */}
+                <div>
+                  <span className="text-zinc-550 uppercase tracking-widest text-[9px] block">Guardian Name</span>
+                  <span className="text-zinc-300 font-medium mt-0.5 block truncate max-w-[160px]" title={selectedAdmission.parentName || 'Self / Legal Guardian'}>{selectedAdmission.parentName || 'Self / Legal Guardian'}</span>
+                </div>
+
+                {/* Phone */}
+                <div>
+                  <span className="text-zinc-550 uppercase tracking-widest text-[9px] block">Primary Phone</span>
+                  <a href={`tel:${selectedAdmission.phone}`} className="text-yellow-500 hover:underline mt-0.5 flex items-center space-x-1.5">
+                    <Phone className="w-3 h-3 shrink-0" />
+                    <span>{selectedAdmission.phone}</span>
+                  </a>
+                </div>
+
+                {/* WhatsApp */}
+                <div>
+                  <span className="text-zinc-550 uppercase tracking-widest text-[9px] block">WhatsApp Contact</span>
+                  {(() => {
+                    let rawPhone = selectedAdmission.whatsApp || selectedAdmission.phone || '';
+                    let cleanPhone = rawPhone.replace(/\D/g, '').replace(/^0+/, '');
+                    if (cleanPhone.startsWith('910') && cleanPhone.length === 13) {
+                      cleanPhone = '91' + cleanPhone.substring(3);
+                    } else if (cleanPhone.length === 10) {
+                      cleanPhone = `91${cleanPhone}`;
+                    }
+                    return (
+                      <a href={`https://api.whatsapp.com/send?phone=${cleanPhone}`} target="_blank" rel="noreferrer" className="text-yellow-500 hover:underline mt-0.5 flex items-center space-x-1.5">
+                        <Phone className="w-3 h-3 shrink-0" />
+                        <span>{selectedAdmission.whatsApp || selectedAdmission.phone}</span>
+                      </a>
+                    );
+                  })()}
+                </div>
+
+                {/* Email */}
+                <div className="col-span-2 xs:col-span-1">
+                  <span className="text-zinc-550 uppercase tracking-widest text-[9px] block">Email Identifier</span>
+                  <a href={`mailto:${selectedAdmission.email}`} className="text-zinc-300 hover:text-white mt-0.5 flex items-center space-x-1.5 truncate">
+                    <Mail className="w-3 h-3 shrink-0" />
+                    <span className="truncate block max-w-full">{selectedAdmission.email}</span>
+                  </a>
+                </div>
+
+                {/* Fees Status */}
+                <div className="col-span-2 xs:col-span-1">
+                  <span className="text-zinc-550 uppercase tracking-widest text-[9px] block">Induction Fees</span>
+                  <div className="flex items-center space-x-2 mt-0.5">
+                    <span className={`inline-flex items-center space-x-1 uppercase font-heading font-black text-[9px] tracking-wider px-2 py-0.5 rounded border ${
+                      (selectedAdmission.feesStatus || 'Unpaid') === 'Paid'
+                        ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                        : 'bg-red-500/10 border-red-500/30 text-red-400'
+                    }`}>
+                      <span className={`w-1 h-1 rounded-full ${
+                        (selectedAdmission.feesStatus || 'Unpaid') === 'Paid' ? 'bg-emerald-400' : 'bg-red-400'
+                      }`} />
+                      <span>{selectedAdmission.feesStatus || 'Unpaid'}</span>
+                    </span>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const currentFees = selectedAdmission.feesStatus || 'Unpaid';
+                        const nextFees = currentFees === 'Paid' ? 'Unpaid' : 'Paid';
+                        updateFeesStatus(selectedAdmission.id, nextFees);
+                      }}
+                      className="text-[9px] bg-zinc-805 hover:bg-zinc-800 hover:text-white text-zinc-350 px-1.5 py-0.5 rounded border border-zinc-800 transition-colors uppercase font-heading font-semibold cursor-pointer"
+                    >
+                      Toggle
+                    </button>
                   </div>
                 </div>
 
-                <div className="space-y-3">
-                  <div>
-                    <span className="text-zinc-550 uppercase tracking-widest text-[9px] block">Active Primary Phone</span>
-                    <a href={`tel:${selectedAdmission.phone}`} className="text-yellow-500 hover:underline mt-0.5 flex items-center space-x-1.5">
-                      <Phone className="w-3.5 h-3.5 shrink-0" />
-                      <span>{selectedAdmission.phone}</span>
-                    </a>
-                  </div>
-                  <div>
-                    <span className="text-zinc-550 uppercase tracking-widest text-[9px] block">WhatsApp Contact</span>
-                    {(() => {
-                      let rawPhone = selectedAdmission.whatsApp || selectedAdmission.phone || '';
-                      let cleanPhone = rawPhone.replace(/\D/g, '').replace(/^0+/, '');
-                      if (cleanPhone.startsWith('910') && cleanPhone.length === 13) {
-                        cleanPhone = '91' + cleanPhone.substring(3);
-                      } else if (cleanPhone.length === 10) {
-                        cleanPhone = `91${cleanPhone}`;
-                      }
-                      return (
-                        <a href={`https://api.whatsapp.com/send?phone=${cleanPhone}`} target="_blank" rel="noreferrer" className="text-yellow-500 hover:underline mt-0.5 flex items-center space-x-1.5">
-                          <Phone className="w-3.5 h-3.5 shrink-0" />
-                          <span>{selectedAdmission.whatsApp || selectedAdmission.phone}</span>
-                        </a>
-                      );
-                    })()}
-                  </div>
-                  <div>
-                    <span className="text-zinc-550 uppercase tracking-widest text-[9px] block">Email Identifier</span>
-                    <a href={`mailto:${selectedAdmission.email}`} className="text-zinc-300 hover:text-white mt-0.5 flex items-center space-x-1.5">
-                      <Mail className="w-3.5 h-3.5 shrink-0" />
-                      <span>{selectedAdmission.email}</span>
-                    </a>
-                  </div>
-                  <div className="pt-1.5 border-t border-zinc-850/30">
-                    <span className="text-zinc-550 uppercase tracking-widest text-[9px] block">Registration Induction Fees</span>
-                    <div className="flex items-center space-x-2.5 mt-1.5">
-                      <span className={`inline-flex items-center space-x-1.5 uppercase font-heading font-black text-[9px] tracking-widest px-2.5 py-0.5 rounded border ${
-                        (selectedAdmission.feesStatus || 'Unpaid') === 'Paid'
-                          ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-                          : 'bg-red-500/10 border-red-500/30 text-red-400'
-                      }`}>
-                        <span className={`w-1 h-1 rounded-full ${
-                          (selectedAdmission.feesStatus || 'Unpaid') === 'Paid' ? 'bg-emerald-400' : 'bg-red-400'
-                        }`} />
-                        <span>{selectedAdmission.feesStatus || 'Unpaid'}</span>
-                      </span>
+                {/* Training Branch */}
+                <div>
+                  <span className="text-zinc-550 uppercase tracking-widest text-[9px] block">Training Branch</span>
+                  <span className="text-yellow-500 font-bold mt-0.5 block truncate max-w-[160px]" title={selectedAdmission.branch || 'Manaji Nagar Branch'}>{selectedAdmission.branch || 'Manaji Nagar Branch'}</span>
+                </div>
 
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const currentFees = selectedAdmission.feesStatus || 'Unpaid';
-                          const nextFees = currentFees === 'Paid' ? 'Unpaid' : 'Paid';
-                          updateFeesStatus(selectedAdmission.id, nextFees);
-                        }}
-                        className="text-[10px] bg-zinc-805 hover:bg-zinc-800 hover:text-white text-zinc-350 px-2 py-0.5 rounded border border-zinc-800 transition-colors uppercase font-heading font-semibold cursor-pointer"
-                      >
-                        Toggle Fees
-                      </button>
-                    </div>
-                  </div>
+                {/* Designated Coach */}
+                <div>
+                  <span className="text-zinc-550 uppercase tracking-widest text-[9px] block">Designated Coach</span>
+                  <span className="text-zinc-400 font-medium mt-0.5 block truncate max-w-[160px]" title={selectedAdmission.coachName || 'Maruti Jadhav Sir 2nd dan Black Belt'}>{selectedAdmission.coachName || 'Maruti Jadhav Sir'}</span>
+                </div>
+
+                {/* Physical Address - occupies full width */}
+                <div className="col-span-2 border-t border-zinc-850/30 pt-2.5">
+                  <span className="text-zinc-550 uppercase tracking-widest text-[9px] block">Physical Address</span>
+                  <span className="text-zinc-300 font-medium mt-0.5 block leading-relaxed">{selectedAdmission.address}</span>
                 </div>
               </div>
 
