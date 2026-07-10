@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { collection, onSnapshot, addDoc, getDocs, query, where } from 'firebase/firestore';
-import { db, handleFirestoreError, OperationType, triggerWhatsAppNotification } from '../firebase';
+import { db, handleFirestoreError, OperationType, triggerWhatsAppNotification, generateSequentialStudentId } from '../firebase';
 import { BATCH_TIMINGS, BatchInfo, Admission, BELT_LEVELS, DOJO_BRANCHES } from '../types';
 import { Calendar, Users, Target, Clock, Sparkles, Send, Laptop, ShieldCheck, Check, Heart, Smile, HelpCircle, Volume2, VolumeX, ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -155,22 +155,6 @@ ${customMsg ? `- Additional Request: ${customMsg}` : ''}`;
     window.open(whatsappUrl, '_blank');
   };
 
-  // Helper to generate dynamic Sequenced Student IDs
-  const generateStudentId = async (): Promise<string> => {
-    const currentYear = new Date().getFullYear();
-    try {
-      const admissionsRef = collection(db, 'admissions');
-      const q = query(admissionsRef, where('createdAt', '>=', new Date(`${currentYear}-01-01`).getTime()));
-      const snap = await getDocs(q);
-      const count = snap.size + 100;
-      const paddedSerial = String(count).padStart(3, '0');
-      return `LKCP-${currentYear}-${paddedSerial}`;
-    } catch {
-      const randomId = Math.floor(100 + Math.random() * 900);
-      return `LKCP-${currentYear}-${randomId}`;
-    }
-  };
-
   // Quick form Firestore submission
   const handleQuickRegisterSubmit = async (e: any) => {
     if (e) e.preventDefault();
@@ -192,7 +176,7 @@ ${customMsg ? `- Additional Request: ${customMsg}` : ''}`;
         }
       }
 
-      const studentId = await generateStudentId();
+      const studentId = await generateSequentialStudentId();
       const currentTimestamp = Date.now();
       const data = classesData[innerActiveAge];
 

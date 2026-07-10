@@ -10,7 +10,7 @@ import {
   addDoc, 
   onSnapshot 
 } from 'firebase/firestore';
-import { db, handleFirestoreError, OperationType } from '../firebase';
+import { db, handleFirestoreError, OperationType, generateSequentialStudentId } from '../firebase';
 import { Admission, BELT_LEVELS, DOJO_BRANCHES } from '../types';
 import AttendanceTracker from './AttendanceTracker';
 import { 
@@ -1559,38 +1559,6 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
     localStorage.removeItem('lkcp_portal_student_id');
   };
 
-  // Generate customized Year Sequence ID: LKCP-YYYY-XXX safely without breaking sequences
-  const generateUniqueStudentId = async (): Promise<string> => {
-    const currentYear = new Date().getFullYear();
-    try {
-      const admissionsRef = collection(db, 'admissions');
-      // Query admissions from this year to calculate next serial
-      const q = query(admissionsRef, where('createdAt', '>=', new Date(`${currentYear}-01-01`).getTime()));
-      const snap = await getDocs(q);
-      
-      let count = snap.size + 100;
-      let uniqueId = `LKCP-${currentYear}-${String(count).padStart(3, '0')}`;
-      
-      // Secondary check to ensure ID sequence is strictly unbroken and collision-free
-      let isDuplicate = true;
-      while (isDuplicate) {
-        const checkQ = query(admissionsRef, where('studentId', '==', uniqueId));
-        const checkSnap = await getDocs(checkQ);
-        if (checkSnap.empty) {
-          isDuplicate = false;
-        } else {
-          count++;
-          uniqueId = `LKCP-${currentYear}-${String(count).padStart(3, '0')}`;
-        }
-      }
-      return uniqueId;
-    } catch (err) {
-      console.error("Fallback generating direct ID:", err);
-      const randomId = Math.floor(100 + Math.random() * 900);
-      return `LKCP-${currentYear}-${randomId}`;
-    }
-  };
-
   const handleRegisterExam = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -1681,7 +1649,7 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
           return;
         } else {
           // Standard brand-new student path
-          studentId = await generateUniqueStudentId();
+          studentId = await generateSequentialStudentId();
           studentName = newStudentName.trim();
           currentBeltVal = newStudentCurrentBelt;
 

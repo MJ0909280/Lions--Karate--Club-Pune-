@@ -254,7 +254,7 @@ export default function Hero({ onNavigate }: HeroProps) {
                 type="primary"
                 className="group"
               >
-                <span>CLAIM 2 FREE TRIALS</span>
+                <span>JOIN NOW / अभी जुड़ें</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1.5 transition-transform" />
               </MartialButton>
               

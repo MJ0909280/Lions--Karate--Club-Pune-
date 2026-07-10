@@ -18,7 +18,7 @@ import {
   onAuthStateChanged,
   User
 } from 'firebase/auth';
-import { db, auth, handleFirestoreError, OperationType, checkFirestoreConnection } from '../firebase';
+import { db, auth, handleFirestoreError, OperationType, checkFirestoreConnection, generateSequentialStudentId } from '../firebase';
 import { Admission, BatchInfo, BATCH_TIMINGS, DOJO_BRANCHES, BELT_LEVELS, Receipt, ReceiptItem, ParentQuery } from '../types';
 import IDCard from './IDCard';
 import ProgressCard from './ProgressCard';
@@ -61,7 +61,11 @@ import {
   ChevronDown,
   ChevronUp,
   Copy,
-  Share2
+  Share2,
+  AlertOctagon,
+  ArrowRight,
+  Lock,
+  Unlock
 } from 'lucide-react';
 
 // @ts-ignore
@@ -294,7 +298,7 @@ export default function AdminPanel() {
   }, []);
 
   // Tab navigation console state
-  const [adminTab, setAdminTab] = useState<'parent_queries' | 'admissions' | 'batches' | 'site_settings' | 'exams' | 'seo_ai' | 'bills'>('admissions');
+  const [adminTab, setAdminTab] = useState<'parent_queries' | 'admissions' | 'batches' | 'site_settings' | 'exams' | 'seo_ai' | 'bills' | 'duplicate_finder'>('admissions');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Parents Online Queries States
@@ -313,6 +317,13 @@ export default function AdminPanel() {
   const [idEditError, setIdEditError] = useState('');
   const [idEditSuccess, setIdEditSuccess] = useState('');
   const [idEditSaving, setIdEditSaving] = useState(false);
+
+  // Duplicate Student ID Diagnostic States
+  const [duplicateRepairOpen, setDuplicateRepairOpen] = useState(false);
+  const [diagIdInputs, setDiagIdInputs] = useState<{ [studentId: string]: string }>({});
+  const [diagSaving, setDiagSaving] = useState<{ [studentId: string]: boolean }>({});
+  const [diagErrors, setDiagErrors] = useState<{ [studentId: string]: string }>({});
+  const [diagSuccesses, setDiagSuccesses] = useState<{ [studentId: string]: string }>({});
 
   const [editingCandidateId, setEditingCandidateId] = useState<string | null>(null);
   const [editingCandidateNewId, setEditingCandidateNewId] = useState('');
@@ -684,6 +695,7 @@ export default function AdminPanel() {
   // Site Video Configuration Inputs
   const [heroVideoInput, setHeroVideoInput] = useState('');
   const [aboutVideoInput, setAboutVideoInput] = useState('');
+  const [kataVideoInput, setKataVideoInput] = useState('');
   const [settingsSaving, setSettingsSaving] = useState(false);
   const [settingsSuccess, setSettingsSuccess] = useState(false);
   const [settingsError, setSettingsError] = useState('');
@@ -751,6 +763,7 @@ export default function AdminPanel() {
   const [manualSaving, setManualSaving] = useState(false);
 
   const [mStudentId, setMStudentId] = useState('');
+  const [mIdLocked, setMIdLocked] = useState(true);
   const [mFullName, setMFullName] = useState('');
   const [mDob, setMDob] = useState('');
   const [mAge, setMAge] = useState<number | ''>('');
@@ -768,6 +781,26 @@ export default function AdminPanel() {
   const [mJoiningDate, setMJoiningDate] = useState('');
   const [mPhotoUrl, setMPhotoUrl] = useState('');
   const [mDragOver, setMDragOver] = useState(false);
+
+  // Edit Student Profile States
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [editFullName, setEditFullName] = useState('');
+  const [editDob, setEditDob] = useState('');
+  const [editAge, setEditAge] = useState<number | ''>('');
+  const [editGender, setEditGender] = useState<'male' | 'female' | 'other'>('male');
+  const [editParentName, setEditParentName] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+  const [editWhatsApp, setEditWhatsApp] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [editBranch, setEditBranch] = useState('');
+  const [editCoachName, setEditCoachName] = useState('');
+  const [editBatch, setEditBatch] = useState('');
+  const [editBeltLevel, setEditBeltLevel] = useState('');
+  const [editSchoolName, setEditSchoolName] = useState('');
+  const [editAddress, setEditAddress] = useState('');
+  const [editFeesStatus, setEditFeesStatus] = useState<'Paid' | 'Unpaid'>('Unpaid');
+  const [editProfileSaving, setEditProfileSaving] = useState(false);
+  const [editProfileError, setEditProfileError] = useState('');
 
   // 1. Manage Firebase Authentication
   useEffect(() => {
@@ -950,10 +983,12 @@ export default function AdminPanel() {
       if (snap.exists()) {
         const data = snap.data();
         setHeroVideoInput(data.heroVideoUrl || 'https://res.cloudinary.com/dlzdagymx/video/upload/q_auto/f_auto/v1779342942/lions-karate-website-media/m3hfwi7bsfujadlsy5sl.mp4');
-        setAboutVideoInput(data.aboutVideoUrl || 'https://res.cloudinary.com/dlzdagymx/video/upload/v1783699434/Kata_hcvwxf.mp4');
+        setAboutVideoInput(data.aboutVideoUrl || 'https://res.cloudinary.com/dlzdagymx/video/upload/v1781891366/WhatsApp_Video_2026-06-19_at_9.51.10_PM_pog0dc.mp4');
+        setKataVideoInput(data.kataVideoUrl || 'https://res.cloudinary.com/dlzdagymx/video/upload/v1783699434/Kata_hcvwxf.mp4');
       } else {
         setHeroVideoInput('https://res.cloudinary.com/dlzdagymx/video/upload/q_auto/f_auto/v1779342942/lions-karate-website-media/m3hfwi7bsfujadlsy5sl.mp4');
-        setAboutVideoInput('https://res.cloudinary.com/dlzdagymx/video/upload/v1783699434/Kata_hcvwxf.mp4');
+        setAboutVideoInput('https://res.cloudinary.com/dlzdagymx/video/upload/v1781891366/WhatsApp_Video_2026-06-19_at_9.51.10_PM_pog0dc.mp4');
+        setKataVideoInput('https://res.cloudinary.com/dlzdagymx/video/upload/v1783699434/Kata_hcvwxf.mp4');
       }
     }, (error) => {
       console.error("Firestore settings sync error: ", error);
@@ -1081,6 +1116,7 @@ export default function AdminPanel() {
       await setDoc(doc(db, 'settings', 'video'), {
         heroVideoUrl: heroVideoInput.trim(),
         aboutVideoUrl: aboutVideoInput.trim(),
+        kataVideoUrl: kataVideoInput.trim(),
         updatedAt: Date.now()
       });
       await setDoc(doc(db, 'settings', 'whatsapp'), {
@@ -1247,17 +1283,20 @@ export default function AdminPanel() {
     }
   };
 
-  const suggestNextStudentId = () => {
-    const currentYear = new Date().getFullYear();
-    const count = admissions.length + 100;
-    const paddedSerial = String(count).padStart(3, '0');
-    setMStudentId(`LKCP-${currentYear}-${paddedSerial}`);
+  const suggestNextStudentId = async () => {
+    try {
+      const nextId = await generateSequentialStudentId();
+      setMStudentId(nextId);
+    } catch (err) {
+      console.warn("Failed to suggest unique ID:", err);
+    }
   };
 
-  const openEnrollModal = () => {
+  const openEnrollModal = async () => {
     const defaultBatch = batches.length > 0 ? batches[0].name : BATCH_TIMINGS[0].name;
     setMBatch(defaultBatch);
-    setMStudentId('');
+    setMStudentId('Generating...');
+    setMIdLocked(true);
     setMFullName('');
     setMDob('');
     setMAge('');
@@ -1274,10 +1313,10 @@ export default function AdminPanel() {
     setManualFormError('');
     setMJoiningDate(new Date().toISOString().split('T')[0]);
     
-    // Auto-generate suggested ID
-    suggestNextStudentId();
-    
     setEnrollModalOpen(true);
+    
+    // Auto-generate suggested ID asynchronously
+    await suggestNextStudentId();
   };
 
   const exportToCSV = () => {
@@ -1413,7 +1452,7 @@ export default function AdminPanel() {
 
   const handleSaveManualStudent = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!mStudentId.trim()) {
+    if (!mIdLocked && !mStudentId.trim()) {
       setManualFormError('Student Roll ID is required.');
       return;
     }
@@ -1433,11 +1472,19 @@ export default function AdminPanel() {
       const selectedBranch = DOJO_BRANCHES.find(b => b.name === mBranch) || DOJO_BRANCHES[0];
       const coachName = selectedBranch.coach;
 
-      const cleanStudentId = mStudentId.trim().toUpperCase();
+      let finalStudentId = '';
+      if (mIdLocked) {
+        // Atomic dynamic generation at submission guarantees no duplicate can ever be created
+        finalStudentId = await generateSequentialStudentId();
+      } else {
+        finalStudentId = mStudentId.trim().toUpperCase();
+      }
 
-      const duplicate = admissions.some(a => a.studentId === cleanStudentId);
-      if (duplicate) {
-        setManualFormError(`The student roll ID "${cleanStudentId}" is already taken in the directory. Please use a unique sequence.`);
+      // Check for duplicate in Firestore directly for absolute precision!
+      const checkQ = query(collection(db, 'admissions'), where('studentId', '==', finalStudentId));
+      const checkSnap = await getDocs(checkQ);
+      if (!checkSnap.empty) {
+        setManualFormError(`The student roll ID "${finalStudentId}" is already taken in the directory. Please use a unique sequence.`);
         setManualSaving(false);
         return;
       }
@@ -1445,7 +1492,7 @@ export default function AdminPanel() {
       const joiningTimestamp = mJoiningDate ? new Date(mJoiningDate).getTime() : Date.now();
 
       const studentData = {
-        studentId: cleanStudentId,
+        studentId: finalStudentId,
         fullName: mFullName.trim(),
         dob: mDob || new Date(Date.now() - 315576000000).toISOString().split('T')[0],
         age: Number(mAge) || 10,
@@ -1512,14 +1559,32 @@ export default function AdminPanel() {
       // 2. If Passed, automatically graduate the student's belt level in the admissions profile collection
       if (gradingExam.statusAction === 'passed') {
         const admissionsRef = collection(db, 'admissions');
-        const q = query(admissionsRef, where('studentId', '==', gradingExam.studentId));
-        const snap = await getDocs(q);
-        if (!snap.empty) {
-          const studentDoc = snap.docs[0];
-          await updateDoc(doc(db, 'admissions', studentDoc.id), {
+        
+        // Find correct student in memory first for 100% accuracy on duplicate IDs
+        const targetStudent = admissions.find(s => 
+          (s.studentId || '').trim().toUpperCase() === (gradingExam.studentId || '').trim().toUpperCase() &&
+          (s.fullName || '').trim().toLowerCase() === (gradingExam.studentName || '').trim().toLowerCase()
+        ) || admissions.find(s => 
+          (s.fullName || '').trim().toLowerCase() === (gradingExam.studentName || '').trim().toLowerCase()
+        );
+        
+        if (targetStudent) {
+          await updateDoc(doc(db, 'admissions', targetStudent.id), {
             beltLevel: gradingExam.targetBelt,
             updatedAt: Date.now()
           });
+          console.log(`Successfully graduated student '${targetStudent.fullName}' to belt '${gradingExam.targetBelt}'`);
+        } else {
+          // Fallback to query
+          const q = query(admissionsRef, where('studentId', '==', gradingExam.studentId));
+          const snap = await getDocs(q);
+          if (!snap.empty) {
+            const studentDoc = snap.docs[0];
+            await updateDoc(doc(db, 'admissions', studentDoc.id), {
+              beltLevel: gradingExam.targetBelt,
+              updatedAt: Date.now()
+            });
+          }
         }
       }
 
@@ -1873,7 +1938,9 @@ export default function AdminPanel() {
       if (trimmedId !== oldId) {
         const checkQ = query(collection(db, 'admissions'), where('studentId', '==', trimmedId));
         const checkSnap = await getDocs(checkQ);
-        if (!checkSnap.empty) {
+        // Ensure no other document has this studentId
+        const conflicts = checkSnap.docs.filter(doc => doc.id !== selectedAdmission.id);
+        if (conflicts.length > 0) {
           setIdEditError(`The Student ID '${trimmedId}' is already assigned to another student.`);
           setIdEditSaving(false);
           return;
@@ -1887,17 +1954,22 @@ export default function AdminPanel() {
         updatedAt: Date.now()
       });
       
-      // 3. Update any exam registrations in 'exams' where studentId was oldId
+      // 3. Update any exam registrations in 'exams' where studentId was oldId and studentName matches this student's name
       const examsQ = query(collection(db, 'exams'), where('studentId', '==', oldId));
       const examsSnap = await getDocs(examsQ);
       const updatePromises: Promise<void>[] = [];
+      const studentNameLower = selectedAdmission.fullName.trim().toLowerCase();
       examsSnap.forEach((examDoc) => {
-        updatePromises.push(
-          updateDoc(doc(db, 'exams', examDoc.id), {
-            studentId: trimmedId,
-            updatedAt: Date.now()
-          })
-        );
+        const examData = examDoc.data();
+        const examNameLower = (examData.studentName || '').trim().toLowerCase();
+        if (examNameLower === studentNameLower) {
+          updatePromises.push(
+            updateDoc(doc(db, 'exams', examDoc.id), {
+              studentId: trimmedId,
+              updatedAt: Date.now()
+            })
+          );
+        }
       });
       await Promise.all(updatePromises);
       
@@ -1906,6 +1978,9 @@ export default function AdminPanel() {
         ...selectedAdmission,
         studentId: trimmedId
       });
+      
+      // Also update the local admissions array
+      setAdmissions(prev => prev.map(item => item.id === selectedAdmission.id ? { ...item, studentId: trimmedId } : item));
       
       setIdEditSuccess('Student Roll ID successfully updated across admissions and exams!');
       setTimeout(() => {
@@ -1920,6 +1995,563 @@ export default function AdminPanel() {
     }
   };
 
+  // Handle branch change inside profile editing to set coach dynamically
+  const handleBranchChange = (branchName: string) => {
+    setEditBranch(branchName);
+    const branchObj = DOJO_BRANCHES.find(b => b.name === branchName);
+    if (branchObj) {
+      setEditCoachName(branchObj.coach);
+    }
+  };
+
+  // Start editing student profile
+  const handleStartEditProfile = () => {
+    if (!selectedAdmission) return;
+    setEditFullName(selectedAdmission.fullName || '');
+    setEditDob(selectedAdmission.dob || '');
+    setEditAge(selectedAdmission.age || '');
+    setEditGender(selectedAdmission.gender || 'male');
+    setEditParentName(selectedAdmission.parentName || '');
+    setEditPhone(selectedAdmission.phone || '');
+    setEditWhatsApp(selectedAdmission.whatsApp || '');
+    setEditEmail(selectedAdmission.email || '');
+    setEditBranch(selectedAdmission.branch || 'Manaji Nagar Branch');
+    setEditCoachName(selectedAdmission.coachName || '');
+    setEditBatch(selectedAdmission.batch || '');
+    setEditBeltLevel(selectedAdmission.beltLevel || 'White Belt');
+    setEditSchoolName(selectedAdmission.schoolName || '');
+    setEditAddress(selectedAdmission.address || '');
+    setEditFeesStatus(selectedAdmission.feesStatus || 'Unpaid');
+    setEditProfileError('');
+    setIsEditingProfile(true);
+  };
+
+  // Save updated student profile
+  const handleSaveProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedAdmission) return;
+
+    if (!editFullName.trim()) {
+      setEditProfileError('Full Name is required');
+      return;
+    }
+    if (!editPhone.trim()) {
+      setEditProfileError('Phone Number is required');
+      return;
+    }
+
+    setEditProfileSaving(true);
+    setEditProfileError('');
+
+    try {
+      const docRef = doc(db, 'admissions', selectedAdmission.id);
+      const updateData: Partial<Admission> = {
+        fullName: editFullName.trim(),
+        dob: editDob,
+        age: Number(editAge) || 10,
+        gender: editGender,
+        parentName: editParentName.trim(),
+        phone: editPhone.trim(),
+        whatsApp: editWhatsApp.trim() || editPhone.trim(),
+        email: editEmail.trim(),
+        branch: editBranch,
+        coachName: editCoachName,
+        batch: editBatch,
+        beltLevel: editBeltLevel,
+        schoolName: editSchoolName.trim(),
+        address: editAddress.trim(),
+        feesStatus: editFeesStatus as 'Paid' | 'Unpaid',
+        updatedAt: Date.now()
+      };
+
+      await updateDoc(docRef, updateData);
+
+      // Update local state to immediately show updated values
+      const updatedAdmission = {
+        ...selectedAdmission,
+        ...updateData
+      };
+      setSelectedAdmission(updatedAdmission);
+      
+      // Also update the local admissions array
+      setAdmissions(prev => prev.map(item => item.id === selectedAdmission.id ? { ...item, ...updateData } : item));
+      
+      setIsEditingProfile(false);
+    } catch (err: any) {
+      console.error("Failed to update student profile:", err);
+      setEditProfileError(err.message || 'Failed to update student details. Please try again.');
+    } finally {
+      setEditProfileSaving(false);
+    }
+  };
+
+  // Centralized diagnostic repair handler for resolving duplicate IDs
+  const handleSaveDiagStudentId = async (student: Admission, newId: string) => {
+    const trimmedId = newId.trim().toUpperCase();
+    if (!trimmedId) {
+      setDiagErrors(prev => ({ ...prev, [student.id]: 'ID cannot be empty' }));
+      return;
+    }
+    
+    setDiagSaving(prev => ({ ...prev, [student.id]: true }));
+    setDiagErrors(prev => ({ ...prev, [student.id]: '' }));
+    setDiagSuccesses(prev => ({ ...prev, [student.id]: '' }));
+    
+    try {
+      const oldId = student.studentId;
+      
+      // 1. Check if the new ID already exists for another student in admissions (excluding this student's document itself)
+      if (trimmedId !== oldId) {
+        const checkQ = query(collection(db, 'admissions'), where('studentId', '==', trimmedId));
+        const checkSnap = await getDocs(checkQ);
+        // Ensure no other document has this studentId
+        const conflicts = checkSnap.docs.filter(doc => doc.id !== student.id);
+        if (conflicts.length > 0) {
+          setDiagErrors(prev => ({ ...prev, [student.id]: `The Student ID '${trimmedId}' is already assigned to another student.` }));
+          setDiagSaving(prev => ({ ...prev, [student.id]: false }));
+          return;
+        }
+      }
+      
+      // 2. Update the student document in 'admissions'
+      const studentDocRef = doc(db, 'admissions', student.id);
+      await updateDoc(studentDocRef, {
+        studentId: trimmedId,
+        updatedAt: Date.now()
+      });
+      
+      // 3. Update any exam registrations in 'exams' where studentId was oldId and studentName matches this student's name
+      const examsQ = query(collection(db, 'exams'), where('studentId', '==', oldId));
+      const examsSnap = await getDocs(examsQ);
+      const updatePromises: Promise<void>[] = [];
+      const studentNameLower = student.fullName.trim().toLowerCase();
+      examsSnap.forEach((examDoc) => {
+        const examData = examDoc.data();
+        const examNameLower = (examData.studentName || '').trim().toLowerCase();
+        if (examNameLower === studentNameLower) {
+          updatePromises.push(
+            updateDoc(doc(db, 'exams', examDoc.id), {
+              studentId: trimmedId,
+              updatedAt: Date.now()
+            })
+          );
+        }
+      });
+      await Promise.all(updatePromises);
+      
+      setDiagSuccesses(prev => ({ ...prev, [student.id]: 'Updated successfully!' }));
+      
+      // Dynamically update the student's ID inside local admissions array state as well
+      setAdmissions(prev => prev.map(item => item.id === student.id ? { ...item, studentId: trimmedId } : item));
+
+      setTimeout(() => {
+        setDiagSuccesses(prev => ({ ...prev, [student.id]: '' }));
+      }, 3000);
+    } catch (err: any) {
+      console.error("Failed to update student ID in diagnosis:", err);
+      setDiagErrors(prev => ({ ...prev, [student.id]: err.message || 'Error occurred.' }));
+    } finally {
+      setDiagSaving(prev => ({ ...prev, [student.id]: false }));
+    }
+  };
+
+  // Diagnostic states for exam sync & profile generation
+  const [syncSaving, setSyncSaving] = useState<{ [key: string]: boolean }>({});
+  const [syncErrors, setSyncErrors] = useState<{ [key: string]: string }>({});
+  const [syncSuccesses, setSyncSuccesses] = useState<{ [key: string]: string }>({});
+
+  const handleSyncExamId = async (examId: string, admissionId: string, targetId: string, direction: 'exam-to-profile' | 'profile-to-exam') => {
+    const key = `${examId}_${admissionId}_${direction}`;
+    setSyncSaving(prev => ({ ...prev, [key]: true }));
+    setSyncErrors(prev => ({ ...prev, [key]: '' }));
+    setSyncSuccesses(prev => ({ ...prev, [key]: '' }));
+
+    try {
+      if (direction === 'exam-to-profile') {
+        // Update exam's studentId to match the profile's studentId (targetId)
+        await updateDoc(doc(db, 'exams', examId), {
+          studentId: targetId,
+          updatedAt: Date.now()
+        });
+        
+        // Update local exams array state if loaded
+        setExams(prev => prev.map(item => item.id === examId ? { ...item, studentId: targetId } : item));
+        
+        setSyncSuccesses(prev => ({ ...prev, [key]: 'Exam ID updated to match profile!' }));
+      } else {
+        // Update profile's studentId to match the exam's studentId (targetId)
+        // First, check if the targetId is already taken by some other student in admissions
+        const checkQ = query(collection(db, 'admissions'), where('studentId', '==', targetId));
+        const checkSnap = await getDocs(checkQ);
+        const conflicts = checkSnap.docs.filter(doc => doc.id !== admissionId);
+        if (conflicts.length > 0) {
+          setSyncErrors(prev => ({ ...prev, [key]: `ID '${targetId}' is already assigned to another student.` }));
+          setSyncSaving(prev => ({ ...prev, [key]: false }));
+          return;
+        }
+
+        await updateDoc(doc(db, 'admissions', admissionId), {
+          studentId: targetId,
+          updatedAt: Date.now()
+        });
+        
+        // Also cascade to other exams if any
+        setAdmissions(prev => prev.map(item => item.id === admissionId ? { ...item, studentId: targetId } : item));
+        
+        setSyncSuccesses(prev => ({ ...prev, [key]: 'Profile ID updated to match Exam ID!' }));
+      }
+      setTimeout(() => {
+        setSyncSuccesses(prev => ({ ...prev, [key]: '' }));
+      }, 3000);
+    } catch (err: any) {
+      console.error("Failed to sync ID:", err);
+      setSyncErrors(prev => ({ ...prev, [key]: err.message || 'Error occurred.' }));
+    } finally {
+      setSyncSaving(prev => ({ ...prev, [key]: false }));
+    }
+  };
+
+  const handleCreateProfileFromExam = async (exam: any) => {
+    const key = `create_profile_${exam.id}`;
+    setSyncSaving(prev => ({ ...prev, [key]: true }));
+    setSyncErrors(prev => ({ ...prev, [key]: '' }));
+    setSyncSuccesses(prev => ({ ...prev, [key]: '' }));
+
+    try {
+      // Intelligently check if we can generate a new ID or use the exam's ID (since it's already generated)
+      const studentId = exam.studentId || await generateSequentialStudentId();
+      
+      const admissionPayload = {
+        studentId: studentId,
+        fullName: exam.studentName,
+        dob: '',
+        gender: 'other',
+        parentName: exam.parentName || '',
+        phone: exam.parentPhone || '',
+        whatsApp: exam.parentPhone || '',
+        email: '',
+        address: '',
+        batch: 'School Student Batch',
+        beltLevel: exam.currentBelt || 'White Belt (10th Kyu - Beginner)',
+        photoUrl: 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\' fill=\'%23111\'><rect width=\'100\' height=\'100\' fill=\'%231a1a1a\'/><circle cx=\'50\' cy=\'35\' r=\'14\' fill=\'%23c9a96e\'/><path d=\'M50 50 L35 75 L30 73 L42 53 L38 50 L30 55 L28 50 L40 42 Z\' fill=\'%23fff\'/><path d=\'M50 50 L65 80 L72 82 L58 55 L65 48 L75 52 L78 47 L60 40 Z\' fill=\'%23fff\'/><path d=\'M42 45 H58 V49 H42 Z\' fill=\'%239B1B20\'/></svg>',
+        termsAccepted: true,
+        status: 'approved',
+        createdAt: Date.now(),
+        approvedAt: Date.now(),
+        isDirectExamRegistration: true,
+        branch: exam.branch || 'Manaji Nagar Branch',
+        schoolName: exam.schoolName || ''
+      };
+
+      await addDoc(collection(db, 'admissions'), admissionPayload);
+      setSyncSuccesses(prev => ({ ...prev, [key]: `Profile successfully created and linked with Roll ID: ${studentId}!` }));
+      
+      setTimeout(() => {
+        setSyncSuccesses(prev => ({ ...prev, [key]: '' }));
+      }, 3000);
+    } catch (err: any) {
+      console.error("Failed to create profile:", err);
+      setSyncErrors(prev => ({ ...prev, [key]: err.message || 'Error occurred.' }));
+    } finally {
+      setSyncSaving(prev => ({ ...prev, [key]: false }));
+    }
+  };
+
+  const renderDiagnosticContent = (isModal: boolean = false) => {
+    const { duplicateGroups, examMismatches, orphanedExams } = getDuplicateIdGroups();
+    const duplicateKeys = Object.keys(duplicateGroups);
+    
+    const totalIssues = duplicateKeys.length + examMismatches.length + orphanedExams.length;
+
+    if (totalIssues === 0) {
+      return (
+        <div className="bg-slate-900/40 border border-emerald-950/30 py-16 text-center text-emerald-400 text-sm font-semibold flex flex-col items-center justify-center gap-4 rounded-2xl">
+          <CheckCircle2 className="w-12 h-12 text-emerald-500" />
+          <div className="space-y-1">
+            <h4 className="text-white font-heading font-black text-sm uppercase tracking-wider">System is Healthy & Synchronized!</h4>
+            <p className="text-zinc-500 text-xs font-sans">No student ID conflicts, exam mismatches, or orphaned records were detected in the database.</p>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-8">
+        {/* Category 1: Profile ID Conflicts in Admissions */}
+        {duplicateKeys.length > 0 && (
+          <div className="space-y-4">
+            <div className="flex items-center space-x-2 border-b border-red-500/20 pb-2">
+              <span className="bg-red-500 text-slate-950 text-[10px] font-heading font-black uppercase tracking-wider px-2 py-0.5 rounded-md">
+                Group {duplicateKeys.length}
+              </span>
+              <h4 className="font-heading font-black text-xs text-red-500 uppercase tracking-widest">Conflicting Profile IDs (Admissions)</h4>
+            </div>
+            
+            <div className="space-y-4">
+              {duplicateKeys.map((sharedId) => {
+                const students = duplicateGroups[sharedId];
+                return (
+                  <div key={sharedId} className="border border-zinc-900 bg-slate-900/20 rounded-2xl overflow-hidden shadow-md">
+                    <div className="bg-red-500/5 px-6 py-3 border-b border-zinc-900 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div className="flex items-center space-x-2">
+                        <span className="font-mono text-xs font-bold text-red-400">
+                          SHARED ID: <span className="bg-red-500/20 px-2 py-0.5 rounded border border-red-500/30 text-white font-bold">{sharedId}</span>
+                        </span>
+                      </div>
+                      <span className="text-[10px] font-mono text-zinc-550">
+                        {students.length} Student Profiles Affected
+                      </span>
+                    </div>
+
+                    <div className="divide-y divide-zinc-900/40 p-5 space-y-4">
+                      {students.map((student) => {
+                        const inputVal = diagIdInputs[student.id] || student.studentId;
+                        const isSaving = diagSaving[student.id] || false;
+                        const errorMsg = diagErrors[student.id] || '';
+                        const successMsg = diagSuccesses[student.id] || '';
+
+                        return (
+                          <div key={student.id} className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pt-4 first:pt-0 text-left">
+                            <div className="flex items-center space-x-4">
+                              <div className="w-10 h-10 rounded-lg overflow-hidden bg-zinc-950 border border-zinc-900 shrink-0">
+                                <img src={student.photoUrl || DEFAULT_STUDENT_AVATAR} alt="Portrait" className="w-full h-full object-cover" />
+                              </div>
+                              <div>
+                                <div className="font-heading font-black text-zinc-200 text-sm tracking-wide">{student.fullName}</div>
+                                <div className="text-[10px] text-zinc-500 font-mono mt-0.5 space-x-1.5">
+                                  <span>Branch: <strong className="text-zinc-400 font-semibold">{student.branch || 'Manaji Nagar Branch'}</strong></span>
+                                  <span>•</span>
+                                  <span>Batch: <strong className="text-zinc-400 font-semibold">{student.batch}</strong></span>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                              <input 
+                                type="text"
+                                value={inputVal}
+                                onChange={(e) => {
+                                  const v = e.target.value.toUpperCase();
+                                  setDiagIdInputs(prev => ({ ...prev, [student.id]: v }));
+                                }}
+                                placeholder="e.g. LKCP-2026-101"
+                                className="bg-slate-950 border border-zinc-900 text-white rounded-lg px-3 py-2 text-xs font-mono w-full sm:w-44 focus:outline-none focus:border-red-500 transition-colors"
+                              />
+
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  try {
+                                    setDiagIdInputs(prev => ({ ...prev, [student.id]: 'Generating...' }));
+                                    const nextId = await generateSequentialStudentId();
+                                    setDiagIdInputs(prev => ({ ...prev, [student.id]: nextId }));
+                                  } catch (err) {
+                                    console.error("Failed to generate unique id for diagnostic", err);
+                                    setDiagIdInputs(prev => ({ ...prev, [student.id]: student.studentId }));
+                                  }
+                                }}
+                                className="bg-zinc-900 hover:bg-zinc-850 text-yellow-500 text-[10px] font-heading font-black uppercase tracking-wider px-3 py-2 rounded-lg border border-zinc-850 cursor-pointer transition-all active:scale-95"
+                              >
+                                Generate Unique ID
+                              </button>
+
+                              <button
+                                type="button"
+                                disabled={isSaving || inputVal === student.studentId}
+                                onClick={() => handleSaveDiagStudentId(student, inputVal)}
+                                className={`text-[10px] uppercase tracking-widest font-heading font-black px-4 py-2 rounded-lg flex items-center justify-center cursor-pointer transition-all active:scale-95 ${
+                                  inputVal === student.studentId
+                                    ? 'bg-zinc-900 text-zinc-600 border border-zinc-900 cursor-not-allowed'
+                                    : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950'
+                                }`}
+                              >
+                                {isSaving ? 'Saving...' : 'Save & Sync'}
+                              </button>
+                            </div>
+
+                            {(errorMsg || successMsg) && (
+                              <div className="w-full text-right text-[11px]">
+                                {errorMsg && <span className="text-red-500 font-semibold font-sans">{errorMsg}</span>}
+                                {successMsg && <span className="text-emerald-500 font-bold font-sans">{successMsg}</span>}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Category 2: Exam & Profile ID Mismatches */}
+        {examMismatches.length > 0 && (
+          <div className="space-y-4">
+            <div className="flex items-center space-x-2 border-b border-yellow-500/20 pb-2">
+              <span className="bg-yellow-500 text-slate-950 text-[10px] font-heading font-black uppercase tracking-wider px-2 py-0.5 rounded-md">
+                Mismatches {examMismatches.length}
+              </span>
+              <h4 className="font-heading font-black text-xs text-yellow-500 uppercase tracking-widest">Exam & Profile ID Mismatches</h4>
+            </div>
+
+            <div className="space-y-4">
+              {examMismatches.map(({ exam, admission }) => {
+                const keyExamToProfile = `${exam.id}_${admission.id}_exam-to-profile`;
+                const keyProfileToExam = `${exam.id}_${admission.id}_profile-to-exam`;
+
+                const savingE2P = syncSaving[keyExamToProfile] || false;
+                const savingP2E = syncSaving[keyProfileToExam] || false;
+
+                const errorE2P = syncErrors[keyExamToProfile] || '';
+                const errorP2E = syncErrors[keyProfileToExam] || '';
+
+                const successE2P = syncSuccesses[keyExamToProfile] || '';
+                const successP2E = syncSuccesses[keyProfileToExam] || '';
+
+                return (
+                  <div key={`${exam.id}_${admission.id}`} className="border border-zinc-900 bg-slate-900/20 rounded-2xl p-5 text-left space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 rounded-lg overflow-hidden bg-zinc-950 border border-zinc-900 shrink-0">
+                          <img src={admission.photoUrl || DEFAULT_STUDENT_AVATAR} alt="Portrait" className="w-full h-full object-cover" />
+                        </div>
+                        <div>
+                          <div className="font-heading font-black text-zinc-100 text-sm tracking-wide">{admission.fullName}</div>
+                          <div className="text-[10px] text-zinc-500 font-mono mt-0.5">
+                            Branch: {admission.branch} | Parent Name: {admission.parentName}
+                          </div>
+                        </div>
+                      </div>
+                      <span className="bg-yellow-500/10 border border-yellow-500/20 text-yellow-500 text-[9px] font-heading font-black uppercase tracking-widest px-2.5 py-1 rounded-md">
+                        ID Mismatch
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-zinc-950 p-4 border border-zinc-900 rounded-xl">
+                      <div className="space-y-1">
+                        <span className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">Admission Profile ID:</span>
+                        <div className="font-mono text-sm font-black text-emerald-400 flex items-center gap-1.5">
+                          <span>{admission.studentId}</span>
+                          <span className="text-[9px] font-sans font-normal text-zinc-500">(Source of Truth)</span>
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">Exam Registration ID:</span>
+                        <div className="font-mono text-sm font-black text-red-400 flex items-center gap-1.5">
+                          <span>{exam.studentId}</span>
+                          <span className="text-[9px] font-sans font-normal text-zinc-500">(Mismatched Candidate ID)</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-3 pt-2">
+                      {/* Sync Option A */}
+                      <div className="flex flex-col items-stretch sm:items-end gap-1">
+                        <button
+                          type="button"
+                          disabled={savingE2P || savingP2E}
+                          onClick={() => handleSyncExamId(exam.id, admission.id, admission.studentId, 'exam-to-profile')}
+                          className="bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-slate-950 font-heading font-black text-[10px] uppercase tracking-wider px-4 py-2.5 rounded-lg transition-all active:scale-95 cursor-pointer flex items-center gap-1.5"
+                        >
+                          {savingE2P ? 'Syncing...' : `Set Exam ID to match Profile (${admission.studentId})`}
+                        </button>
+                        {errorE2P && <span className="text-red-500 text-[10px] font-medium font-sans mt-0.5">{errorE2P}</span>}
+                        {successE2P && <span className="text-emerald-400 text-[10px] font-bold font-sans mt-0.5">{successE2P}</span>}
+                      </div>
+
+                      {/* Sync Option B */}
+                      <div className="flex flex-col items-stretch sm:items-end gap-1">
+                        <button
+                          type="button"
+                          disabled={savingE2P || savingP2E}
+                          onClick={() => handleSyncExamId(exam.id, admission.id, exam.studentId, 'profile-to-exam')}
+                          className="bg-zinc-800 hover:bg-zinc-700 disabled:opacity-50 text-white font-heading font-black text-[10px] uppercase tracking-wider px-4 py-2.5 rounded-lg transition-all active:scale-95 cursor-pointer flex items-center gap-1.5"
+                        >
+                          {savingP2E ? 'Syncing...' : `Set Profile ID to match Exam (${exam.studentId})`}
+                        </button>
+                        {errorP2E && <span className="text-red-500 text-[10px] font-medium font-sans mt-0.5">{errorP2E}</span>}
+                        {successP2E && <span className="text-emerald-400 text-[10px] font-bold font-sans mt-0.5">{successP2E}</span>}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Category 3: Orphaned Exam Registrations */}
+        {orphanedExams.length > 0 && (
+          <div className="space-y-4">
+            <div className="flex items-center space-x-2 border-b border-orange-500/20 pb-2">
+              <span className="bg-orange-500 text-slate-950 text-[10px] font-heading font-black uppercase tracking-wider px-2 py-0.5 rounded-md">
+                Orphans {orphanedExams.length}
+              </span>
+              <h4 className="font-heading font-black text-xs text-orange-500 uppercase tracking-widest">Orphaned Exam Candidates</h4>
+            </div>
+
+            <p className="text-zinc-500 text-xs text-left leading-relaxed font-sans">
+              These candidate exam records have a Karate Roll ID that **does not exist** in the admissions directory. 
+              Usually, this occurs when direct exam registration fails to store the main profile doc or when the profile is deleted.
+            </p>
+
+            <div className="space-y-4">
+              {orphanedExams.map((exam) => {
+                const key = `create_profile_${exam.id}`;
+                const isSaving = syncSaving[key] || false;
+                const errorMsg = syncErrors[key] || '';
+                const successMsg = syncSuccesses[key] || '';
+
+                return (
+                  <div key={exam.id} className="border border-zinc-900 bg-slate-900/20 rounded-2xl p-5 text-left space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 rounded-lg overflow-hidden bg-zinc-950 border border-zinc-900 shrink-0 flex items-center justify-center">
+                          <Award className="w-5 h-5 text-orange-500" />
+                        </div>
+                        <div>
+                          <div className="font-heading font-black text-zinc-100 text-sm tracking-wide">{exam.studentName}</div>
+                          <div className="text-[10px] text-zinc-500 font-mono mt-0.5">
+                            Exam Target Belt: <strong className="text-yellow-500 font-semibold">{exam.targetBelt}</strong> | Phone: {exam.parentPhone || 'N/A'}
+                          </div>
+                        </div>
+                      </div>
+                      <span className="bg-orange-500/10 border border-orange-500/20 text-orange-500 text-[9px] font-heading font-black uppercase tracking-widest px-2.5 py-1 rounded-md">
+                        Orphaned Candidate
+                      </span>
+                    </div>
+
+                    <div className="bg-zinc-950 p-4 border border-zinc-900 rounded-xl flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <span className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">Unresolved Candidate ID:</span>
+                        <div className="font-mono text-sm font-black text-orange-400">{exam.studentId || 'N/A'}</div>
+                      </div>
+
+                      <div className="flex flex-col items-end gap-1">
+                        <button
+                          type="button"
+                          disabled={isSaving}
+                          onClick={() => handleCreateProfileFromExam(exam)}
+                          className="bg-yellow-500 hover:bg-yellow-400 text-slate-950 disabled:opacity-50 font-heading font-black text-[10px] uppercase tracking-wider px-4 py-2.5 rounded-lg transition-all active:scale-95 cursor-pointer flex items-center gap-1"
+                        >
+                          {isSaving ? 'Creating...' : 'Auto-Create Student Profile'}
+                        </button>
+                        {errorMsg && <span className="text-red-500 text-[10px] font-medium font-sans mt-1">{errorMsg}</span>}
+                        {successMsg && <span className="text-emerald-400 text-[10px] font-bold font-sans mt-1">{successMsg}</span>}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   // Save edited or assigned Candidate ID from the candidate table
   const handleSaveCandidateId = async (candidate: any) => {
     const trimmedId = editingCandidateNewId.trim().toUpperCase();
@@ -1927,6 +2559,7 @@ export default function AdminPanel() {
     
     try {
       const oldId = candidate.studentId;
+      const candidateNameLower = (candidate.studentName || '').trim().toLowerCase();
       
       // 1. Update the exam registration in 'exams'
       await updateDoc(doc(db, 'exams', candidate.id), {
@@ -1934,34 +2567,79 @@ export default function AdminPanel() {
         updatedAt: Date.now()
       });
       
-      // 2. Also find and update the matching record in 'admissions' if it exists
-      const admissionsQ = query(collection(db, 'admissions'), where('studentId', '==', oldId));
-      const admissionsSnap = await getDocs(admissionsQ);
-      const promises: Promise<void>[] = [];
-      admissionsSnap.forEach((admDoc) => {
-        promises.push(
-          updateDoc(doc(db, 'admissions', admDoc.id), {
-            studentId: trimmedId,
-            updatedAt: Date.now()
-          })
-        );
-      });
-      
-      // Also, if the name matches exactly but the ID was different, update it
-      const admissionsNameQ = query(collection(db, 'admissions'), where('fullName', '==', candidate.studentName));
-      const admissionsNameSnap = await getDocs(admissionsNameQ);
-      admissionsNameSnap.forEach((admDoc) => {
-        if (!admissionsSnap.docs.some(d => d.id === admDoc.id)) {
-          promises.push(
-            updateDoc(doc(db, 'admissions', admDoc.id), {
+      // 2. Also find and update any other exam registrations for this SAME student (by name) to keep them synced
+      const otherExamsQ = query(collection(db, 'exams'), where('studentName', '==', candidate.studentName));
+      const otherExamsSnap = await getDocs(otherExamsQ);
+      const examPromises: Promise<void>[] = [];
+      otherExamsSnap.forEach((examDoc) => {
+        if (examDoc.id !== candidate.id) {
+          examPromises.push(
+            updateDoc(doc(db, 'exams', examDoc.id), {
               studentId: trimmedId,
               updatedAt: Date.now()
             })
           );
         }
       });
+      await Promise.all(examPromises);
       
-      await Promise.all(promises);
+      // 3. Find the matching record in the 'admissions' state array (which contains all records)
+      // First try: exact ID and case-insensitive name match
+      let matchedStudent = admissions.find(student => 
+        (student.studentId || '').trim().toUpperCase() === oldId.toUpperCase() &&
+        (student.fullName || '').trim().toLowerCase() === candidateNameLower
+      );
+      
+      // Second try: fallback to case-insensitive name match only
+      if (!matchedStudent) {
+        matchedStudent = admissions.find(student => 
+          (student.fullName || '').trim().toLowerCase() === candidateNameLower
+        );
+      }
+      
+      if (matchedStudent) {
+        // Update the unique matching student document in 'admissions'
+        await updateDoc(doc(db, 'admissions', matchedStudent.id), {
+          studentId: trimmedId,
+          updatedAt: Date.now()
+        });
+        console.log(`Successfully updated student '${matchedStudent.fullName}' ID to '${trimmedId}'`);
+      } else {
+        // Fallback: if not found in state array (unexpected), search Firestore with queries
+        console.log("Student not found in memory state, performing Firestore queries...");
+        const admissionsQ = query(collection(db, 'admissions'), where('studentId', '==', oldId));
+        const admissionsSnap = await getDocs(admissionsQ);
+        const fallbackPromises: Promise<void>[] = [];
+        
+        let updatedByName = false;
+        // Try searching by name exactly if we can't find by ID
+        const admissionsNameQ = query(collection(db, 'admissions'), where('fullName', '==', candidate.studentName));
+        const admissionsNameSnap = await getDocs(admissionsNameQ);
+        
+        admissionsNameSnap.forEach((admDoc) => {
+          fallbackPromises.push(
+            updateDoc(doc(db, 'admissions', admDoc.id), {
+              studentId: trimmedId,
+              updatedAt: Date.now()
+            })
+          );
+          updatedByName = true;
+        });
+        
+        // Only if we couldn't match by name at all, update matching IDs (to be safe)
+        if (!updatedByName) {
+          admissionsSnap.forEach((admDoc) => {
+            fallbackPromises.push(
+              updateDoc(doc(db, 'admissions', admDoc.id), {
+                studentId: trimmedId,
+                updatedAt: Date.now()
+              })
+            );
+          });
+        }
+        await Promise.all(fallbackPromises);
+      }
+      
       setEditingCandidateId(null);
     } catch (err) {
       console.error("Failed to update candidate ID:", err);
@@ -2049,6 +2727,71 @@ export default function AdminPanel() {
 
     return matchesSearch && matchesStatus && matchesBatch && matchesBranch && matchesFees;
   });
+
+  // Real-time grouping of duplicated student IDs and system mismatches for diagnosis and automated correction
+  const getDuplicateIdGroups = () => {
+    // 1. Admissions collection duplicates
+    const groups: { [id: string]: Admission[] } = {};
+    admissions.forEach(student => {
+      const sId = (student.studentId || '').trim().toUpperCase();
+      if (!sId) return;
+      if (!groups[sId]) {
+        groups[sId] = [];
+      }
+      groups[sId].push(student);
+    });
+    
+    const duplicateGroups: { [id: string]: Admission[] } = {};
+    let admissionsDuplicatesCount = 0;
+    Object.keys(groups).forEach(id => {
+      if (groups[id].length > 1) {
+        duplicateGroups[id] = groups[id];
+        admissionsDuplicatesCount += groups[id].length;
+      }
+    });
+
+    // 2. Mismatched Exam IDs
+    // Find exam registrations where the student exists in admissions, but with a DIFFERENT studentId
+    const examMismatches: {
+      exam: any;
+      admission: Admission;
+    }[] = [];
+
+    // Find exam records that don't match any admission record (orphaned)
+    const orphanedExams: any[] = [];
+
+    exams.forEach(exam => {
+      const examNameClean = (exam.studentName || '').trim().toLowerCase();
+      const examIdClean = (exam.studentId || '').trim().toUpperCase();
+      
+      // Look up student by name in admissions
+      const matchedAdmission = admissions.find(adm => 
+        (adm.fullName || '').trim().toLowerCase() === examNameClean
+      );
+
+      if (matchedAdmission) {
+        const admIdClean = (matchedAdmission.studentId || '').trim().toUpperCase();
+        if (examIdClean !== admIdClean) {
+          examMismatches.push({
+            exam,
+            admission: matchedAdmission
+          });
+        }
+      } else {
+        orphanedExams.push(exam);
+      }
+    });
+
+    const totalIssuesCount = admissionsDuplicatesCount + examMismatches.length + orphanedExams.length;
+    
+    return {
+      duplicateGroups,
+      examMismatches,
+      orphanedExams,
+      hasDuplicates: totalIssuesCount > 0,
+      totalDuplicatesCount: totalIssuesCount
+    };
+  };
 
   // Perform search criteria match filters for parent queries
   const filteredQueries = parentQueries.filter((q) => {
@@ -2320,6 +3063,33 @@ export default function AdminPanel() {
                 <DollarSign className="w-3.5 h-3.5 shrink-0" />
                 <span>Fees & Billing</span>
               </button>
+              <button
+                onClick={() => {
+                  const { duplicateGroups } = getDuplicateIdGroups();
+                  const initialInputs: { [key: string]: string } = {};
+                  Object.values(duplicateGroups).flat().forEach(student => {
+                    initialInputs[student.id] = student.studentId;
+                  });
+                  setDiagIdInputs(initialInputs);
+                  setAdminTab('duplicate_finder');
+                }}
+                className={`font-heading font-black text-xs tracking-widest uppercase pb-4 border-b-2 transition-all cursor-pointer flex items-center space-x-1.5 ${
+                  adminTab === 'duplicate_finder' 
+                    ? 'border-[#FF3B3F] text-[#FF3B3F] font-extrabold' 
+                    : 'border-transparent text-zinc-550 hover:text-red-400'
+                }`}
+              >
+                <AlertOctagon className="w-3.5 h-3.5 shrink-0" />
+                <span>Duplicate Finder</span>
+                {(() => {
+                  const { totalDuplicatesCount } = getDuplicateIdGroups();
+                  return totalDuplicatesCount > 0 ? (
+                    <span className="bg-[#FF3B3F] text-white text-[9px] font-mono px-1.5 py-0.5 rounded-full font-bold shrink-0 ml-1">
+                      {totalDuplicatesCount}
+                    </span>
+                  ) : null;
+                })()}
+              </button>
             </div>
 
             {adminTab === 'bills' && (
@@ -2362,6 +3132,7 @@ export default function AdminPanel() {
                   {adminTab === 'exams' && <Award className="w-4 h-4 text-yellow-500" />}
                   {adminTab === 'seo_ai' && <Sparkles className="w-4 h-4 text-yellow-500" />}
                   {adminTab === 'bills' && <DollarSign className="w-4 h-4 text-yellow-500" />}
+                  {adminTab === 'duplicate_finder' && <AlertOctagon className="w-4 h-4 text-red-500" />}
 
                   <span className="font-heading font-black text-xs uppercase tracking-widest text-zinc-100">
                     {adminTab === 'admissions' && 'Student Directory'}
@@ -2371,6 +3142,7 @@ export default function AdminPanel() {
                     {adminTab === 'exams' && 'Exams & Belt Grading'}
                     {adminTab === 'seo_ai' && 'GSC & AI SEO'}
                     {adminTab === 'bills' && 'Fees & Billing'}
+                    {adminTab === 'duplicate_finder' && 'Duplicate ID Finder'}
                   </span>
 
                   {adminTab === 'parent_queries' && parentQueries.filter(q => q.status === 'new').length > 0 && (
@@ -2378,6 +3150,14 @@ export default function AdminPanel() {
                       {parentQueries.filter(q => q.status === 'new').length}
                     </span>
                   )}
+                  {adminTab === 'duplicate_finder' && (() => {
+                    const { totalDuplicatesCount } = getDuplicateIdGroups();
+                    return totalDuplicatesCount > 0 ? (
+                      <span className="bg-[#FF3B3F] text-white text-[9px] font-mono px-1.5 py-0.5 rounded-full font-bold ml-1.5">
+                        {totalDuplicatesCount}
+                      </span>
+                    ) : null;
+                  })()}
                 </div>
                 {isMobileMenuOpen ? (
                   <ChevronUp className="w-4 h-4 text-zinc-400" />
@@ -2482,6 +3262,36 @@ export default function AdminPanel() {
                       <span className="font-heading font-bold text-xs uppercase tracking-wider">Fees & Billing</span>
                     </div>
                     {adminTab === 'bills' && <Check className="w-3.5 h-3.5 text-yellow-500" />}
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      const { duplicateGroups } = getDuplicateIdGroups();
+                      const initialInputs: { [key: string]: string } = {};
+                      Object.values(duplicateGroups).flat().forEach(student => {
+                        initialInputs[student.id] = student.studentId;
+                      });
+                      setDiagIdInputs(initialInputs);
+                      setAdminTab('duplicate_finder');
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className={`w-full px-4 py-3 flex items-center justify-between text-left transition-all hover:bg-zinc-900/65 ${
+                      adminTab === 'duplicate_finder' ? 'bg-zinc-900/30 text-red-500' : 'text-zinc-400'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <AlertOctagon className={`w-4 h-4 ${adminTab === 'duplicate_finder' ? 'text-red-500' : 'text-zinc-500'}`} />
+                      <span className="font-heading font-bold text-xs uppercase tracking-wider">Duplicate ID Finder</span>
+                      {(() => {
+                        const { totalDuplicatesCount } = getDuplicateIdGroups();
+                        return totalDuplicatesCount > 0 ? (
+                          <span className="bg-[#FF3B3F] text-white text-[9px] font-mono px-1.5 py-0.5 rounded-full font-bold">
+                            {totalDuplicatesCount}
+                          </span>
+                        ) : null;
+                      })()}
+                    </div>
+                    {adminTab === 'duplicate_finder' && <Check className="w-3.5 h-3.5 text-red-500" />}
                   </button>
                 </div>
               )}
@@ -2942,7 +3752,43 @@ export default function AdminPanel() {
 
         {/* TAB 1: Real-time Admissions directory */}
         {adminTab === 'admissions' && (
-          <div className="bg-slate-900/40 border border-zinc-900 rounded-2xl overflow-hidden shadow-xl">
+          <div className="space-y-4">
+            {/* Live Duplicate ID Diagnostic Alert Banner */}
+            {(() => {
+              const { hasDuplicates, totalDuplicatesCount } = getDuplicateIdGroups();
+              if (!hasDuplicates) return null;
+              return (
+                <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-xl flex flex-col md:flex-row items-center justify-between gap-4 text-left shadow-lg">
+                  <div className="flex items-start space-x-3">
+                    <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="font-heading font-black text-xs uppercase tracking-wider text-red-500">Duplicate Student IDs Detected!</h4>
+                      <p className="text-zinc-400 text-xs mt-1">
+                        We found <strong className="text-white font-mono font-bold">{totalDuplicatesCount}</strong> student records that share identical Karate Roll IDs. This can lead to wrong reports, portal login conflicts, and incorrect belt progressions.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const { duplicateGroups } = getDuplicateIdGroups();
+                      const initialInputs: { [key: string]: string } = {};
+                      Object.values(duplicateGroups).flat().forEach(student => {
+                        initialInputs[student.id] = student.studentId;
+                      });
+                      setDiagIdInputs(initialInputs);
+                      setAdminTab('duplicate_finder');
+                    }}
+                    className="shrink-0 bg-[#FF3B3F] hover:bg-rose-600 text-white font-heading font-extrabold text-[10px] uppercase tracking-wider px-4 py-2.5 rounded-lg transition-all shadow-md flex items-center space-x-1.5 cursor-pointer active:scale-95"
+                  >
+                    <span>Analyze & Repair Duplicates</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              );
+            })()}
+
+            <div className="bg-slate-900/40 border border-zinc-900 rounded-2xl overflow-hidden shadow-xl">
           {/* Filtering bar */}
           <div className="p-5 sm:p-6 border-b border-zinc-900 flex flex-col lg:flex-row gap-4 items-center justify-between">
             {/* Search inputs */}
@@ -3183,6 +4029,7 @@ export default function AdminPanel() {
             </div>
           )}
         </div>
+        </div>
         )}
 
         {/* TAB 2: Dynamic Karate Batches management console */}
@@ -3352,6 +4199,23 @@ export default function AdminPanel() {
                 />
                 <span className="block text-[10px] text-zinc-500 leading-normal">
                   Requires direct MP4 links, YouTube URL structures, or local files (e.g., <code className="text-zinc-400 font-mono bg-zinc-950 px-1 py-0.5 rounded text-[9px]">/about_video.mp4</code>). Unmute volume toggle is equipped automatically.
+                </span>
+              </div>
+
+              {/* Student Kata Showcase Video URL Field */}
+              <div className="space-y-2">
+                <label className="block text-[10px] font-mono text-zinc-400 font-extrabold uppercase tracking-widest">
+                  Student Kata Showcase Video URL
+                </label>
+                <input
+                  type="text"
+                  value={kataVideoInput}
+                  onChange={(e) => setKataVideoInput(e.target.value)}
+                  placeholder="e.g. https://example.com/kata_showcase.mp4"
+                  className="w-full bg-slate-950/80 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-white font-medium focus:outline-none focus:border-yellow-500/50 transition-all font-mono placeholder:text-zinc-650"
+                />
+                <span className="block text-[10px] text-zinc-500 leading-normal">
+                  Enter the direct MP4 URL or Cloudinary URL to replace the default young karatekas Kata loop video dynamically across the site.
                 </span>
               </div>
 
@@ -4577,7 +5441,10 @@ export default function AdminPanel() {
               </div>
               <button 
                 type="button"
-                onClick={() => setSelectedAdmission(null)}
+                onClick={() => {
+                  setSelectedAdmission(null);
+                  setIsEditingProfile(false);
+                }}
                 className="bg-[#FF3B3F] hover:bg-rose-600 text-white font-heading font-black text-[10px] uppercase tracking-widest px-3 py-1.5 rounded-lg transition-all duration-150 flex items-center gap-1 shadow-md active:scale-95 cursor-pointer"
                 aria-label="Close"
               >
@@ -4595,7 +5462,19 @@ export default function AdminPanel() {
                 </div>
                 {/* Visual Metadata banner */}
                 <div className="text-left space-y-1 flex-grow">
-                  <h4 className="font-title text-base sm:text-lg font-bold text-white uppercase tracking-wider">{selectedAdmission.fullName}</h4>
+                  <div className="flex items-center justify-between gap-2">
+                    <h4 className="font-title text-base sm:text-lg font-bold text-white uppercase tracking-wider">{selectedAdmission.fullName}</h4>
+                    {!isEditingProfile && (
+                      <button 
+                        type="button"
+                        onClick={handleStartEditProfile}
+                        className="bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-heading font-black text-[9px] uppercase tracking-widest px-2.5 py-1.5 rounded-lg transition-all duration-150 flex items-center gap-1 shadow-md active:scale-95 cursor-pointer shrink-0"
+                      >
+                        <Edit2 className="w-3.5 h-3.5 text-slate-950" />
+                        <span>Edit Details</span>
+                      </button>
+                    )}
+                  </div>
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] sm:text-xs text-zinc-550 font-mono">
                     <span className="flex items-center gap-1.5">
                       <span>ID: {selectedAdmission.studentId}</span>
@@ -4670,160 +5549,378 @@ export default function AdminPanel() {
                 </div>
               </div>
 
-              {/* Comprehensive parameters list grid - optimized for mobile 2-column view */}
-              <div className="grid grid-cols-2 gap-x-5 gap-y-3.5 border-t border-b border-zinc-850/60 py-4.5 text-xs">
-                {/* DOB / Age */}
-                <div>
-                  <span className="text-zinc-550 uppercase tracking-widest text-[9px] block">DOB / Age</span>
-                  <span className="text-zinc-300 font-medium mt-0.5 block">{selectedAdmission.dob} / {selectedAdmission.age} yrs</span>
-                </div>
+              {isEditingProfile ? (
+                <form onSubmit={handleSaveProfile} className="space-y-4 text-left border-t border-zinc-850/60 pt-4.5">
+                  {editProfileError && (
+                    <div className="bg-red-950/40 border border-red-500/20 text-red-400 p-3.5 rounded-lg flex items-start space-x-2 text-xs">
+                      <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                      <span>{editProfileError}</span>
+                    </div>
+                  )}
 
-                {/* Guardian Name */}
-                <div>
-                  <span className="text-zinc-550 uppercase tracking-widest text-[9px] block">Guardian Name</span>
-                  <span className="text-zinc-300 font-medium mt-0.5 block truncate max-w-[160px]" title={selectedAdmission.parentName || 'Self / Legal Guardian'}>{selectedAdmission.parentName || 'Self / Legal Guardian'}</span>
-                </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Full Name */}
+                    <div>
+                      <label className="text-zinc-400 uppercase tracking-widest text-[9px] block font-bold mb-1.5">Student Full Name *</label>
+                      <input
+                        type="text"
+                        required
+                        value={editFullName}
+                        onChange={(e) => setEditFullName(e.target.value)}
+                        className="w-full bg-slate-950 border border-zinc-800 text-zinc-200 px-3 py-2.5 rounded-lg text-xs font-semibold focus:outline-none focus:border-yellow-500 transition-all"
+                      />
+                    </div>
 
-                {/* Phone */}
-                <div>
-                  <span className="text-zinc-550 uppercase tracking-widest text-[9px] block">Primary Phone</span>
-                  <a href={`tel:${selectedAdmission.phone}`} className="text-yellow-500 hover:underline mt-0.5 flex items-center space-x-1.5">
-                    <Phone className="w-3 h-3 shrink-0" />
-                    <span>{selectedAdmission.phone}</span>
-                  </a>
-                </div>
+                    {/* Date of Birth */}
+                    <div>
+                      <label className="text-zinc-400 uppercase tracking-widest text-[9px] block font-bold mb-1.5">Date of Birth</label>
+                      <input
+                        type="date"
+                        value={editDob}
+                        onChange={(e) => setEditDob(e.target.value)}
+                        className="w-full bg-slate-950 border border-zinc-800 text-zinc-200 px-3 py-2.5 rounded-lg text-xs focus:outline-none focus:border-yellow-500 transition-all"
+                      />
+                    </div>
 
-                {/* WhatsApp */}
-                <div>
-                  <span className="text-zinc-550 uppercase tracking-widest text-[9px] block">WhatsApp Contact</span>
-                  {(() => {
-                    let rawPhone = selectedAdmission.whatsApp || selectedAdmission.phone || '';
-                    let cleanPhone = rawPhone.replace(/\D/g, '').replace(/^0+/, '');
-                    if (cleanPhone.startsWith('910') && cleanPhone.length === 13) {
-                      cleanPhone = '91' + cleanPhone.substring(3);
-                    } else if (cleanPhone.length === 10) {
-                      cleanPhone = `91${cleanPhone}`;
-                    }
-                    return (
-                      <a href={`https://api.whatsapp.com/send?phone=${cleanPhone}`} target="_blank" rel="noreferrer" className="text-yellow-500 hover:underline mt-0.5 flex items-center space-x-1.5">
-                        <Phone className="w-3 h-3 shrink-0" />
-                        <span>{selectedAdmission.whatsApp || selectedAdmission.phone}</span>
-                      </a>
-                    );
-                  })()}
-                </div>
+                    {/* Age */}
+                    <div>
+                      <label className="text-zinc-400 uppercase tracking-widest text-[9px] block font-bold mb-1.5">Student Age</label>
+                      <input
+                        type="number"
+                        min="3"
+                        max="90"
+                        value={editAge}
+                        onChange={(e) => setEditAge(e.target.value ? Number(e.target.value) : '')}
+                        className="w-full bg-slate-950 border border-zinc-800 text-zinc-200 px-3 py-2.5 rounded-lg text-xs focus:outline-none focus:border-yellow-500 transition-all"
+                      />
+                    </div>
 
-                {/* Email */}
-                <div className="col-span-2 xs:col-span-1">
-                  <span className="text-zinc-550 uppercase tracking-widest text-[9px] block">Email Identifier</span>
-                  <a href={`mailto:${selectedAdmission.email}`} className="text-zinc-300 hover:text-white mt-0.5 flex items-center space-x-1.5 truncate">
-                    <Mail className="w-3 h-3 shrink-0" />
-                    <span className="truncate block max-w-full">{selectedAdmission.email}</span>
-                  </a>
-                </div>
+                    {/* Gender */}
+                    <div>
+                      <label className="text-zinc-400 uppercase tracking-widest text-[9px] block font-bold mb-1.5">Gender *</label>
+                      <select
+                        value={editGender}
+                        onChange={(e: any) => setEditGender(e.target.value)}
+                        className="w-full bg-slate-950 border border-zinc-800 text-zinc-200 px-3 py-2.5 rounded-lg text-xs focus:outline-none focus:border-yellow-500 transition-all"
+                      >
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                        <option value="other">Other</option>
+                      </select>
+                    </div>
 
-                {/* Fees Status */}
-                <div className="col-span-2 xs:col-span-1">
-                  <span className="text-zinc-550 uppercase tracking-widest text-[9px] block">Induction Fees</span>
-                  <div className="flex items-center space-x-2 mt-0.5">
-                    <span className={`inline-flex items-center space-x-1 uppercase font-heading font-black text-[9px] tracking-wider px-2 py-0.5 rounded border ${
-                      (selectedAdmission.feesStatus || 'Unpaid') === 'Paid'
-                        ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-                        : 'bg-red-500/10 border-red-500/30 text-red-400'
-                    }`}>
-                      <span className={`w-1 h-1 rounded-full ${
-                        (selectedAdmission.feesStatus || 'Unpaid') === 'Paid' ? 'bg-emerald-400' : 'bg-red-400'
-                      }`} />
-                      <span>{selectedAdmission.feesStatus || 'Unpaid'}</span>
-                    </span>
+                    {/* Guardian Name */}
+                    <div>
+                      <label className="text-zinc-400 uppercase tracking-widest text-[9px] block font-bold mb-1.5">Guardian / Parent Name</label>
+                      <input
+                        type="text"
+                        value={editParentName}
+                        onChange={(e) => setEditParentName(e.target.value)}
+                        className="w-full bg-slate-950 border border-zinc-800 text-zinc-200 px-3 py-2.5 rounded-lg text-xs focus:outline-none focus:border-yellow-500 transition-all"
+                      />
+                    </div>
 
+                    {/* Primary Phone */}
+                    <div>
+                      <label className="text-zinc-400 uppercase tracking-widest text-[9px] block font-bold mb-1.5">Primary Phone *</label>
+                      <input
+                        type="tel"
+                        required
+                        value={editPhone}
+                        onChange={(e) => setEditPhone(e.target.value)}
+                        className="w-full bg-slate-950 border border-zinc-800 text-zinc-200 px-3 py-2.5 rounded-lg text-xs focus:outline-none focus:border-yellow-500 transition-all"
+                      />
+                    </div>
+
+                    {/* WhatsApp */}
+                    <div>
+                      <label className="text-zinc-400 uppercase tracking-widest text-[9px] block font-bold mb-1.5">WhatsApp Contact</label>
+                      <input
+                        type="tel"
+                        value={editWhatsApp}
+                        onChange={(e) => setEditWhatsApp(e.target.value)}
+                        className="w-full bg-slate-950 border border-zinc-800 text-zinc-200 px-3 py-2.5 rounded-lg text-xs focus:outline-none focus:border-yellow-500 transition-all"
+                      />
+                    </div>
+
+                    {/* Email */}
+                    <div>
+                      <label className="text-zinc-400 uppercase tracking-widest text-[9px] block font-bold mb-1.5">Email Identifier</label>
+                      <input
+                        type="email"
+                        value={editEmail}
+                        onChange={(e) => setEditEmail(e.target.value)}
+                        className="w-full bg-slate-950 border border-zinc-800 text-zinc-200 px-3 py-2.5 rounded-lg text-xs focus:outline-none focus:border-yellow-500 transition-all"
+                      />
+                    </div>
+
+                    {/* Dojo Branch */}
+                    <div>
+                      <label className="text-zinc-400 uppercase tracking-widest text-[9px] block font-bold mb-1.5">Dojo Branch *</label>
+                      <select
+                        value={editBranch}
+                        onChange={(e) => handleBranchChange(e.target.value)}
+                        className="w-full bg-slate-950 border border-zinc-800 text-zinc-200 px-3 py-2.5 rounded-lg text-xs focus:outline-none focus:border-yellow-500 transition-all"
+                      >
+                        {DOJO_BRANCHES.map(b => (
+                          <option key={b.id} value={b.name}>{b.name}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Program Batch Cohort * */}
+                    <div>
+                      <label className="text-zinc-400 uppercase tracking-widest text-[9px] block font-bold mb-1.5">Program Batch Cohort *</label>
+                      <select
+                        value={editBatch}
+                        onChange={(e) => setEditBatch(e.target.value)}
+                        className="w-full bg-slate-950 border border-zinc-800 text-zinc-200 px-3 py-2.5 rounded-lg text-xs focus:outline-none focus:border-yellow-500 transition-all"
+                      >
+                        {batches.map(b => (
+                          <option key={b.id} value={b.name}>{b.name}</option>
+                        ))}
+                        {BATCH_TIMINGS.map(b => (
+                          <option key={b.id} value={b.name}>{b.name}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Current Belt Level */}
+                    <div>
+                      <label className="text-zinc-400 uppercase tracking-widest text-[9px] block font-bold mb-1.5">Current Belt level *</label>
+                      <select
+                        value={editBeltLevel}
+                        onChange={(e) => setEditBeltLevel(e.target.value)}
+                        className="w-full bg-slate-950 border border-zinc-800 text-zinc-200 px-3 py-2.5 rounded-lg text-xs focus:outline-none focus:border-yellow-500 transition-all"
+                      >
+                        {BELT_LEVELS.map(b => (
+                          <option key={b.name} value={b.name}>{b.name}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Fees Status */}
+                    <div>
+                      <label className="text-zinc-400 uppercase tracking-widest text-[9px] block font-bold mb-1.5">Fees Status *</label>
+                      <select
+                        value={editFeesStatus}
+                        onChange={(e: any) => setEditFeesStatus(e.target.value)}
+                        className="w-full bg-slate-950 border border-zinc-800 text-zinc-200 px-3 py-2.5 rounded-lg text-xs focus:outline-none focus:border-yellow-500 transition-all"
+                      >
+                        <option value="Paid">Paid</option>
+                        <option value="Unpaid">Unpaid</option>
+                      </select>
+                    </div>
+
+                    {/* School Name */}
+                    <div className="md:col-span-2">
+                      <label className="text-zinc-400 uppercase tracking-widest text-[9px] block font-bold mb-1.5">School / Institution Name</label>
+                      <input
+                        type="text"
+                        value={editSchoolName}
+                        onChange={(e) => setEditSchoolName(e.target.value)}
+                        className="w-full bg-slate-950 border border-zinc-800 text-zinc-200 px-3 py-2.5 rounded-lg text-xs focus:outline-none focus:border-yellow-500 transition-all"
+                      />
+                    </div>
+
+                    {/* Address */}
+                    <div className="md:col-span-2">
+                      <label className="text-zinc-400 uppercase tracking-widest text-[9px] block font-bold mb-1.5">Physical Address</label>
+                      <textarea
+                        value={editAddress}
+                        onChange={(e) => setEditAddress(e.target.value)}
+                        rows={2}
+                        className="w-full bg-slate-950 border border-zinc-800 text-zinc-200 px-3 py-2.5 rounded-lg text-xs focus:outline-none focus:border-yellow-500 transition-all resize-none"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Actions buttons */}
+                  <div className="flex items-center justify-end space-x-2.5 pt-4 border-t border-zinc-850">
                     <button
                       type="button"
-                      onClick={() => {
-                        const currentFees = selectedAdmission.feesStatus || 'Unpaid';
-                        const nextFees = currentFees === 'Paid' ? 'Unpaid' : 'Paid';
-                        updateFeesStatus(selectedAdmission.id, nextFees);
-                      }}
-                      className="text-[9px] bg-zinc-805 hover:bg-zinc-800 hover:text-white text-zinc-350 px-1.5 py-0.5 rounded border border-zinc-800 transition-colors uppercase font-heading font-semibold cursor-pointer"
+                      onClick={() => setIsEditingProfile(false)}
+                      className="bg-zinc-800 hover:bg-zinc-700 text-white font-heading font-black text-[10px] uppercase tracking-wider px-5 py-2.5 rounded-lg transition-all cursor-pointer"
                     >
-                      Toggle
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={editProfileSaving}
+                      className="bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-heading font-black text-[10px] uppercase tracking-wider px-5 py-2.5 rounded-lg transition-all disabled:opacity-50 flex items-center space-x-1.5 cursor-pointer"
+                    >
+                      {editProfileSaving ? (
+                        <>
+                          <RefreshCw className="w-3 h-3 animate-spin" />
+                          <span>Saving...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Save className="w-3 h-3" />
+                          <span>Save Student Details</span>
+                        </>
+                      )}
                     </button>
                   </div>
-                </div>
+                </form>
+              ) : (
+                <>
+                  {/* Comprehensive parameters list grid - optimized for mobile 2-column view */}
+                  <div className="grid grid-cols-2 gap-x-5 gap-y-3.5 border-t border-b border-zinc-850/60 py-4.5 text-xs">
+                    {/* DOB / Age */}
+                    <div>
+                      <span className="text-zinc-550 uppercase tracking-widest text-[9px] block">DOB / Age</span>
+                      <span className="text-zinc-300 font-medium mt-0.5 block">{selectedAdmission.dob} / {selectedAdmission.age} yrs</span>
+                    </div>
 
-                {/* Training Branch */}
-                <div>
-                  <span className="text-zinc-550 uppercase tracking-widest text-[9px] block">Training Branch</span>
-                  <span className="text-yellow-500 font-bold mt-0.5 block truncate max-w-[160px]" title={selectedAdmission.branch || 'Manaji Nagar Branch'}>{selectedAdmission.branch || 'Manaji Nagar Branch'}</span>
-                </div>
+                    {/* Guardian Name */}
+                    <div>
+                      <span className="text-zinc-550 uppercase tracking-widest text-[9px] block">Guardian Name</span>
+                      <span className="text-zinc-300 font-medium mt-0.5 block truncate max-w-[160px]" title={selectedAdmission.parentName || 'Self / Legal Guardian'}>{selectedAdmission.parentName || 'Self / Legal Guardian'}</span>
+                    </div>
 
-                {/* Designated Coach */}
-                <div>
-                  <span className="text-zinc-550 uppercase tracking-widest text-[9px] block">Designated Coach</span>
-                  <span className="text-zinc-400 font-medium mt-0.5 block truncate max-w-[160px]" title={selectedAdmission.coachName || 'Maruti Jadhav Sir 2nd dan Black Belt'}>{selectedAdmission.coachName || 'Maruti Jadhav Sir'}</span>
-                </div>
+                    {/* Phone */}
+                    <div>
+                      <span className="text-zinc-550 uppercase tracking-widest text-[9px] block">Primary Phone</span>
+                      <a href={`tel:${selectedAdmission.phone}`} className="text-yellow-500 hover:underline mt-0.5 flex items-center space-x-1.5">
+                        <Phone className="w-3 h-3 shrink-0" />
+                        <span>{selectedAdmission.phone}</span>
+                      </a>
+                    </div>
 
-                {/* School Name - occupies full width if present */}
-                {selectedAdmission.schoolName && (
-                  <div className="col-span-2 border-t border-zinc-850/30 pt-2.5">
-                    <span className="text-zinc-550 uppercase tracking-widest text-[9px] block">School / Institution / College</span>
-                    <span className="text-yellow-500 font-medium mt-0.5 block leading-relaxed uppercase">{selectedAdmission.schoolName}</span>
+                    {/* WhatsApp */}
+                    <div>
+                      <span className="text-zinc-550 uppercase tracking-widest text-[9px] block">WhatsApp Contact</span>
+                      {(() => {
+                        let rawPhone = selectedAdmission.whatsApp || selectedAdmission.phone || '';
+                        let cleanPhone = rawPhone.replace(/\D/g, '').replace(/^0+/, '');
+                        if (cleanPhone.startsWith('910') && cleanPhone.length === 13) {
+                          cleanPhone = '91' + cleanPhone.substring(3);
+                        } else if (cleanPhone.length === 10) {
+                          cleanPhone = `91${cleanPhone}`;
+                        }
+                        return (
+                          <a href={`https://api.whatsapp.com/send?phone=${cleanPhone}`} target="_blank" rel="noreferrer" className="text-yellow-500 hover:underline mt-0.5 flex items-center space-x-1.5">
+                            <Phone className="w-3 h-3 shrink-0" />
+                            <span>{selectedAdmission.whatsApp || selectedAdmission.phone}</span>
+                          </a>
+                        );
+                      })()}
+                    </div>
+
+                    {/* Email */}
+                    <div className="col-span-2 xs:col-span-1">
+                      <span className="text-zinc-550 uppercase tracking-widest text-[9px] block">Email Identifier</span>
+                      <a href={`mailto:${selectedAdmission.email}`} className="text-zinc-300 hover:text-white mt-0.5 flex items-center space-x-1.5 truncate">
+                        <Mail className="w-3 h-3 shrink-0" />
+                        <span className="truncate block max-w-full">{selectedAdmission.email}</span>
+                      </a>
+                    </div>
+
+                    {/* Fees Status */}
+                    <div className="col-span-2 xs:col-span-1">
+                      <span className="text-zinc-550 uppercase tracking-widest text-[9px] block">Induction Fees</span>
+                      <div className="flex items-center space-x-2 mt-0.5">
+                        <span className={`inline-flex items-center space-x-1 uppercase font-heading font-black text-[9px] tracking-wider px-2 py-0.5 rounded border ${
+                          (selectedAdmission.feesStatus || 'Unpaid') === 'Paid'
+                            ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                            : 'bg-red-500/10 border-red-500/30 text-red-400'
+                        }`}>
+                          <span className={`w-1 h-1 rounded-full ${
+                            (selectedAdmission.feesStatus || 'Unpaid') === 'Paid' ? 'bg-emerald-400' : 'bg-red-400'
+                          }`} />
+                          <span>{selectedAdmission.feesStatus || 'Unpaid'}</span>
+                        </span>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const currentFees = selectedAdmission.feesStatus || 'Unpaid';
+                            const nextFees = currentFees === 'Paid' ? 'Unpaid' : 'Paid';
+                            updateFeesStatus(selectedAdmission.id, nextFees);
+                          }}
+                          className="text-[9px] bg-zinc-805 hover:bg-zinc-800 hover:text-white text-zinc-350 px-1.5 py-0.5 rounded border border-zinc-800 transition-colors uppercase font-heading font-semibold cursor-pointer"
+                        >
+                          Toggle
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Training Branch */}
+                    <div>
+                      <span className="text-zinc-550 uppercase tracking-widest text-[9px] block">Training Branch</span>
+                      <span className="text-yellow-500 font-bold mt-0.5 block truncate max-w-[160px]" title={selectedAdmission.branch || 'Manaji Nagar Branch'}>{selectedAdmission.branch || 'Manaji Nagar Branch'}</span>
+                    </div>
+
+                    {/* Designated Coach */}
+                    <div>
+                      <span className="text-zinc-550 uppercase tracking-widest text-[9px] block">Designated Coach</span>
+                      <span className="text-zinc-400 font-medium mt-0.5 block truncate max-w-[160px]" title={selectedAdmission.coachName || 'Maruti Jadhav Sir 2nd dan Black Belt'}>{selectedAdmission.coachName || 'Maruti Jadhav Sir'}</span>
+                    </div>
+
+                    {/* School Name - occupies full width if present */}
+                    {selectedAdmission.schoolName && (
+                      <div className="col-span-2 border-t border-zinc-850/30 pt-2.5">
+                        <span className="text-zinc-550 uppercase tracking-widest text-[9px] block">School / Institution / College</span>
+                        <span className="text-yellow-500 font-medium mt-0.5 block leading-relaxed uppercase">{selectedAdmission.schoolName}</span>
+                      </div>
+                    )}
+
+                    {/* Physical Address - occupies full width */}
+                    <div className="col-span-2 border-t border-zinc-850/30 pt-2.5">
+                      <span className="text-zinc-550 uppercase tracking-widest text-[9px] block">Physical Address</span>
+                      <span className="text-zinc-300 font-medium mt-0.5 block leading-relaxed">{selectedAdmission.address}</span>
+                    </div>
                   </div>
-                )}
 
-                {/* Physical Address - occupies full width */}
-                <div className="col-span-2 border-t border-zinc-850/30 pt-2.5">
-                  <span className="text-zinc-550 uppercase tracking-widest text-[9px] block">Physical Address</span>
-                  <span className="text-zinc-300 font-medium mt-0.5 block leading-relaxed">{selectedAdmission.address}</span>
-                </div>
-              </div>
+                  {/* Actions approval panel */}
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div className="flex items-center space-x-2.5">
+                      <span className="text-[10px] text-zinc-500 font-mono">Current review status:</span>
+                      <span className={`uppercase text-[10px] font-bold px-2.5 py-0.5 rounded border border-yellow-500/10 ${
+                        selectedAdmission.status === 'approved' ? 'bg-emerald-500/5 text-emerald-500' : selectedAdmission.status === 'rejected' ? 'bg-red-500/5 text-red-500' : 'bg-yellow-500/5 text-yellow-500'
+                      }`}>{selectedAdmission.status}</span>
+                    </div>
 
-              {/* Actions approval panel */}
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div className="flex items-center space-x-2.5">
-                  <span className="text-[10px] text-zinc-500 font-mono">Current review status:</span>
-                  <span className={`uppercase text-[10px] font-bold px-2.5 py-0.5 rounded border border-yellow-500/10 ${
-                    selectedAdmission.status === 'approved' ? 'bg-emerald-500/5 text-emerald-500' : selectedAdmission.status === 'rejected' ? 'bg-red-500/5 text-red-500' : 'bg-yellow-500/5 text-yellow-500'
-                  }`}>{selectedAdmission.status}</span>
-                </div>
+                    <div className="flex items-center space-x-2 w-full sm:w-auto">
+                      {selectedAdmission.status === 'pending' && (
+                        <>
+                          <button
+                            onClick={() => updateAdmissionStatus(selectedAdmission.id, 'rejected')}
+                            className="w-full sm:w-auto text-center font-heading font-black text-[10px] uppercase tracking-wider bg-transparent hover:bg-red-950/20 border border-red-500/30 hover:border-red-500 text-red-500 px-5 py-2.5 rounded transition-all cursor-pointer"
+                          >
+                            REJECT REGISTER
+                          </button>
+                          <button
+                            onClick={() => updateAdmissionStatus(selectedAdmission.id, 'approved')}
+                            className="w-full sm:w-auto text-center font-heading font-black text-[10px] uppercase tracking-wider bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-5 py-2.5 rounded transition-all shadow shadow-emerald-500/10 cursor-pointer"
+                          >
+                            APPROVE DOJO ENTRY
+                          </button>
+                        </>
+                      )}
 
-                <div className="flex items-center space-x-2 w-full sm:w-auto">
-                  {selectedAdmission.status === 'pending' && (
-                    <>
-                      <button
-                        onClick={() => updateAdmissionStatus(selectedAdmission.id, 'rejected')}
-                        className="w-full sm:w-auto text-center font-heading font-black text-[10px] uppercase tracking-wider bg-transparent hover:bg-red-950/20 border border-red-500/30 hover:border-red-500 text-red-500 px-5 py-2.5 rounded transition-all cursor-pointer"
-                      >
-                        REJECT REGISTER
-                      </button>
-                      <button
-                        onClick={() => updateAdmissionStatus(selectedAdmission.id, 'approved')}
-                        className="w-full sm:w-auto text-center font-heading font-black text-[10px] uppercase tracking-wider bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-5 py-2.5 rounded transition-all shadow shadow-emerald-500/10 cursor-pointer"
-                      >
-                        APPROVE DOJO ENTRY
-                      </button>
-                    </>
-                  )}
+                      {selectedAdmission.status === 'approved' && (
+                        <button
+                          onClick={() => updateAdmissionStatus(selectedAdmission.id, 'rejected')}
+                          className="w-full sm:w-auto text-center font-heading font-black text-[10px] uppercase tracking-wider border border-zinc-800 hover:bg-zinc-850 hover:text-zinc-200 text-zinc-400 px-5 py-2.5 rounded transition-all cursor-pointer"
+                        >
+                          REVOKE APPROVAL
+                        </button>
+                      )}
 
-                  {selectedAdmission.status === 'approved' && (
-                    <button
-                      onClick={() => updateAdmissionStatus(selectedAdmission.id, 'rejected')}
-                      className="w-full sm:w-auto text-center font-heading font-black text-[10px] uppercase tracking-wider border border-zinc-800 hover:bg-zinc-850 hover:text-zinc-200 text-zinc-400 px-5 py-2.5 rounded transition-all cursor-pointer"
-                    >
-                      REVOKE APPROVAL
-                    </button>
-                  )}
-
-                  {selectedAdmission.status === 'rejected' && (
-                    <button
-                      onClick={() => updateAdmissionStatus(selectedAdmission.id, 'approved')}
-                      className="w-full sm:w-auto text-center font-heading font-black text-[10px] uppercase tracking-wider bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-5 py-2.5 rounded transition-all cursor-pointer"
-                    >
-                      RE-APPROVE
-                    </button>
-                  )}
-                </div>
-              </div>
+                      {selectedAdmission.status === 'rejected' && (
+                        <button
+                          onClick={() => updateAdmissionStatus(selectedAdmission.id, 'approved')}
+                          className="w-full sm:w-auto text-center font-heading font-black text-[10px] uppercase tracking-wider bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-5 py-2.5 rounded transition-all cursor-pointer"
+                        >
+                          RE-APPROVE
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
 
             </div>
           </div>
@@ -5230,16 +6327,44 @@ export default function AdminPanel() {
 
               {/* Student ID */}
               <div>
-                <label className="text-zinc-400 uppercase tracking-widest text-[9px] block font-bold mb-1.5">LKCP Student Roll ID *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. LKCP-2025-001"
-                  value={mStudentId}
-                  onChange={(e) => setMStudentId(e.target.value)}
-                  className="w-full bg-slate-950 border border-zinc-850 text-zinc-205 px-3.5 py-2.5 rounded-lg text-xs font-mono uppercase tracking-widest focus:outline-none focus:border-yellow-500 transition-all placeholder:text-zinc-750"
-                />
-                <span className="text-[10px] text-zinc-600 mt-1 block">Editable sequence. Type exact previous ID if existing.</span>
+                <label className="text-zinc-400 uppercase tracking-widest text-[9px] block font-bold mb-1.5 flex items-center justify-between">
+                  <span>LKCP Student Roll ID *</span>
+                  <span className={`text-[8.5px] font-bold tracking-wider uppercase px-1.5 py-0.5 rounded ${
+                    mIdLocked ? 'bg-amber-500/10 text-amber-500' : 'bg-red-500/10 text-red-500'
+                  }`}>
+                    {mIdLocked ? '🔒 AUTO-LOCKED' : '🔓 UNLOCKED / MANUAL'}
+                  </span>
+                </label>
+                <div className="relative flex items-center">
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. LKCP-2025-001"
+                    value={mStudentId}
+                    onChange={(e) => setMStudentId(e.target.value.toUpperCase())}
+                    disabled={mIdLocked}
+                    className={`w-full bg-slate-950 border text-xs font-mono uppercase tracking-widest focus:outline-none transition-all placeholder:text-zinc-750 rounded-lg px-3.5 py-2.5 pr-10 ${
+                      mIdLocked 
+                        ? 'border-zinc-800 text-zinc-400 cursor-not-allowed bg-slate-950/40 opacity-80' 
+                        : 'border-yellow-500 text-yellow-400 focus:border-yellow-400'
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setMIdLocked(!mIdLocked)}
+                    title={mIdLocked ? "Click to manually edit student Roll ID" : "Click to lock & use auto-generated ID"}
+                    className={`absolute right-3.5 top-1/2 -translate-y-1/2 cursor-pointer transition-colors ${
+                      mIdLocked ? 'text-zinc-500 hover:text-yellow-500' : 'text-yellow-500 hover:text-zinc-400'
+                    }`}
+                  >
+                    {mIdLocked ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
+                  </button>
+                </div>
+                <span className="text-[10px] text-zinc-650 mt-1 block font-medium">
+                  {mIdLocked 
+                    ? "System auto-suggested a unique ID to prevent duplicates. Click Lock to edit manually." 
+                    : "Editable sequence. Enter a custom ID or click Lock to use the automated generator."}
+                </span>
               </div>
 
               {/* Full Name */}
@@ -5947,6 +7072,86 @@ export default function AdminPanel() {
               </div>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {adminTab === 'duplicate_finder' && (
+        <div className="space-y-6 animate-fade-in py-2">
+          {/* Page Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-900 pb-5">
+            <div className="flex items-center space-x-3 text-red-500 uppercase">
+              <AlertOctagon className="w-6 h-6 text-red-500" />
+              <div>
+                <h3 className="font-heading font-black text-sm tracking-widest text-white uppercase">Duplicate ID Diagnostic & Repair Console</h3>
+                <p className="text-[10px] text-zinc-500 font-medium normal-case mt-0.5">Detect, resolve and auto-assign unique student identifiers</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Info Card */}
+          <div className="bg-slate-900/40 border border-zinc-900 p-5 rounded-2xl text-left space-y-3">
+            <h4 className="font-heading font-black text-xs uppercase tracking-wider text-yellow-500">How to use the Diagnostic Console:</h4>
+            <p className="text-zinc-400 text-xs leading-relaxed font-sans">
+              Below are grouped listings of students who currently share the **exact same Karate Roll ID** in the database. 
+              Duplicate IDs cause registration errors, portal login conflicts, and misaligned belt progression histories.
+            </p>
+            <div className="text-zinc-500 text-[11px] font-sans space-y-1">
+              <div>• <strong className="text-zinc-300">Generate Unique ID:</strong> Click this button to instantly query the database and suggest a fresh, guaranteed-unique, sequential Roll ID.</div>
+              <div>• <strong className="text-zinc-300">Save & Sync:</strong> Saves the updated Roll ID directly to the student's profile and automatically cascades the update to all their registered Belt Grading Exams.</div>
+            </div>
+          </div>
+
+          {renderDiagnosticContent(false)}
+        </div>
+      )}
+
+      {/* Duplicate ID Diagnostic & Repair Modal */}
+      {duplicateRepairOpen && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/95 backdrop-blur-md flex justify-center p-4 items-start sm:items-center">
+          <div className="bg-slate-900 border border-zinc-850 w-full max-w-4xl rounded-2xl overflow-hidden shadow-2xl relative my-6">
+            <div className="absolute top-0 left-0 right-0 h-1 bg-[#FF3B3F]" />
+            
+            {/* Modal Header */}
+            <div className="px-6 py-5 border-b border-zinc-850 flex items-center justify-between">
+              <div className="flex items-center space-x-3 text-red-500 uppercase">
+                <AlertOctagon className="w-5 h-5 text-red-500 animate-pulse" />
+                <h3 className="font-title text-base font-bold text-white tracking-wider">Duplicate ID Diagnostic & Repair Console</h3>
+              </div>
+              <button 
+                type="button"
+                onClick={() => setDuplicateRepairOpen(false)}
+                className="bg-[#FF3B3F] hover:bg-rose-600 text-white font-heading font-black text-[10px] uppercase tracking-widest px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 cursor-pointer shadow-md"
+              >
+                <X className="w-3.5 h-3.5 text-white stroke-[3px]" />
+                <span>Close</span>
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
+              <div className="bg-slate-950 p-4 border border-zinc-850 rounded-xl text-left">
+                <p className="text-zinc-400 text-xs leading-relaxed font-sans">
+                  Below are groups of students who currently share the **exact same Karate Roll ID** or have ID inconsistencies in the database. Correcting these will ensure accurate database synchronization, secure student portal logins, and individual progression.
+                </p>
+                <p className="text-yellow-500/95 text-[11px] font-medium mt-2 flex items-center gap-1.5 font-sans">
+                  <span>💡 Tip: Click "Generate Unique ID" to instantly fetch a brand new sequential ID for any student!</span>
+                </p>
+              </div>
+
+              {renderDiagnosticContent(true)}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 border-t border-zinc-850 bg-slate-950 flex justify-end">
+              <button 
+                type="button"
+                onClick={() => setDuplicateRepairOpen(false)}
+                className="bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-heading font-black text-xs uppercase tracking-wider px-6 py-2.5 rounded-xl transition-all shadow-md cursor-pointer active:scale-95"
+              >
+                All Set
+              </button>
+            </div>
           </div>
         </div>
       )}

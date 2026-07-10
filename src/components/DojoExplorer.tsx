@@ -15,6 +15,7 @@ import {
 
 // Import the existing home page sections
 import About from './About';
+import KataShowcase from './KataShowcase';
 import Batches from './Batches';
 import Coaches from './Coaches';
 import Gallery from './Gallery';
@@ -25,7 +26,7 @@ interface DojoExplorerProps {
   onSelectBatch: (batchName: string) => void;
 }
 
-type TabType = 'about' | 'batches' | 'coaches' | 'gallery' | 'testimonials' | 'contact';
+type TabType = 'about' | 'kata' | 'batches' | 'coaches' | 'gallery' | 'testimonials' | 'contact';
 
 export default function DojoExplorer({ onSelectBatch }: DojoExplorerProps) {
   const [activeTab, setActiveTab] = useState<TabType>('about');
@@ -37,6 +38,7 @@ export default function DojoExplorer({ onSelectBatch }: DojoExplorerProps) {
       const hash = window.location.hash;
       const targetTabMap: Record<string, TabType> = {
         '#about': 'about',
+        '#kata': 'kata',
         '#batches': 'batches',
         '#coaches': 'coaches',
         '#gallery': 'gallery',
@@ -67,8 +69,9 @@ export default function DojoExplorer({ onSelectBatch }: DojoExplorerProps) {
 
   const tabs = [
     { id: 'about' as TabType, label: 'Dojo Heritage', icon: Award, color: 'text-red-500', kanji: '空手' },
-    { id: 'batches' as TabType, label: 'Classes & Batches', icon: Calendar, color: 'text-yellow-500', kanji: '時間' },
-    { id: 'coaches' as TabType, label: 'Our Senseis', icon: Users, color: 'text-orange-500', kanji: '先生' },
+    { id: 'kata' as TabType, label: 'Students Kata', icon: BookOpen, color: 'text-yellow-500', kanji: '型' },
+    { id: 'batches' as TabType, label: 'Classes & Batches', icon: Calendar, color: 'text-orange-500', kanji: '時間' },
+    { id: 'coaches' as TabType, label: 'Our Senseis', icon: Users, color: 'text-orange-400', kanji: '先生' },
     { id: 'gallery' as TabType, label: 'Dojo Gallery', icon: Camera, color: 'text-pink-500', kanji: '写真' },
     { id: 'testimonials' as TabType, label: 'Parent Reviews', icon: Star, color: 'text-emerald-500', kanji: '評価' },
     { id: 'contact' as TabType, label: 'Contact & Map', icon: MapPin, color: 'text-blue-500', kanji: '地図' },
@@ -208,6 +211,12 @@ export default function DojoExplorer({ onSelectBatch }: DojoExplorerProps) {
               {activeTab === 'about' && (
                 <div className="relative animate-fadeIn">
                   <About />
+                </div>
+              )}
+              
+              {activeTab === 'kata' && (
+                <div className="relative animate-fadeIn">
+                  <KataShowcase />
                 </div>
               )}
               

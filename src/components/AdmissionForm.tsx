@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, DragEvent, ChangeEvent } from 'react';
 import { collection, addDoc, getDocs, query, where } from 'firebase/firestore';
-import { db, handleFirestoreError, OperationType, triggerWhatsAppNotification } from '../firebase';
+import { db, handleFirestoreError, OperationType, triggerWhatsAppNotification, generateSequentialStudentId } from '../firebase';
 import { BELT_LEVELS, BATCH_TIMINGS, BatchInfo, DOJO_BRANCHES } from '../types';
 import { Upload, Camera, FileText, CheckCircle2, ShieldAlert, ArrowRight, RefreshCw, AlertCircle } from 'lucide-react';
 
@@ -188,27 +188,6 @@ export default function AdmissionForm({ preselectedBatch = "", onSuccess }: Admi
     }
   };
 
-  // Generate customized Year Sequence ID: LKCP-YYYY-XXX
-  const generateStudentId = async (): Promise<string> => {
-    const currentYear = new Date().getFullYear();
-    try {
-      // Query admissions from this year to calculate next serial
-      const admissionsRef = collection(db, 'admissions');
-      const q = query(admissionsRef, where('createdAt', '>=', new Date(`${currentYear}-01-01`).getTime()));
-      const snap = await getDocs(q);
-      
-      // Starting systematic number from 100
-      const count = snap.size + 100;
-      // Pad to 3 digits
-      const paddedSerial = String(count).padStart(3, '0');
-      return `LKCP-${currentYear}-${paddedSerial}`;
-    } catch {
-      // Simple random serial starting from 100 if connection fails or rule blocks read during submission
-      const randomId = Math.floor(100 + Math.random() * 900);
-      return `LKCP-${currentYear}-${randomId}`;
-    }
-  };
-
   // Form submit operations
   const handleSubmit = async (e: any) => {
     e.preventDefault();
@@ -238,7 +217,7 @@ export default function AdmissionForm({ preselectedBatch = "", onSuccess }: Admi
         return;
       }
 
-      const studentId = await generateStudentId();
+      const studentId = await generateSequentialStudentId();
       const currentTimestamp = Date.now();
 
       const selectedBranch = DOJO_BRANCHES.find(b => b.id === selectedBranchId) || DOJO_BRANCHES[0];

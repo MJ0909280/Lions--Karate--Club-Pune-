@@ -5,6 +5,7 @@ import { ShieldAlert, Volume2, VolumeX, RefreshCw, MapPin, Globe, Sparkles } fro
 
 export default function About() {
   const [aboutVideoUrl, setAboutVideoUrl] = useState<string>('');
+  const [kataVideoUrl, setKataVideoUrl] = useState<string>('');
   const [isMuted, setIsMuted] = useState<boolean>(true);
   const [isPlaying, setIsPlaying] = useState<boolean>(true);
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -16,6 +17,9 @@ export default function About() {
         const data = snap.data();
         if (data.aboutVideoUrl) {
           setAboutVideoUrl(data.aboutVideoUrl);
+        }
+        if (data.kataVideoUrl) {
+          setKataVideoUrl(data.kataVideoUrl);
         }
       }
     }, (err) => {
@@ -189,12 +193,13 @@ export default function About() {
             <div className="lg:col-span-7 flex justify-center">
               <div className="relative w-full max-w-[340px] aspect-[9/16] rounded-2xl border-4 border-zinc-900 bg-black overflow-hidden shadow-[0_12px_40px_rgba(0,0,0,0.65)] group">
                 <video
+                  key={kataVideoUrl}
                   autoPlay
                   loop
                   muted
                   playsInline
                   className="w-full h-full object-cover object-center filter brightness-105 contrast-[1.03] transition-all duration-1000 group-hover:scale-102"
-                  src="https://res.cloudinary.com/dlzdagymx/video/upload/v1783699434/Kata_hcvwxf.mp4"
+                  src={kataVideoUrl || "https://res.cloudinary.com/dlzdagymx/video/upload/v1783699434/Kata_hcvwxf.mp4"}
                 />
                 
                 {/* Floating subtle badge */}

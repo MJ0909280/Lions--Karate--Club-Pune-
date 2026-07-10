@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { initializeFirestore, doc, getDoc } from 'firebase/firestore';
+import { initializeFirestore, doc, getDoc, runTransaction, collection, query, where, getDocs } from 'firebase/firestore';
 
 // Embedded Firebase credentials so the ZIP download & Vercel deployment work instantly
 const metaEnv = (import.meta as any).env || {};
@@ -161,3 +161,68 @@ export async function triggerWhatsAppNotification(type: 'admission' | 'inquiry',
     console.warn("Failed sending WhatsApp automatic alert:", error);
   }
 }
+
+/**
+ * Generates a unique, strictly sequential student ID (e.g. LKCP-2026-142)
+ * using a centralized atomic transaction in Firestore.
+ * Prevents identical IDs from being generated even during parallel enrollments!
+ */
+export async function generateSequentialStudentId(): Promise<string> {
+  const currentYear = new Date().getFullYear();
+  const counterDocRef = doc(db, 'settings', `counters_${currentYear}`);
+  
+  // 1. Check if the counter doc exists. If not, do the bootstrapping query FIRST (outside transaction)
+  let initialSerial = 99;
+  try {
+    const counterSnap = await getDoc(counterDocRef);
+    if (!counterSnap.exists()) {
+      // Bootstrap: find the max serial in the admissions collection first
+      const admissionsRef = collection(db, 'admissions');
+      const q = query(admissionsRef, where('studentId', '>=', `LKCP-${currentYear}-`));
+      const snap = await getDocs(q);
+      
+      let maxSerial = 99;
+      snap.forEach((doc) => {
+        const data = doc.data();
+        if (data.studentId && typeof data.studentId === 'string') {
+          const parts = data.studentId.split('-');
+          if (parts.length === 3 && parts[1] === String(currentYear)) {
+            const serial = parseInt(parts[2], 10);
+            if (!isNaN(serial) && serial > maxSerial) {
+              maxSerial = serial;
+            }
+          }
+        }
+      });
+      initialSerial = maxSerial;
+    }
+  } catch (err) {
+    console.warn("Bootstrap query failed, starting from 99:", err);
+  }
+
+  // 2. Run transaction to atomically fetch and increment the counter
+  try {
+    const studentId = await runTransaction(db, async (transaction) => {
+      const counterSnap = await transaction.get(counterDocRef);
+      let nextSerial = 100;
+      
+      if (counterSnap.exists()) {
+        const currentCounter = counterSnap.data().lastSerial || 99;
+        nextSerial = currentCounter + 1;
+      } else {
+        nextSerial = initialSerial + 1;
+      }
+      
+      transaction.set(counterDocRef, { lastSerial: nextSerial }, { merge: true });
+      return `LKCP-${currentYear}-${String(nextSerial).padStart(3, '0')}`;
+    });
+    
+    return studentId;
+  } catch (error) {
+    console.error("Transaction failed to generate unique ID, using safe fallback:", error);
+    const randomId = Math.floor(100 + Math.random() * 900);
+    const ts = Date.now().toString().slice(-4);
+    return `LKCP-${currentYear}-${randomId}-${ts}`;
+  }
+}
+
