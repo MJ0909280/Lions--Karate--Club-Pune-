@@ -15,6 +15,7 @@ export default function AdmissionForm({ preselectedBatch = "", onSuccess }: Admi
   const [dob, setDob] = useState('');
   const [age, setAge] = useState<number | ''>('');
   const [gender, setGender] = useState<'male' | 'female' | 'other' | ''>('');
+  const [schoolName, setSchoolName] = useState('');
   const [parentName, setParentName] = useState('');
   const [phone, setPhone] = useState('');
   const [whatsApp, setWhatsApp] = useState('');
@@ -261,7 +262,8 @@ export default function AdmissionForm({ preselectedBatch = "", onSuccess }: Admi
         updatedAt: currentTimestamp,
         branch: selectedBranch.name,
         coachName: selectedBranch.coach,
-        feesStatus: feesStatus
+        feesStatus: feesStatus,
+        schoolName: schoolName.trim()
       };
 
       // Add to firestore collection 'admissions'
@@ -449,6 +451,17 @@ export default function AdmissionForm({ preselectedBatch = "", onSuccess }: Admi
                 <option value="female">Female</option>
                 <option value="other">Other</option>
               </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-stone-400 uppercase tracking-wide mb-1">School / College / Institution Name</label>
+              <input 
+                type="text" 
+                placeholder="e.g. Dynamic High School, Pune"
+                value={schoolName}
+                onChange={(e) => setSchoolName(e.target.value)}
+                className="w-full bg-[#1c1917]/50 border border-stone-850 text-stone-100 rounded-lg px-3.5 py-3 text-xs focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-all font-sans outline-none placeholder:text-stone-600"
+              />
             </div>
 
             <div>

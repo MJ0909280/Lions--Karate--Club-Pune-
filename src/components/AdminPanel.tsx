@@ -759,6 +759,7 @@ export default function AdminPanel() {
   const [mPhone, setMPhone] = useState('');
   const [mWhatsApp, setMWhatsApp] = useState('');
   const [mEmail, setMEmail] = useState('');
+  const [mSchoolName, setMSchoolName] = useState('');
   const [mAddress, setMAddress] = useState('');
   const [mBatch, setMBatch] = useState('');
   const [mBeltLevel, setMBeltLevel] = useState('White Belt (10th Kyu - Beginner)');
@@ -1463,7 +1464,8 @@ export default function AdminPanel() {
         approvedAt: Date.now(),
         branch: mBranch,
         coachName: coachName,
-        feesStatus: mFeesStatus
+        feesStatus: mFeesStatus,
+        schoolName: mSchoolName.trim()
       };
 
       await addDoc(collection(db, 'admissions'), studentData);
@@ -3073,6 +3075,11 @@ export default function AdminPanel() {
                           <span>•</span>
                           <span>Phone: {student.phone}</span>
                         </div>
+                        {student.schoolName && (
+                          <div className="text-[10px] text-yellow-500/90 font-medium">
+                            School: <span className="text-zinc-400 font-normal">{student.schoolName}</span>
+                          </div>
+                        )}
                       </td>
 
                       {/* Dojo Branch & Dedicated Coach */}
@@ -4756,6 +4763,14 @@ export default function AdminPanel() {
                   <span className="text-zinc-400 font-medium mt-0.5 block truncate max-w-[160px]" title={selectedAdmission.coachName || 'Maruti Jadhav Sir 2nd dan Black Belt'}>{selectedAdmission.coachName || 'Maruti Jadhav Sir'}</span>
                 </div>
 
+                {/* School Name - occupies full width if present */}
+                {selectedAdmission.schoolName && (
+                  <div className="col-span-2 border-t border-zinc-850/30 pt-2.5">
+                    <span className="text-zinc-550 uppercase tracking-widest text-[9px] block">School / Institution / College</span>
+                    <span className="text-yellow-500 font-medium mt-0.5 block leading-relaxed uppercase">{selectedAdmission.schoolName}</span>
+                  </div>
+                )}
+
                 {/* Physical Address - occupies full width */}
                 <div className="col-span-2 border-t border-zinc-850/30 pt-2.5">
                   <span className="text-zinc-550 uppercase tracking-widest text-[9px] block">Physical Address</span>
@@ -5397,6 +5412,18 @@ export default function AdminPanel() {
                   value={mEmail}
                   onChange={(e) => setMEmail(e.target.value)}
                   className="w-full bg-slate-950 border border-zinc-850 text-zinc-200 px-3.5 py-2.5 rounded-lg text-xs focus:outline-none focus:border-yellow-500 transition-all placeholder:text-zinc-755"
+                />
+              </div>
+
+              {/* School Name */}
+              <div>
+                <label className="text-zinc-400 uppercase tracking-widest text-[9px] block font-bold mb-1.5">School / College Name</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Dynamic High School, Pune"
+                  value={mSchoolName}
+                  onChange={(e) => setMSchoolName(e.target.value)}
+                  className="w-full bg-slate-950 border border-zinc-850 text-zinc-200 px-3.5 py-2.5 rounded-lg text-xs focus:outline-none focus:border-yellow-500 transition-all placeholder:text-zinc-700"
                 />
               </div>
 

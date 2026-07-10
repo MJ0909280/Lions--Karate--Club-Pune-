@@ -254,7 +254,7 @@ export default function IDCard({ admission, showSuccessBanner = false, hideDownl
         ctx.font = 'bold 8px "Outfit", sans-serif';
         ctx.fillText((admission.feesStatus || 'Unpaid').toUpperCase(), 355, 489);
 
-        // Metadata Row 4: Parent Declaration
+        // Metadata Row 4: Parent Declaration & School
         ctx.textAlign = 'left';
         ctx.fillStyle = '#71717a';
         ctx.font = 'bold 6.5px "Outfit", sans-serif';
@@ -263,6 +263,18 @@ export default function IDCard({ admission, showSuccessBanner = false, hideDownl
         ctx.fillStyle = '#065f46'; // dark green
         ctx.font = 'bold 7px "Outfit", sans-serif';
         ctx.fillText('✅ SIGNED & POLICIES ACCEPTED', 45, 517);
+
+        if (admission.schoolName) {
+          ctx.textAlign = 'right';
+          ctx.fillStyle = '#71717a';
+          ctx.font = 'bold 6.5px "Outfit", sans-serif';
+          ctx.fillText('SCHOOL / INSTITUTION', 355, 506);
+
+          ctx.fillStyle = '#000000';
+          ctx.font = 'bold 7.5px "Outfit", sans-serif';
+          const cleanSchoolName = admission.schoolName.toUpperCase();
+          ctx.fillText(cleanSchoolName.length > 25 ? cleanSchoolName.substring(0, 22) + '...' : cleanSchoolName, 355, 517);
+        }
 
         // QR Code Render on bottom-left, signature on bottom-right
         const qrImg = new Image();
@@ -534,6 +546,14 @@ export default function IDCard({ admission, showSuccessBanner = false, hideDownl
                 {(admission.feesStatus || 'Unpaid').toUpperCase()}
               </span>
             </div>
+            {admission.schoolName && (
+              <div className="col-span-2 border-t border-black/5 pt-1 mt-0.5">
+                <p className="text-[5.5px] uppercase font-bold text-zinc-500">SCHOOL / INSTITUTION</p>
+                <p className="text-[8.5px] font-bold text-black uppercase truncate leading-tight" title={admission.schoolName}>
+                  {admission.schoolName}
+                </p>
+              </div>
+            )}
             <div className="col-span-2 border-t border-black/5 pt-1 mt-0.5">
               <p className="text-[5.5px] uppercase font-bold text-zinc-500">GUARDIAN DECLARATION STATUS</p>
               <p className="text-[7.5px] font-black text-emerald-800 flex items-center gap-1.5">
