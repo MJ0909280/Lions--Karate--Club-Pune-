@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Menu, X, ShieldAlert, Award, Calendar, Users, Phone, ShieldCheck, ChevronDown } from 'lucide-react';
+import { Menu, X, ShieldAlert, Award, Calendar, Users, Phone, ShieldCheck, ChevronDown, UserCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { checkFirestoreConnection } from '../firebase';
 import MartialButton from './MartialButton';
@@ -157,6 +157,13 @@ export default function Navbar({ currentView, studentPortalTab, onNavigate }: Na
                     >
                       <Calendar className="w-4 h-4 text-yellow-500 shrink-0 animate-pulse" />
                       <span>Attendance Tracker</span>
+                    </button>
+                    <button
+                      onClick={() => { onNavigate('checkin'); setIsPortalsOpen(false); }}
+                      className="flex items-center space-x-2.5 font-heading text-xs text-zinc-350 hover:text-[#FF3B3F] hover:bg-[#FF3B3F]/5 p-2.5 rounded-lg transition-colors text-left w-full cursor-pointer"
+                    >
+                      <UserCheck className="w-4 h-4 text-[#FF3B3F] shrink-0" />
+                      <span className="font-semibold text-white/90">Exam Day Check-In</span>
                     </button>
                     <button
                       onClick={() => { onNavigate('admin'); setIsPortalsOpen(false); }}
@@ -335,6 +342,23 @@ export default function Navbar({ currentView, studentPortalTab, onNavigate }: Na
                     🥋 CHECK PROGRESS & RESULTS
                   </motion.button>
                   
+                  <motion.button
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.18 }}
+                    onClick={() => {
+                      setIsOpen(false);
+                      onNavigate('checkin');
+                    }}
+                    className={`w-full font-heading font-black text-xs uppercase tracking-widest py-3 px-4 rounded-xl text-center shadow-lg block cursor-pointer transition-all hover:scale-[1.01] ${
+                      currentView === 'checkin'
+                        ? 'bg-gradient-to-r from-red-600 to-rose-500 text-white border border-red-500 shadow-rose-500/10'
+                        : 'bg-slate-900 border border-zinc-800 text-zinc-300 hover:bg-slate-850'
+                    }`}
+                  >
+                    📍 EXAM DAY CHECK-IN
+                  </motion.button>
+
                   <motion.button
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}

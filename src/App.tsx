@@ -13,12 +13,13 @@ import AdmissionForm from './components/AdmissionForm';
 import IDCard from './components/IDCard';
 import AdminPanel from './components/AdminPanel';
 import StudentPortal from './components/StudentPortal';
+import ExamCheckIn from './components/ExamCheckIn';
 import WhatsAppFAB from './components/WhatsAppFAB';
 import TrailerOverlay from './components/TrailerOverlay';
 
 import { Award, ShieldAlert, ShieldCheck, ArrowLeft, RefreshCw, Star, MapPin, Instagram, Youtube, MessageCircle } from 'lucide-react';
 
-type ViewType = 'home' | 'admission' | 'success' | 'admin' | 'student-portal';
+type ViewType = 'home' | 'admission' | 'success' | 'admin' | 'student-portal' | 'checkin';
 
 export default function App() {
   const [view, setView] = useState<ViewType>('home');
@@ -48,6 +49,8 @@ export default function App() {
       } else if (hash.startsWith('#attendance')) {
         setView('student-portal');
         setStudentPortalTab('attendance');
+      } else if (hash.startsWith('#checkin')) {
+        setView('checkin');
       } else if (hash.startsWith('#admission')) {
         setView('admission');
       } else if (hash.startsWith('#success')) {
@@ -120,6 +123,9 @@ export default function App() {
     } else if (nextView === 'belt-exam') {
       setStudentPortalTab('exam');
       window.location.hash = 'belt-exam';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else if (nextView === 'checkin') {
+      window.location.hash = 'checkin';
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else if (nextView === 'attendance') {
       setStudentPortalTab('attendance');
@@ -280,6 +286,13 @@ export default function App() {
             </button>
             <StudentPortal initialTab={studentPortalTab} onNavigate={(v) => navigateTo(v)} />
           </div>
+        </main>
+      )}
+
+      {/* RENDER VIEW 6: BELT EXAM DAY PORTABLE SMARTPHONE CHECK-IN */}
+      {view === 'checkin' && (
+        <main className="flex-grow pt-32 pb-20">
+          <ExamCheckIn onBackToHome={() => navigateTo('home')} />
         </main>
       )}
 

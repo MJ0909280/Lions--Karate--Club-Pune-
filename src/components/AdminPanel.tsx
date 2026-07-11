@@ -65,7 +65,8 @@ import {
   AlertOctagon,
   ArrowRight,
   Lock,
-  Unlock
+  Unlock,
+  ExternalLink
 } from 'lucide-react';
 
 // @ts-ignore
@@ -1746,6 +1747,8 @@ export default function AdminPanel() {
       "Venue Details",
       "Fees Status",
       "Approval/Registry State",
+      "Checked-In (Present)",
+      "Check-In Time",
       "Grade/Kyu Rank",
       "Sensei Remarks & Message"
     ];
@@ -1765,6 +1768,8 @@ export default function AdminPanel() {
       item.venueDetails || '',
       item.feesStatus || 'Pending',
       item.status || 'pending',
+      item.checkedIn ? 'Yes' : 'No',
+      item.checkInTime || '',
       item.grade || '',
       item.remarks ? item.remarks.replace(/"/g, '""') : ''
     ]);
@@ -1785,6 +1790,97 @@ export default function AdminPanel() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const handlePrintQRCheckIn = () => {
+    const checkinUrl = `${window.location.origin}/#checkin`;
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(checkinUrl)}`;
+    
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Belt Exam Day QR Check-In - Lions Karate Club Pune</title>
+            <style>
+              body {
+                background-color: white;
+                color: #1c1917;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+                text-align: center;
+                padding: 40px;
+              }
+              .container {
+                max-width: 500px;
+                margin: 0 auto;
+                border: 4px solid #FF3B3F;
+                border-radius: 20px;
+                padding: 40px;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+              }
+              .logo {
+                font-size: 24px;
+                font-weight: 900;
+                text-transform: uppercase;
+                letter-spacing: 2px;
+                color: #1c1917;
+                margin-bottom: 5px;
+              }
+              .subtitle {
+                font-size: 14px;
+                color: #FF3B3F;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 1.5px;
+                margin-bottom: 30px;
+              }
+              .qr-code {
+                width: 250px;
+                height: 250px;
+                margin: 0 auto 30px;
+                display: block;
+              }
+              .instruction {
+                font-size: 18px;
+                font-weight: 800;
+                margin-bottom: 10px;
+                text-transform: uppercase;
+              }
+              .sub-instruction {
+                font-size: 13px;
+                color: #666;
+                line-height: 1.5;
+              }
+              .footer-branding {
+                margin-top: 40px;
+                font-size: 11px;
+                color: #999;
+                letter-spacing: 1px;
+                text-transform: uppercase;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="logo">Lions Karate Club Pune</div>
+              <div class="subtitle">Belt Grading Examination</div>
+              <img class="qr-code" src="${qrUrl}" alt="Check-In QR Code" />
+              <div class="instruction">Parents: Scan to Check-In</div>
+              <div class="sub-instruction">
+                Scan this QR code with your phone camera to quickly find your child's name/ID and mark them present for today's belt exam.
+              </div>
+              <div class="footer-branding">Courage • Respect • Discipline</div>
+            </div>
+            <script>
+              window.onload = function() {
+                window.print();
+              };
+            </script>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+    }
   };
 
   const openCreateScheduleModal = () => {
@@ -4404,6 +4500,69 @@ export default function AdminPanel() {
 
             {examsSubTab === 'applications' && (
               <div className="space-y-6">
+                {/* Live Exam Day Attendance & QR Code Signboard Panel */}
+                <div className="bg-slate-905 border border-zinc-900 rounded-2xl p-6 flex flex-col lg:flex-row justify-between items-center gap-6 shadow-xl relative overflow-hidden">
+                  {/* Subtle red martial stripe */}
+                  <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-[#FF3B3F]" />
+                  
+                  <div className="space-y-4 max-w-xl text-left pl-2 w-full lg:w-auto">
+                    <div>
+                      <div className="inline-flex items-center space-x-2 bg-yellow-500/10 border border-yellow-500/20 px-2.5 py-1 rounded-full mb-2">
+                        <span className="w-1.5 h-1.5 bg-yellow-500 rounded-full animate-ping" />
+                        <span className="text-[9px] font-mono font-bold uppercase tracking-widest text-yellow-500">Live Exam-Day Attendance Console</span>
+                      </div>
+                      <h3 className="font-heading font-black text-base uppercase text-white tracking-wide">Smartphone QR Check-In</h3>
+                      <p className="text-[11px] text-zinc-500 mt-1 leading-relaxed">
+                        Dojo admins can print this QR signboard and display it at the exam entry gate. Parents scan the QR code with their mobile devices, type their child's name, and instantly check them in.
+                      </p>
+                    </div>
+
+                    {/* Live Statistics Counter */}
+                    <div className="grid grid-cols-3 gap-3.5 pt-1.5">
+                      <div className="bg-slate-950 p-3 rounded-xl border border-zinc-850">
+                        <span className="text-[9px] font-mono text-zinc-550 uppercase tracking-wider block">Registered</span>
+                        <span className="font-heading font-black text-xs text-white block mt-0.5 truncate">{exams.length} Students</span>
+                      </div>
+                      <div className="bg-emerald-950/10 p-3 rounded-xl border border-emerald-900/30">
+                        <span className="text-[9px] font-mono text-emerald-500 uppercase tracking-wider block">Present (Checked In)</span>
+                        <span className="font-heading font-black text-xs text-emerald-400 block mt-0.5 truncate">{exams.filter((e: any) => e.checkedIn).length} Students</span>
+                      </div>
+                      <div className="bg-red-950/10 p-3 rounded-xl border border-red-900/20">
+                        <span className="text-[9px] font-mono text-red-400 uppercase tracking-wider block">Absent (Waiting)</span>
+                        <span className="font-heading font-black text-xs text-red-400 block mt-0.5 truncate">{exams.filter((e: any) => !e.checkedIn).length} Students</span>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      <button
+                        onClick={handlePrintQRCheckIn}
+                        className="bg-[#FF3B3F] hover:bg-red-600 text-white border border-[#FF3B3F]/30 px-4 py-2 rounded-lg text-[10px] font-heading font-black uppercase tracking-wider transition-all flex items-center space-x-1.5 cursor-pointer"
+                      >
+                        <Printer className="w-3.5 h-3.5" />
+                        <span>Print Gate Signboard</span>
+                      </button>
+                      <button
+                        onClick={() => window.open(`${window.location.origin}/#checkin`, '_blank')}
+                        className="bg-zinc-900 border border-zinc-850 hover:border-zinc-750 text-zinc-300 hover:text-white px-4 py-2 rounded-lg text-[10px] font-heading font-black uppercase tracking-wider transition-all flex items-center space-x-1.5 cursor-pointer"
+                        title="Open Check-In page in a new mobile-emulator tab"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                        <span>Open Mobile Check-In Page</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* QR Code Graphic Frame */}
+                  <div className="bg-slate-950 p-4 rounded-xl border border-zinc-850 flex flex-col items-center justify-center shrink-0 w-44">
+                    <img
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(window.location.origin + '/#checkin')}`}
+                      alt="Check-In QR"
+                      className="w-32 h-32 bg-white p-1.5 rounded-lg border border-zinc-800"
+                    />
+                    <span className="text-[9px] font-mono text-zinc-500 font-bold uppercase tracking-widest mt-3">Scan to Check-In</span>
+                  </div>
+                </div>
+
                 {/* Filter Bar */}
                 <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-slate-900/40 border border-zinc-900 p-4.5 rounded-xl">
                   <div className="relative w-full md:max-w-sm">
@@ -4560,6 +4719,18 @@ export default function AdminPanel() {
                                           Fees: {item.feesStatus || 'Pending'}
                                         </span>
                                       </div>
+
+                                      <div className="block mt-1">
+                                        {item.checkedIn ? (
+                                          <span className="inline-block bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 text-[9px] font-heading font-black px-2 py-0.5 rounded uppercase tracking-wider" title={`Checked-in at ${item.checkInTime}`}>
+                                            ✓ Present ({item.checkInTime || 'Confirmed'})
+                                          </span>
+                                        ) : (
+                                          <span className="inline-block bg-zinc-900 text-zinc-500 border border-zinc-800 text-[9px] font-heading font-black px-2 py-0.5 rounded uppercase tracking-wider">
+                                            ✗ Absent
+                                          </span>
+                                        )}
+                                      </div>
                                     </div>
                                   </td>
                                   <td className="py-4.5 px-6 text-left min-w-[150px]">
@@ -4601,6 +4772,32 @@ export default function AdminPanel() {
                                         title="Toggle fee status"
                                       >
                                         Toggle Fee
+                                      </button>
+
+                                      {/* Manual attendance checkin toggle */}
+                                      <button
+                                        onClick={async () => {
+                                          try {
+                                            const newCheckedIn = !item.checkedIn;
+                                            const timeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                                            await updateDoc(doc(db, 'exams', item.id), {
+                                              checkedIn: newCheckedIn,
+                                              checkInTime: newCheckedIn ? timeString : null,
+                                              checkInTimestamp: newCheckedIn ? Date.now() : null,
+                                              updatedAt: Date.now()
+                                            });
+                                          } catch (err) {
+                                            console.error("Failed to toggle attendance:", err);
+                                          }
+                                        }}
+                                        className={`text-[9px] font-heading font-black uppercase tracking-wider px-2.5 py-1.5 rounded transition-all cursor-pointer ${
+                                          item.checkedIn
+                                            ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-600/30'
+                                            : 'bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-[#FF3B3F] hover:border-[#FF3B3F]/20'
+                                        }`}
+                                        title="Toggle student present/absent state manually"
+                                      >
+                                        {item.checkedIn ? 'Mark Absent' : 'Check In'}
                                       </button>
                                       
                                       {item.status === 'approved' && (
