@@ -16,6 +16,19 @@ export default function ExamCheckIn({ onBackToHome }: ExamCheckInProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [checkInSuccess, setCheckInSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [countdown, setCountdown] = useState(6);
+
+  const getBeltColorClasses = (beltName: string = '') => {
+    const name = beltName.toLowerCase();
+    if (name.includes('yellow')) return { bg: 'bg-yellow-500/10', border: 'border-yellow-500/30', text: 'text-yellow-500', dot: 'bg-yellow-500' };
+    if (name.includes('orange')) return { bg: 'bg-orange-500/10', border: 'border-orange-500/30', text: 'text-orange-500', dot: 'bg-orange-500' };
+    if (name.includes('green')) return { bg: 'bg-emerald-500/10', border: 'border-emerald-500/30', text: 'text-emerald-400', dot: 'bg-emerald-500' };
+    if (name.includes('blue')) return { bg: 'bg-blue-500/10', border: 'border-blue-500/30', text: 'text-blue-400', dot: 'bg-blue-500' };
+    if (name.includes('purple')) return { bg: 'bg-purple-500/10', border: 'border-purple-500/30', text: 'text-purple-400', dot: 'bg-purple-500' };
+    if (name.includes('brown')) return { bg: 'bg-amber-900/20', border: 'border-amber-800/30', text: 'text-amber-600', dot: 'bg-amber-800' };
+    if (name.includes('black')) return { bg: 'bg-zinc-800/20', border: 'border-zinc-700/50', text: 'text-zinc-200', dot: 'bg-zinc-300' };
+    return { bg: 'bg-slate-900/60', border: 'border-zinc-800', text: 'text-white', dot: 'bg-white' };
+  };
 
   // Synchronize candidate list from Firestore exams collection in real time
   useEffect(() => {
@@ -36,6 +49,35 @@ export default function ExamCheckIn({ onBackToHome }: ExamCheckInProps) {
 
     return () => unsubscribe();
   }, []);
+
+  // Countdown timer for automatic redirect back to roster search
+  useEffect(() => {
+    let timer: any;
+    if (checkInSuccess) {
+      setCountdown(6);
+      timer = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            setSelectedStudent(null);
+            setSearchQuery('');
+            setCheckInSuccess(false);
+            return 6;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [checkInSuccess]);
+
+  const handleResetSearch = () => {
+    setSelectedStudent(null);
+    setSearchQuery('');
+    setCheckInSuccess(false);
+  };
 
   // Filter candidates based on search query
   const filteredCandidates = candidates.filter(c => {
@@ -179,6 +221,201 @@ export default function ExamCheckIn({ onBackToHome }: ExamCheckInProps) {
             >
               Back to Dojo Homepage
             </button>
+          </motion.div>
+        ) : checkInSuccess ? (
+          <motion.div
+            key="success-step"
+            initial={{ opacity: 0, scale: 0.93, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.93, y: -10 }}
+            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+            className="space-y-6 text-center"
+          >
+            {/* Success Animation & Header */}
+            <div className="space-y-3 py-4">
+              <div className="relative inline-block">
+                {/* Glowing background halo */}
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.6 }}
+                  animate={{ opacity: [0.1, 0.4, 0.1], scale: [1, 1.4, 1] }}
+                  transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
+                  className="absolute inset-0 bg-emerald-500/20 blur-xl rounded-full"
+                />
+                
+                {/* Sparkling particles */}
+                <motion.div
+                  initial={{ opacity: 0, rotate: 0 }}
+                  animate={{ opacity: 1, rotate: 360 }}
+                  transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+                  className="absolute -top-3 -right-3 text-yellow-500"
+                >
+                  <Sparkles className="w-6 h-6 animate-pulse" />
+                </motion.div>
+                <motion.div
+                  initial={{ opacity: 0, scale: 0 }}
+                  animate={{ opacity: [0, 1, 0], y: [-20, -40] }}
+                  transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
+                  className="absolute -top-4 left-4 text-emerald-400"
+                >
+                  <span className="text-xs">✦</span>
+                </motion.div>
+
+                {/* Animated Path Drawing Checkmark SVG */}
+                <motion.svg
+                  width="92"
+                  height="92"
+                  viewBox="0 0 80 80"
+                  className="mx-auto text-emerald-400 relative z-10"
+                  initial="hidden"
+                  animate="visible"
+                >
+                  {/* Circle outline drawing */}
+                  <motion.circle
+                    cx="40"
+                    cy="40"
+                    r="35"
+                    stroke="currentColor"
+                    strokeWidth="5"
+                    fill="#022c22" // deep solid emerald-950 background
+                    fillOpacity="0.4"
+                    strokeLinecap="round"
+                    variants={{
+                      hidden: { pathLength: 0, opacity: 0 },
+                      visible: {
+                        pathLength: 1,
+                        opacity: 1,
+                        transition: { duration: 0.6, ease: "easeInOut" }
+                      }
+                    }}
+                  />
+                  {/* Inner green glowing check circle for contrast */}
+                  <motion.circle
+                    cx="40"
+                    cy="40"
+                    r="31"
+                    className="text-emerald-500/10"
+                    fill="currentColor"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: 0.4, type: "spring", stiffness: 100 }}
+                  />
+                  {/* Checkmark path drawing */}
+                  <motion.path
+                    d="M 25 41 L 35 51 L 55 31"
+                    stroke="currentColor"
+                    strokeWidth="5.5"
+                    fill="transparent"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    variants={{
+                      hidden: { pathLength: 0, opacity: 0 },
+                      visible: {
+                        pathLength: 1,
+                        opacity: 1,
+                        transition: { delay: 0.4, duration: 0.5, ease: [0.16, 1, 0.3, 1] }
+                      }
+                    }}
+                  />
+                </motion.svg>
+              </div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6 }}
+                className="space-y-1"
+              >
+                <h2 className="font-heading font-black text-2xl uppercase tracking-wider text-emerald-400">
+                  Attendance Confirmed
+                </h2>
+                <p className="text-zinc-500 text-xs">
+                  Today's grading attendance sheet is successfully updated!
+                </p>
+              </motion.div>
+            </div>
+
+            {/* Profile Info Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.7 }}
+              className="bg-slate-900 border border-emerald-950/40 p-6 rounded-2xl text-left relative overflow-hidden shadow-2xl"
+            >
+              <div className="absolute right-0 top-0 bottom-0 w-1 bg-emerald-500" />
+              
+              <div className="space-y-4">
+                <div>
+                  <span className="text-[9px] font-mono text-zinc-550 uppercase tracking-widest font-black block">Registered Student</span>
+                  <h3 className="font-heading font-black text-xl text-white uppercase mt-0.5 leading-tight">
+                    {selectedStudent.studentName}
+                  </h3>
+                  <span className="font-mono text-xs text-zinc-400 font-extrabold tracking-wider block mt-0.5">
+                    ID: {selectedStudent.studentId}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3.5 pt-1">
+                  <div className="bg-slate-950 p-3 rounded-xl border border-zinc-850">
+                    <span className="text-[9px] font-mono text-zinc-550 uppercase tracking-wider block">Branch</span>
+                    <span className="font-heading font-black text-xs text-white block mt-1 truncate">
+                      {selectedStudent.branch}
+                    </span>
+                  </div>
+                  
+                  {/* Dynamic target belt color decoration */}
+                  {(() => {
+                    const beltColors = getBeltColorClasses(selectedStudent.targetBelt);
+                    return (
+                      <div className={`p-3 rounded-xl border ${beltColors.bg} ${beltColors.border}`}>
+                        <span className="text-[9px] font-mono text-zinc-400 uppercase tracking-wider block">Target Rank</span>
+                        <span className={`font-heading font-black text-xs ${beltColors.text} flex items-center space-x-1.5 mt-1 truncate`}>
+                          <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${beltColors.dot}`} />
+                          <span>{selectedStudent.targetBelt?.split(' (')[0]}</span>
+                        </span>
+                      </div>
+                    );
+                  })()}
+                </div>
+
+                <div className="pt-3 border-t border-zinc-850/60 flex items-center justify-between text-xs text-zinc-400 font-medium">
+                  <span>Check-In Recorded At:</span>
+                  <span className="font-mono text-white font-bold bg-slate-950 px-2 py-1 rounded border border-zinc-850">
+                    {selectedStudent.checkInTime || 'Just now'}
+                  </span>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Countdown and navigation buttons */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.9 }}
+              className="space-y-3 pt-2"
+            >
+              {/* Countdown Progress */}
+              <div className="bg-slate-950/80 border border-zinc-900 rounded-xl p-3.5 flex items-center justify-between">
+                <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">Auto-redirecting...</span>
+                <span className="font-mono text-xs text-emerald-400 font-bold">
+                  Roster search in <strong className="text-sm font-black">{countdown}s</strong>
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={handleResetSearch}
+                  className="py-3.5 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-teal-600 hover:to-emerald-600 text-white font-heading font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-emerald-950/20 active:scale-98 cursor-pointer text-center"
+                >
+                  Roster Search
+                </button>
+                <button
+                  onClick={onBackToHome}
+                  className="py-3.5 bg-zinc-900 hover:bg-zinc-850 text-zinc-400 hover:text-white border border-zinc-800 hover:border-zinc-750 text-xs font-heading font-black uppercase tracking-widest rounded-xl transition-all cursor-pointer text-center"
+                >
+                  Homepage
+                </button>
+              </div>
+            </motion.div>
           </motion.div>
         ) : (
           <motion.div
