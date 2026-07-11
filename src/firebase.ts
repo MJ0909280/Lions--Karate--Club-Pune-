@@ -171,47 +171,56 @@ export async function generateSequentialStudentId(): Promise<string> {
   const currentYear = new Date().getFullYear();
   const counterDocRef = doc(db, 'settings', `counters_${currentYear}`);
   
-  // 1. Check if the counter doc exists. If not, do the bootstrapping query FIRST (outside transaction)
-  let initialSerial = 99;
+  // 1. Dynamic scan across both admissions AND exams collections to find the absolute highest serial number in use
+  let maxDbSerial = 99;
   try {
-    const counterSnap = await getDoc(counterDocRef);
-    if (!counterSnap.exists()) {
-      // Bootstrap: find the max serial in the admissions collection first
-      const admissionsRef = collection(db, 'admissions');
-      const q = query(admissionsRef, where('studentId', '>=', `LKCP-${currentYear}-`));
-      const snap = await getDocs(q);
-      
-      let maxSerial = 99;
-      snap.forEach((doc) => {
-        const data = doc.data();
-        if (data.studentId && typeof data.studentId === 'string') {
-          const parts = data.studentId.split('-');
-          if (parts.length === 3 && parts[1] === String(currentYear)) {
-            const serial = parseInt(parts[2], 10);
-            if (!isNaN(serial) && serial > maxSerial) {
-              maxSerial = serial;
-            }
+    const admissionsRef = collection(db, 'admissions');
+    const admSnap = await getDocs(admissionsRef);
+    admSnap.forEach((doc) => {
+      const data = doc.data();
+      if (data.studentId && typeof data.studentId === 'string') {
+        const cleanId = data.studentId.toUpperCase().trim();
+        const parts = cleanId.split('-');
+        if (parts.length === 3 && parts[0] === 'LKCP' && parts[1] === String(currentYear)) {
+          const serial = parseInt(parts[2], 10);
+          if (!isNaN(serial) && serial > maxDbSerial) {
+            maxDbSerial = serial;
           }
         }
-      });
-      initialSerial = maxSerial;
-    }
+      }
+    });
+
+    const examsRef = collection(db, 'exams');
+    const examSnap = await getDocs(examsRef);
+    examSnap.forEach((doc) => {
+      const data = doc.data();
+      if (data.studentId && typeof data.studentId === 'string') {
+        const cleanId = data.studentId.toUpperCase().trim();
+        const parts = cleanId.split('-');
+        if (parts.length === 3 && parts[0] === 'LKCP' && parts[1] === String(currentYear)) {
+          const serial = parseInt(parts[2], 10);
+          if (!isNaN(serial) && serial > maxDbSerial) {
+            maxDbSerial = serial;
+          }
+        }
+      }
+    });
   } catch (err) {
-    console.warn("Bootstrap query failed, starting from 99:", err);
+    console.warn("Dynamic database serial scan failed, using safe baseline 99:", err);
   }
 
-  // 2. Run transaction to atomically fetch and increment the counter
+  // 2. Run transaction to atomically fetch, compare and increment the counter
   try {
     const studentId = await runTransaction(db, async (transaction) => {
       const counterSnap = await transaction.get(counterDocRef);
-      let nextSerial = 100;
+      let counterSerial = 99;
       
       if (counterSnap.exists()) {
-        const currentCounter = counterSnap.data().lastSerial || 99;
-        nextSerial = currentCounter + 1;
-      } else {
-        nextSerial = initialSerial + 1;
+        counterSerial = counterSnap.data().lastSerial || 99;
       }
+      
+      // The new serial must be strictly greater than both the db maximum and the recorded counter
+      const nextSerial = Math.max(maxDbSerial, counterSerial) + 1;
       
       transaction.set(counterDocRef, { lastSerial: nextSerial }, { merge: true });
       return `LKCP-${currentYear}-${String(nextSerial).padStart(3, '0')}`;
