@@ -33,18 +33,6 @@ export default function Hero({ onNavigate }: HeroProps) {
       ]
     },
     {
-      id: 'kata-perfection',
-      title: 'Kata Form Perfection Drill',
-      desc: 'Mock pattern combat practice where children learn precise balanced steps, core posture, and extreme focus.',
-      url: 'https://res.cloudinary.com/dlzdagymx/video/upload/v1781884670/WhatsApp_Video_2026-06-19_at_9.01.28_PM_mu9fjt.mp4',
-      watermark: 'LIONS DOJO KATA',
-      benefits: [
-        { label: "🤝 Mind Discipline", desc: "Teaches extreme focus, memory control, and absolute follow-through." },
-        { label: "🛡️ Practical Defense", desc: "Builds crisp reflexes & blocks that protect your child automatically." },
-        { label: "🤸 Body Posture", desc: "Strengthens legs & spine core through traditional balanced motions." }
-      ]
-    },
-    {
       id: 'combat-reflexes',
       title: 'Combat Agile Reaction Drill',
       desc: 'High energy active preparation drills. Children build sharp agility, timing, and brave confidence to defend their boundaries.',
