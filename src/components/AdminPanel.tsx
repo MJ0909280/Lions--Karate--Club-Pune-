@@ -43,6 +43,8 @@ import {
   AlertCircle,
   FileText,
   Plus,
+  Cake,
+  Gift,
   Edit2,
   Save,
   Check,
@@ -2847,6 +2849,80 @@ export default function AdminPanel() {
     return matchesSearch && matchesStatus && matchesBatch && matchesBranch && matchesFees;
   });
 
+  // Helper to check if a DOB string is in the current month
+  const isBirthdayThisMonth = (dobString?: string) => {
+    if (!dobString) return false;
+    const currentMonthNum = new Date().getMonth(); // 0-indexed, 6 is July
+    
+    // Check YYYY-MM-DD format
+    const dobParts = dobString.split('-');
+    if (dobParts.length === 3) {
+      const birthMonth = parseInt(dobParts[1], 10) - 1; // 0-indexed
+      return birthMonth === currentMonthNum;
+    }
+    
+    // Check MM/DD/YYYY format or others
+    const dateObj = new Date(dobString);
+    if (!isNaN(dateObj.getTime())) {
+      return dateObj.getMonth() === currentMonthNum;
+    }
+    return false;
+  };
+
+  // Helper to get all students with birthdays this month
+  const getBirthdayStudents = () => {
+    return admissions.filter(student => student.status === 'approved' && isBirthdayThisMonth(student.dob));
+  };
+
+  // Helper to format birthday nicely (e.g. "July 12")
+  const formatBirthdayDay = (dobString?: string) => {
+    if (!dobString) return '';
+    const months = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    
+    const dobParts = dobString.split('-');
+    if (dobParts.length === 3) {
+      const monthIndex = parseInt(dobParts[1], 10) - 1;
+      const day = parseInt(dobParts[2], 10);
+      if (monthIndex >= 0 && monthIndex < 12) {
+        return `${months[monthIndex]} ${day}`;
+      }
+    }
+    const dateObj = new Date(dobString);
+    if (!isNaN(dateObj.getTime())) {
+      const monthIndex = dateObj.getMonth();
+      const day = dateObj.getDate();
+      return `${months[monthIndex]} ${day}`;
+    }
+    return dobString;
+  };
+
+  // Function to send customized WhatsApp birthday greeting from Chief Instructor
+  const sendWhatsAppBirthdayGreeting = (student: Admission) => {
+    const currentYear = new Date().getFullYear();
+    const birthYear = student.dob ? parseInt(student.dob.split('-')[0], 10) : 0;
+    const turningAge = birthYear ? (currentYear - birthYear) : student.age;
+    
+    const greetingText = `Greetings from Lions Karate Club Pune! 🥋✨\n\n` +
+      `Dear *${student.fullName}*,\n\n` +
+      `Wishing you a very Happy Birthday! 🎂🎉\n` +
+      `May this year bring you strong spirit, focus, discipline, and excellent health. Keep training hard and shining on the tatami mat! 💪🔥\n\n` +
+      `Best wishes & blessings,\n` +
+      `*Chief Instructor Maruti Jadhav* 🥋\n` +
+      `*LIONS KARATE CLUB PUNE*`;
+
+    const phone = student.whatsApp || student.phone || '';
+    const cleanPhone = phone.replace(/\D/g, '');
+    
+    // Format standard Indian phone numbers with country code 91 if it's 10 digits
+    const formattedPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+    
+    const url = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(greetingText)}`;
+    window.open(url, '_blank');
+  };
+
   // Real-time grouping of duplicated student IDs and system mismatches for diagnosis and automated correction
   const getDuplicateIdGroups = () => {
     // 1. Admissions collection duplicates
@@ -3907,6 +3983,90 @@ export default function AdminPanel() {
               );
             })()}
 
+            {/* 🎂 Current Month Birthday Celebrations Board */}
+            {(() => {
+              const birthdayStudents = getBirthdayStudents();
+              const currentMonthName = new Date().toLocaleString('default', { month: 'long' });
+              
+              return (
+                <div className="bg-gradient-to-r from-rose-950/30 to-slate-900/40 border border-rose-900/30 p-5 rounded-2xl shadow-xl space-y-3.5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2.5">
+                      <div className="p-2 bg-rose-500/10 rounded-lg text-rose-400">
+                        <Cake className="w-5 h-5 animate-bounce" />
+                      </div>
+                      <div>
+                        <h3 className="font-heading font-black text-xs uppercase tracking-wider text-rose-400">
+                          {currentMonthName} Birthday Celebrations 🎂
+                        </h3>
+                        <p className="text-zinc-400 text-xs mt-0.5">
+                          Send personalized blessings from Chief Instructor Maruti Jadhav with a single click.
+                        </p>
+                      </div>
+                    </div>
+                    <span className="bg-rose-500/15 border border-rose-500/25 text-rose-400 font-mono font-bold text-[10px] px-2.5 py-1 rounded-full shrink-0">
+                      {birthdayStudents.length} {birthdayStudents.length === 1 ? 'Student' : 'Students'}
+                    </span>
+                  </div>
+
+                  {birthdayStudents.length === 0 ? (
+                    <div className="py-4 text-center text-zinc-500 text-xs italic bg-slate-950/20 border border-zinc-900/50 rounded-xl">
+                      🎉 No student birthdays registered in {currentMonthName}. Good luck to all on the tatami mat!
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {birthdayStudents.map((student) => {
+                        const currentYear = new Date().getFullYear();
+                        const birthYear = student.dob ? parseInt(student.dob.split('-')[0], 10) : 0;
+                        const turningAge = birthYear ? (currentYear - birthYear) : student.age;
+                        
+                        return (
+                          <div 
+                            key={student.id} 
+                            className="bg-slate-950/40 border border-zinc-900/80 p-3.5 rounded-xl flex items-center justify-between hover:border-rose-900/40 transition-all group"
+                          >
+                            <div className="flex items-center space-x-3 min-w-0">
+                              <div className="w-10 h-10 rounded-lg overflow-hidden bg-zinc-900 border border-zinc-800 shrink-0 relative">
+                                <img 
+                                  src={student.photoUrl || DEFAULT_STUDENT_AVATAR} 
+                                  alt={student.fullName} 
+                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform" 
+                                />
+                                <div className="absolute -bottom-0.5 -right-0.5 bg-rose-500 text-[8px] p-0.5 rounded-tl-md">
+                                  🎂
+                                </div>
+                              </div>
+                              <div className="min-w-0">
+                                <h4 className="font-bold text-zinc-200 text-xs truncate group-hover:text-white transition-colors">
+                                  {student.fullName}
+                                </h4>
+                                <p className="text-[10px] text-rose-400 font-medium mt-0.5 flex items-center gap-1.5">
+                                  <span>{formatBirthdayDay(student.dob)}</span>
+                                  <span className="text-zinc-600">•</span>
+                                  <span className="bg-rose-500/10 text-rose-300 px-1 py-0.2 rounded text-[9px] font-semibold">
+                                    Turning {turningAge}!
+                                  </span>
+                                </p>
+                              </div>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => sendWhatsAppBirthdayGreeting(student)}
+                              className="shrink-0 bg-emerald-500 hover:bg-emerald-600 text-slate-950 p-2 rounded-lg transition-all shadow-md flex items-center justify-center cursor-pointer active:scale-95 group/btn"
+                              title={`Send Birthday Wish on WhatsApp to ${student.fullName}`}
+                            >
+                              <MessageSquare className="w-4 h-4 text-black group-hover/btn:scale-110 transition-transform" />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
             <div className="bg-slate-900/40 border border-zinc-900 rounded-2xl overflow-hidden shadow-xl">
           {/* Filtering bar */}
           <div className="p-5 sm:p-6 border-b border-zinc-900 flex flex-col lg:flex-row gap-4 items-center justify-between">
@@ -4027,8 +4187,16 @@ export default function AdminPanel() {
 
                       {/* Name, Parent, Phone details */}
                       <td className="py-4 px-6 space-y-0.5">
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <span className="font-bold text-zinc-200 text-sm">{student.fullName}</span>
+                          {isBirthdayThisMonth(student.dob) && (
+                            <span 
+                              className="bg-rose-500/15 border border-rose-500/30 text-rose-400 text-[8px] font-heading font-black uppercase tracking-wider px-1.5 py-0.5 rounded flex items-center gap-1 shrink-0 animate-pulse" 
+                              title={`Birthday this month!`}
+                            >
+                              🎂 Birthday
+                            </span>
+                          )}
                           {student.isDirectExamRegistration && (
                             <span className="bg-purple-500/10 border border-purple-500/20 text-purple-400 text-[8px] font-heading font-black uppercase tracking-wider px-1.5 py-0.5 rounded">
                               Exam Reg
