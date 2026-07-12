@@ -294,7 +294,7 @@ export default function IDCard({ admission, showSuccessBanner = false, hideDownl
           ctx.textAlign = 'right';
           ctx.fillStyle = '#000000';
           ctx.font = 'italic italic bold 9px Georgia, serif';
-          ctx.fillText('Sensei M. Jadhav', 355, 548);
+          ctx.fillText('Chief Instructor Maruti Jadhav', 355, 548);
 
           ctx.fillStyle = '#71717a';
           ctx.font = '900 5.5px "JetBrains Mono", sans-serif';
@@ -574,7 +574,7 @@ export default function IDCard({ admission, showSuccessBanner = false, hideDownl
             />
           </div>
           <div className="text-right flex flex-col items-end">
-            <span className="italic text-[9px] font-bold font-serif leading-none block mb-0.5 text-black">Maruti Jadhav</span>
+            <span className="italic text-[9px] font-bold font-serif leading-none block mb-0.5 text-black">Chief Instructor Maruti Jadhav</span>
             <span className="text-[5px] uppercase font-bold font-mono tracking-widest text-zinc-400">CHIEF TRAINER & ADMIN</span>
           </div>
         </div>
