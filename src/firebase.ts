@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { initializeFirestore, doc, getDoc, runTransaction, collection, query, where, getDocs } from 'firebase/firestore';
+import { initializeFirestore, doc, getDoc, runTransaction, collection, query, where, getDocs, enableIndexedDbPersistence } from 'firebase/firestore';
 
 // Embedded Firebase credentials so the ZIP download & Vercel deployment work instantly
 const metaEnv = (import.meta as any).env || {};
@@ -26,6 +26,17 @@ export const db = initializeFirestore(app, {
     useFetchStreams: false
   }
 } as any, firebaseConfig.firestoreDatabaseId);
+
+// Enable offline database persistence for seamless offline app experience
+if (typeof window !== 'undefined') {
+  enableIndexedDbPersistence(db).catch((err) => {
+    if (err.code === 'failed-precondition') {
+      console.warn('Firestore offline persistence failed: Multiple tabs open.');
+    } else if (err.code === 'unimplemented') {
+      console.warn('Firestore offline persistence failed: Browser does not support it.');
+    }
+  });
+}
 
 export const auth = getAuth();
 
