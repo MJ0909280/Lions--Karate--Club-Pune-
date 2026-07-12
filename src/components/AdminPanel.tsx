@@ -4610,15 +4610,15 @@ export default function AdminPanel() {
                 {!examsLoading && (
                   <div className="bg-slate-905 border border-zinc-900 overflow-hidden rounded-xl">
                     <div className="overflow-x-auto">
-                      <table className="w-full text-left whitespace-nowrap">
+                      <table className="w-full text-left">
                         <thead>
                           <tr className="bg-slate-950 text-zinc-450 text-[10px] uppercase font-bold tracking-wider font-mono border-b border-zinc-900">
-                            <th className="py-4 px-6 min-w-[220px]">Student details</th>
-                            <th className="py-4 px-6 min-w-[180px]">Dojo training Branch</th>
-                            <th className="py-4 px-6 min-w-[160px]">Current & Target Belt</th>
-                            <th className="py-4 px-6 min-w-[150px]">Registry state</th>
-                            <th className="py-4 px-6 min-w-[150px]">Score & Comments</th>
-                            <th className="py-4 pl-6 pr-8 text-right min-w-[240px]">Actions</th>
+                            <th className="py-4 px-6 min-w-[160px]">Student details</th>
+                            <th className="py-4 px-6 min-w-[120px]">Dojo training Branch</th>
+                            <th className="py-4 px-6 min-w-[120px]">Current & Target Belt</th>
+                            <th className="py-4 px-6 min-w-[110px]">Registry state</th>
+                            <th className="py-4 px-6 min-w-[110px]">Score & Comments</th>
+                            <th className="py-4 pl-6 pr-8 text-right min-w-[180px]">Actions</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-zinc-900/40 text-xs">
@@ -4632,7 +4632,7 @@ export default function AdminPanel() {
                             .map((item) => {
                               return (
                                 <tr key={item.id} className="hover:bg-slate-900/15 transition-colors">
-                                  <td className="py-4.5 px-6 text-left min-w-[220px]">
+                                  <td className="py-4.5 px-6 text-left min-w-[160px] whitespace-normal">
                                     {editingCandidateId === item.id ? (
                                       <div className="space-y-1.5 mt-1">
                                         <input
@@ -4680,14 +4680,14 @@ export default function AdminPanel() {
                                     {item.parentPhone && <span className="text-zinc-500 text-[10px] mt-0.5 block">Phone: {item.parentPhone}</span>}
                                     {item.coachName && <span className="text-zinc-500 text-[10px] mt-0.5 block">Coach: {item.coachName}</span>}
                                   </td>
-                                  <td className="py-4.5 px-6 text-zinc-400 font-medium text-left min-w-[180px]">
+                                  <td className="py-4.5 px-6 text-zinc-400 font-medium text-left min-w-[120px] whitespace-normal">
                                     {item.branch}
                                   </td>
-                                  <td className="py-4.5 px-6 text-left font-mono min-w-[160px]">
+                                  <td className="py-4.5 px-6 text-left font-mono min-w-[120px] whitespace-normal">
                                     <span className="text-zinc-550 block">Current: {item.currentBelt.split(' (')[0]}</span>
                                     <span className="text-emerald-400 font-semibold block mt-1">Target: {item.targetBelt.split(' (')[0]}</span>
                                   </td>
-                                  <td className="py-4.5 px-6 text-left min-w-[150px]">
+                                  <td className="py-4.5 px-6 text-left min-w-[110px] whitespace-normal">
                                     <div className="space-y-1.5">
                                       {item.status === 'pending' && (
                                         <span className="inline-block bg-yellow-500/10 text-yellow-550 border border-yellow-500/20 text-[9px] font-heading font-black px-2 py-0.5 rounded uppercase tracking-wider">
@@ -4733,25 +4733,25 @@ export default function AdminPanel() {
                                       </div>
                                     </div>
                                   </td>
-                                  <td className="py-4.5 px-6 text-left min-w-[150px]">
+                                  <td className="py-4.5 px-6 text-left min-w-[110px] whitespace-normal">
                                     {item.grade ? (
                                       <div>
                                         <span className="text-white font-bold block">Grade: {item.grade}</span>
                                         {item.remarks && <span className="text-zinc-500 text-[10px] block truncate max-w-xs mt-0.5" title={item.remarks}>{item.remarks}</span>}
                                       </div>
                                     ) : (
-                                      <span className="text-zinc-650 italic">Not graded yet</span>
+                                      <span className="text-zinc-655 italic">Not graded yet</span>
                                     )}
                                   </td>
-                                  <td className="py-4.5 pl-6 pr-8 text-right min-w-[240px]">
-                                    <div className="flex items-center justify-end space-x-2">
+                                  <td className="py-4.5 pl-6 pr-8 text-right min-w-[180px]">
+                                    <div className="flex flex-wrap items-center justify-end gap-1.5">
                                       {item.status === 'pending' && (
                                         <button
                                           onClick={() => handleApproveExamSlot(item.id)}
-                                          className="bg-blue-600 hover:bg-blue-550 text-white text-[9px] font-heading font-black uppercase tracking-wider px-2.5 py-1.5 rounded transition-all cursor-pointer"
+                                          className="bg-blue-600 hover:bg-blue-550 text-white text-[9px] font-heading font-black uppercase tracking-wider px-2 py-1 rounded transition-all cursor-pointer"
                                           title="Confirm exam slot or fee payment"
                                         >
-                                          Approve slot
+                                          Approve
                                         </button>
                                       )}
 
@@ -4768,7 +4768,7 @@ export default function AdminPanel() {
                                             console.error("Failed to toggle fees status:", err);
                                           }
                                         }}
-                                        className="bg-zinc-900 border border-zinc-800 hover:border-yellow-500/20 text-zinc-400 hover:text-yellow-500 text-[9px] font-heading font-black uppercase tracking-wider px-2.5 py-1.5 rounded transition-all cursor-pointer"
+                                        className="bg-zinc-900 border border-zinc-800 hover:border-yellow-500/20 text-zinc-400 hover:text-yellow-500 text-[9px] font-heading font-black uppercase tracking-wider px-2 py-1 rounded transition-all cursor-pointer"
                                         title="Toggle fee status"
                                       >
                                         Toggle Fee
@@ -4790,7 +4790,7 @@ export default function AdminPanel() {
                                             console.error("Failed to toggle attendance:", err);
                                           }
                                         }}
-                                        className={`text-[9px] font-heading font-black uppercase tracking-wider px-2.5 py-1.5 rounded transition-all cursor-pointer ${
+                                        className={`text-[9px] font-heading font-black uppercase tracking-wider px-2 py-1 rounded transition-all cursor-pointer ${
                                           item.checkedIn
                                             ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-600/30'
                                             : 'bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-[#FF3B3F] hover:border-[#FF3B3F]/20'
@@ -4801,17 +4801,17 @@ export default function AdminPanel() {
                                       </button>
                                       
                                       {item.status === 'approved' && (
-                                        <div className="flex items-center space-x-1.5">
+                                        <div className="flex items-center gap-1">
                                           <button
                                             onClick={() => setGradingExam({ ...item, statusAction: 'passed' })}
-                                            className="bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-heading font-black uppercase tracking-widest px-2.5 py-1.5 rounded-lg transition-all cursor-pointer"
+                                            className="bg-emerald-600 hover:bg-emerald-500 text-white text-[9px] font-heading font-black uppercase tracking-widest px-2 py-1 rounded transition-all cursor-pointer"
                                             title="Assessed and passed"
                                           >
                                             Pass
                                           </button>
                                           <button
                                             onClick={() => setGradingExam({ ...item, statusAction: 'failed' })}
-                                            className="bg-red-650 hover:bg-red-600 text-white text-[10px] font-heading font-black uppercase tracking-widest px-2.5 py-1.5 rounded-lg transition-all cursor-pointer"
+                                            className="bg-red-650 hover:bg-red-600 text-white text-[9px] font-heading font-black uppercase tracking-widest px-2 py-1 rounded transition-all cursor-pointer"
                                             title="Assessed and failed"
                                           >
                                             Fail
@@ -4821,7 +4821,7 @@ export default function AdminPanel() {
                                       
                                       <button
                                         onClick={() => handleDeleteExamRecord(item.id)}
-                                        className="p-1 px-2 border border-zinc-800 text-zinc-500 hover:text-red-500 hover:bg-red-500/5 rounded transition-all cursor-pointer"
+                                        className="p-1 px-1.5 border border-zinc-800 text-zinc-500 hover:text-red-500 hover:bg-red-500/5 rounded transition-all cursor-pointer"
                                         title="Erase Entry"
                                       >
                                         <Trash2 className="w-3.5 h-3.5" />
@@ -4833,7 +4833,7 @@ export default function AdminPanel() {
                             })}
                           {exams.length === 0 && (
                             <tr>
-                              <td colSpan={6} className="py-20 text-center text-zinc-600">
+                              <td colSpan={6} className="py-20 text-center text-zinc-650">
                                 No belt examinations registered on this branch yet.
                               </td>
                             </tr>
