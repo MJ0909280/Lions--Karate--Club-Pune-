@@ -29,13 +29,17 @@ export const db = initializeFirestore(app, {
 
 // Enable offline database persistence for seamless offline app experience
 if (typeof window !== 'undefined') {
-  enableIndexedDbPersistence(db).catch((err) => {
-    if (err.code === 'failed-precondition') {
-      console.warn('Firestore offline persistence failed: Multiple tabs open.');
-    } else if (err.code === 'unimplemented') {
-      console.warn('Firestore offline persistence failed: Browser does not support it.');
-    }
-  });
+  try {
+    enableIndexedDbPersistence(db).catch((err) => {
+      if (err.code === 'failed-precondition') {
+        console.warn('Firestore offline persistence failed: Multiple tabs open.');
+      } else if (err.code === 'unimplemented') {
+        console.warn('Firestore offline persistence failed: Browser does not support it.');
+      }
+    });
+  } catch (err) {
+    console.warn('Firestore offline persistence blocked by browser/sandbox context:', err);
+  }
 }
 
 export const auth = getAuth();
