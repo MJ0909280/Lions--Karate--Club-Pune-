@@ -56,7 +56,7 @@ service cloud.firestore {
       // Allow public get and list queries to sync site configurations dynamically
       allow read: if true;
       // Allow public write specifically for student ID counters, admin for everything else
-      allow write: if isAdmin() || settingId.startsWith('counters_');
+      allow write: if isAdmin() || settingId.matches('^counters_.*');
     }
     
     // Attendance collection rules

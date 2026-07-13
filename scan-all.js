@@ -35,7 +35,7 @@ async function run() {
       snap.forEach(doc => {
         const data = doc.data();
         const str = JSON.stringify(data).toLowerCase();
-        if (str.includes('8010502603') || str.includes('devansh') || str.includes('deshmukh') || str.includes('143')) {
+        if (str.includes('lkcp-2026-107-2802')) {
           console.log(`[FOUND in ${collName}] docId: ${doc.id}`);
           console.log(JSON.stringify(data, null, 2));
         }
