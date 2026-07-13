@@ -10,6 +10,7 @@ import {
   writeBatch
 } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../firebase';
+import { safeLocalStorage } from '../utils/storage';
 import { Admission, DOJO_BRANCHES, BATCH_TIMINGS } from '../types';
 import { 
   Lock, 
@@ -101,7 +102,7 @@ const playKarateBell = () => {
 export default function AttendanceTracker() {
   // Authentication & Access state
   const [isUnlocked, setIsUnlocked] = useState<boolean>(() => {
-    return localStorage.getItem('lkcp_coach_unlocked') === 'true';
+    return safeLocalStorage.getItem('lkcp_coach_unlocked') === 'true';
   });
   const [pinInput, setPinInput] = useState('');
   const [pinError, setPinError] = useState('');
@@ -116,7 +117,7 @@ export default function AttendanceTracker() {
   });
 
   const [selectedCoach, setSelectedCoach] = useState<string>(() => {
-    return localStorage.getItem('lkcp_active_coach') || DOJO_BRANCHES[0].coach;
+    return safeLocalStorage.getItem('lkcp_active_coach') || DOJO_BRANCHES[0].coach;
   });
 
   const [selectedBatch, setSelectedBatch] = useState<string>('All Batches');
@@ -144,7 +145,7 @@ export default function AttendanceTracker() {
 
   // Save coach to local storage when changed
   useEffect(() => {
-    localStorage.setItem('lkcp_active_coach', selectedCoach);
+    safeLocalStorage.setItem('lkcp_active_coach', selectedCoach);
   }, [selectedCoach]);
 
   // Real-time fetch of all approved admissions (active students)
@@ -212,7 +213,7 @@ export default function AttendanceTracker() {
     setPinError('');
     if (pinInput.trim() === 'LKCP-COACH-2026') {
       setIsUnlocked(true);
-      localStorage.setItem('lkcp_coach_unlocked', 'true');
+      safeLocalStorage.setItem('lkcp_coach_unlocked', 'true');
       setPinInput('');
     } else {
       setPinError('Incorrect Coach Access PIN! Contact admin if you forgot the PIN.');
@@ -221,7 +222,7 @@ export default function AttendanceTracker() {
 
   const handleLockCoachTab = () => {
     setIsUnlocked(false);
-    localStorage.removeItem('lkcp_coach_unlocked');
+    safeLocalStorage.removeItem('lkcp_coach_unlocked');
   };
 
   // Immediate attendance setter for individual student

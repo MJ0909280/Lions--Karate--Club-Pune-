@@ -3,6 +3,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from './firebase';
 import { Admission } from './types';
 import { motion } from 'motion/react';
+import { safeSessionStorage } from './utils/storage';
 
 // Importing Custom Reusable UI Components
 import Navbar from './components/Navbar';
@@ -27,7 +28,7 @@ export default function App() {
   const [studentPortalTab, setStudentPortalTab] = useState<'progress' | 'exam' | 'attendance'>('progress');
   
   // Trailer state persistent per session
-  const [trailerCompleted, setTrailerCompleted] = useState(() => !!sessionStorage.getItem('dojo_trailer_entered'));
+  const [trailerCompleted, setTrailerCompleted] = useState(() => !!safeSessionStorage.getItem('dojo_trailer_entered'));
 
   // Success states
   const [successDocId, setSuccessDocId] = useState('');
@@ -145,7 +146,7 @@ export default function App() {
       {!trailerCompleted && (
         <TrailerOverlay onEnter={() => {
           setTrailerCompleted(true);
-          sessionStorage.setItem('dojo_trailer_entered', 'true');
+          safeSessionStorage.setItem('dojo_trailer_entered', 'true');
         }} />
       )}
 

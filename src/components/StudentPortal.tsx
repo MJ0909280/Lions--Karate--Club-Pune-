@@ -11,6 +11,7 @@ import {
   onSnapshot 
 } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType, generateSequentialStudentId } from '../firebase';
+import { safeLocalStorage } from '../utils/storage';
 import { Admission, BELT_LEVELS, DOJO_BRANCHES } from '../types';
 import AttendanceTracker from './AttendanceTracker';
 import { 
@@ -1452,7 +1453,7 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
 
   // Auto-lookup if there's a stored ID in localStorage to keep sessions fast & premium
   useEffect(() => {
-    const savedId = localStorage.getItem('lkcp_portal_student_id');
+    const savedId = safeLocalStorage.getItem('lkcp_portal_student_id');
     if (savedId) {
       setStudentIdInput(savedId);
       performLookup(savedId);
@@ -1521,7 +1522,7 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
         } as Admission;
         
         setActiveStudent(studentData);
-        localStorage.setItem('lkcp_portal_student_id', searchId);
+        safeLocalStorage.setItem('lkcp_portal_student_id', searchId);
         
         // Pre-fill exam form details
         setParentName(studentData.parentName || '');
@@ -1556,7 +1557,7 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
     setActiveStudent(null);
     setStudentIdInput('');
     setSearchError('');
-    localStorage.removeItem('lkcp_portal_student_id');
+    safeLocalStorage.removeItem('lkcp_portal_student_id');
   };
 
   const handleRegisterExam = async (e: React.FormEvent) => {
@@ -1729,7 +1730,7 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
         age: 10
       };
 
-      localStorage.setItem('lkcp_portal_student_id', studentId);
+      safeLocalStorage.setItem('lkcp_portal_student_id', studentId);
       setActiveStudent(newStudentData);
       setStudentIdInput(studentId);
 

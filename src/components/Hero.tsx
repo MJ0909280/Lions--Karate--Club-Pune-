@@ -4,6 +4,7 @@ import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 import { motion, AnimatePresence } from 'motion/react';
 import MartialButton from './MartialButton';
+import { safeSessionStorage } from '../utils/storage';
 
 interface HeroProps {
   onNavigate: (view: string) => void;
@@ -77,7 +78,7 @@ export default function Hero({ onNavigate }: HeroProps) {
 
     // Show floating card for parents after a tiny delay
     const toastTimer = setTimeout(() => {
-      const alreadySeen = sessionStorage.getItem('seenTodayKataVideo');
+      const alreadySeen = safeSessionStorage.getItem('seenTodayKataVideo');
       if (!alreadySeen) {
         setShowToast(true);
       }
@@ -93,7 +94,7 @@ export default function Hero({ onNavigate }: HeroProps) {
   const openVideoModal = () => {
     setIsModalOpen(true);
     setShowToast(false);
-    sessionStorage.setItem('seenTodayKataVideo', 'true');
+    safeSessionStorage.setItem('seenTodayKataVideo', 'true');
   };
 
   const closeVideoModal = () => {
