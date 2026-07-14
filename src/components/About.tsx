@@ -6,6 +6,7 @@ import { ShieldAlert, Volume2, VolumeX, RefreshCw, MapPin, Globe, Sparkles } fro
 export default function About() {
   const [aboutVideoUrl, setAboutVideoUrl] = useState<string>('');
   const [kataVideoUrl, setKataVideoUrl] = useState<string>('');
+  const [kataVideoUrl2, setKataVideoUrl2] = useState<string>('');
   const [isMuted, setIsMuted] = useState<boolean>(true);
   const [isPlaying, setIsPlaying] = useState<boolean>(true);
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -20,6 +21,9 @@ export default function About() {
         }
         if (data.kataVideoUrl) {
           setKataVideoUrl(data.kataVideoUrl);
+        }
+        if (data.kataVideoUrl2) {
+          setKataVideoUrl2(data.kataVideoUrl2);
         }
       }
     }, (err) => {
@@ -185,27 +189,46 @@ export default function About() {
                 <span className="text-yellow-500 font-kanji font-black">SHOWCASE</span>
               </h3>
               <p className="text-zinc-300 text-xs sm:text-sm leading-relaxed font-body font-light">
-                Watch our dedicated young karatekas perfect their stances, speed, and precision through continuous, repetitive Kata drills. This looping focus allows parents and families to observe authentic forms, posture alignments, and student focus in real time.
+                Watch our dedicated young karatekas perfect their stances, speed, and precision through continuous, repetitive Kata drills. This dual showcase displays both individual technique mastery and synchronized class-wide group coordination in real time.
               </p>
             </div>
 
             {/* Right Column: Video Container */}
             <div className="lg:col-span-7 flex justify-center">
-              <div className="relative w-full max-w-[340px] aspect-[9/16] rounded-2xl border-4 border-zinc-900 bg-black overflow-hidden shadow-[0_12px_40px_rgba(0,0,0,0.65)] group">
-                <video
-                  key={kataVideoUrl}
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                  className="w-full h-full object-cover object-center filter brightness-105 contrast-[1.03] transition-all duration-1000 group-hover:scale-102"
-                  src={kataVideoUrl || "https://res.cloudinary.com/dlzdagymx/video/upload/v1784001539/WhatsApp_Video_2026-07-14_at_9.23.13_AM_sve0ia.mp4"}
-                />
+              <div className="grid grid-cols-2 gap-4 w-full max-w-[480px]">
                 
-                {/* Floating subtle badge */}
-                <div className="absolute top-4 left-4 bg-slate-950/90 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-yellow-500/30 text-yellow-500 font-heading text-[9px] uppercase tracking-wider font-bold">
-                  • kata practice loop
+                {/* Video 1: Individual */}
+                <div className="relative w-full aspect-[9/16] rounded-xl border-4 border-zinc-900 bg-black overflow-hidden shadow-[0_12px_40px_rgba(0,0,0,0.65)] group">
+                  <video
+                    key={kataVideoUrl || "v1"}
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    className="w-full h-full object-cover object-center filter brightness-105 contrast-[1.03] transition-all duration-1000 group-hover:scale-102"
+                    src={kataVideoUrl || "https://res.cloudinary.com/dlzdagymx/video/upload/v1784001539/WhatsApp_Video_2026-07-14_at_9.23.13_AM_sve0ia.mp4"}
+                  />
+                  <div className="absolute top-3 left-3 bg-slate-950/90 backdrop-blur-md px-2.5 py-1 rounded border border-yellow-500/30 text-yellow-500 font-heading text-[8px] uppercase tracking-widest font-bold">
+                    • INDIVIDUAL DRILL
+                  </div>
                 </div>
+
+                {/* Video 2: Group */}
+                <div className="relative w-full aspect-[9/16] rounded-xl border-4 border-zinc-900 bg-black overflow-hidden shadow-[0_12px_40px_rgba(0,0,0,0.65)] group">
+                  <video
+                    key={kataVideoUrl2 || "v2"}
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    className="w-full h-full object-cover object-center filter brightness-105 contrast-[1.03] transition-all duration-1000 group-hover:scale-102"
+                    src={kataVideoUrl2 || "https://res.cloudinary.com/dlzdagymx/video/upload/v1783699434/Kata_hcvwxf.mp4"}
+                  />
+                  <div className="absolute top-3 left-3 bg-slate-950/90 backdrop-blur-md px-2.5 py-1 rounded border border-yellow-500/30 text-yellow-500 font-heading text-[8px] uppercase tracking-widest font-bold">
+                    • GROUP SHOWCASE
+                  </div>
+                </div>
+
               </div>
             </div>
 

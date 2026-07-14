@@ -722,6 +722,7 @@ export default function AdminPanel() {
   const [heroVideoInput, setHeroVideoInput] = useState('');
   const [aboutVideoInput, setAboutVideoInput] = useState('');
   const [kataVideoInput, setKataVideoInput] = useState('');
+  const [kataVideoInput2, setKataVideoInput2] = useState('');
   const [settingsSaving, setSettingsSaving] = useState(false);
   const [settingsSuccess, setSettingsSuccess] = useState(false);
   const [settingsError, setSettingsError] = useState('');
@@ -1011,10 +1012,12 @@ export default function AdminPanel() {
         setHeroVideoInput(data.heroVideoUrl || 'https://res.cloudinary.com/dlzdagymx/video/upload/q_auto/f_auto/v1779342942/lions-karate-website-media/m3hfwi7bsfujadlsy5sl.mp4');
         setAboutVideoInput(data.aboutVideoUrl || 'https://res.cloudinary.com/dlzdagymx/video/upload/v1781891366/WhatsApp_Video_2026-06-19_at_9.51.10_PM_pog0dc.mp4');
         setKataVideoInput(data.kataVideoUrl || 'https://res.cloudinary.com/dlzdagymx/video/upload/v1784001539/WhatsApp_Video_2026-07-14_at_9.23.13_AM_sve0ia.mp4');
+        setKataVideoInput2(data.kataVideoUrl2 || 'https://res.cloudinary.com/dlzdagymx/video/upload/v1783699434/Kata_hcvwxf.mp4');
       } else {
         setHeroVideoInput('https://res.cloudinary.com/dlzdagymx/video/upload/q_auto/f_auto/v1779342942/lions-karate-website-media/m3hfwi7bsfujadlsy5sl.mp4');
         setAboutVideoInput('https://res.cloudinary.com/dlzdagymx/video/upload/v1781891366/WhatsApp_Video_2026-06-19_at_9.51.10_PM_pog0dc.mp4');
         setKataVideoInput('https://res.cloudinary.com/dlzdagymx/video/upload/v1784001539/WhatsApp_Video_2026-07-14_at_9.23.13_AM_sve0ia.mp4');
+        setKataVideoInput2('https://res.cloudinary.com/dlzdagymx/video/upload/v1783699434/Kata_hcvwxf.mp4');
       }
     }, (error) => {
       console.error("Firestore settings sync error: ", error);
@@ -1143,6 +1146,7 @@ export default function AdminPanel() {
         heroVideoUrl: heroVideoInput.trim(),
         aboutVideoUrl: aboutVideoInput.trim(),
         kataVideoUrl: kataVideoInput.trim(),
+        kataVideoUrl2: kataVideoInput2.trim(),
         updatedAt: Date.now()
       });
       await setDoc(doc(db, 'settings', 'whatsapp'), {
@@ -4489,21 +4493,39 @@ export default function AdminPanel() {
                 </span>
               </div>
 
-              {/* Student Kata Showcase Video URL Field */}
-              <div className="space-y-2">
-                <label className="block text-[10px] font-mono text-zinc-400 font-extrabold uppercase tracking-widest">
-                  Student Kata Showcase Video URL
-                </label>
-                <input
-                  type="text"
-                  value={kataVideoInput}
-                  onChange={(e) => setKataVideoInput(e.target.value)}
-                  placeholder="e.g. https://example.com/kata_showcase.mp4"
-                  className="w-full bg-slate-950/80 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-white font-medium focus:outline-none focus:border-yellow-500/50 transition-all font-mono placeholder:text-zinc-650"
-                />
-                <span className="block text-[10px] text-zinc-500 leading-normal">
-                  Enter the direct MP4 URL or Cloudinary URL to replace the default young karatekas Kata loop video dynamically across the site.
-                </span>
+              {/* Student Kata Showcase Video URL Fields */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-mono text-zinc-400 font-extrabold uppercase tracking-widest">
+                    Kata Video 1: Individual Drill
+                  </label>
+                  <input
+                    type="text"
+                    value={kataVideoInput}
+                    onChange={(e) => setKataVideoInput(e.target.value)}
+                    placeholder="e.g. https://example.com/kata_1.mp4"
+                    className="w-full bg-slate-950/80 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-white font-medium focus:outline-none focus:border-yellow-500/50 transition-all font-mono placeholder:text-zinc-650"
+                  />
+                  <span className="block text-[10px] text-zinc-500 leading-normal">
+                    Enter the direct MP4 URL or Cloudinary URL for the Individual Speed Drill video.
+                  </span>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-mono text-zinc-400 font-extrabold uppercase tracking-widest">
+                    Kata Video 2: Group Showcase
+                  </label>
+                  <input
+                    type="text"
+                    value={kataVideoInput2}
+                    onChange={(e) => setKataVideoInput2(e.target.value)}
+                    placeholder="e.g. https://example.com/kata_2.mp4"
+                    className="w-full bg-slate-950/80 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-white font-medium focus:outline-none focus:border-yellow-500/50 transition-all font-mono placeholder:text-zinc-650"
+                  />
+                  <span className="block text-[10px] text-zinc-500 leading-normal">
+                    Enter the direct MP4 URL or Cloudinary URL for the synchronized Group Showcase video.
+                  </span>
+                </div>
               </div>
 
               {/* WhatsApp Auto-Alert server integration configuration */}

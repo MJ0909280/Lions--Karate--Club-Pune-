@@ -5,9 +5,16 @@ import { Play, Pause, Volume2, VolumeX, Sparkles, BookOpen, ShieldCheck, Award }
 
 export default function KataShowcase() {
   const [kataVideoUrl, setKataVideoUrl] = useState<string>('');
-  const [isMuted, setIsMuted] = useState<boolean>(true);
-  const [isPlaying, setIsPlaying] = useState<boolean>(true);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [kataVideoUrl2, setKataVideoUrl2] = useState<string>('');
+  
+  const [isMuted1, setIsMuted1] = useState<boolean>(true);
+  const [isPlaying1, setIsPlaying1] = useState<boolean>(true);
+  
+  const [isMuted2, setIsMuted2] = useState<boolean>(true);
+  const [isPlaying2, setIsPlaying2] = useState<boolean>(true);
+
+  const videoRef1 = useRef<HTMLVideoElement | null>(null);
+  const videoRef2 = useRef<HTMLVideoElement | null>(null);
 
   useEffect(() => {
     // Synchronize video configuration in real-time from Firestore setting doc
@@ -17,6 +24,9 @@ export default function KataShowcase() {
         if (data.kataVideoUrl) {
           setKataVideoUrl(data.kataVideoUrl);
         }
+        if (data.kataVideoUrl2) {
+          setKataVideoUrl2(data.kataVideoUrl2);
+        }
       }
     }, (err) => {
       console.error("Firestore loading error on site settings: ", err);
@@ -24,21 +34,39 @@ export default function KataShowcase() {
     return () => unsub();
   }, []);
 
-  const toggleMute = () => {
-    if (videoRef.current) {
-      videoRef.current.muted = !isMuted;
-      setIsMuted(!isMuted);
+  const toggleMute1 = () => {
+    if (videoRef1.current) {
+      videoRef1.current.muted = !isMuted1;
+      setIsMuted1(!isMuted1);
     }
   };
 
-  const togglePlay = () => {
-    if (videoRef.current) {
-      if (isPlaying) {
-        videoRef.current.pause();
+  const togglePlay1 = () => {
+    if (videoRef1.current) {
+      if (isPlaying1) {
+        videoRef1.current.pause();
       } else {
-        videoRef.current.play().catch(err => console.error(err));
+        videoRef1.current.play().catch(err => console.error(err));
       }
-      setIsPlaying(!isPlaying);
+      setIsPlaying1(!isPlaying1);
+    }
+  };
+
+  const toggleMute2 = () => {
+    if (videoRef2.current) {
+      videoRef2.current.muted = !isMuted2;
+      setIsMuted2(!isMuted2);
+    }
+  };
+
+  const togglePlay2 = () => {
+    if (videoRef2.current) {
+      if (isPlaying2) {
+        videoRef2.current.pause();
+      } else {
+        videoRef2.current.play().catch(err => console.error(err));
+      }
+      setIsPlaying2(!isPlaying2);
     }
   };
 
@@ -94,56 +122,103 @@ export default function KataShowcase() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-stretch">
         
         {/* Left Column: Vertical Student Kata Showcase video (9:16 aspect) */}
-        <div className="lg:col-span-5 flex flex-col items-center justify-center bg-[#0C0C0E] border border-zinc-900 rounded-2xl p-6 relative overflow-hidden shadow-2xl">
+        <div className="lg:col-span-6 flex flex-col items-center justify-center bg-[#0C0C0E] border border-zinc-900 rounded-2xl p-4 sm:p-6 relative overflow-hidden shadow-2xl">
           
           <div className="absolute inset-0 bg-gradient-to-b from-yellow-500/5 to-transparent pointer-events-none" />
           
-          <div className="relative w-full max-w-[320px] aspect-[9/16] rounded-xl border-4 border-zinc-900 bg-black overflow-hidden shadow-[0_12px_45px_rgba(0,0,0,0.7)] group">
-            <video
-              ref={videoRef}
-              key={kataVideoUrl}
-              autoPlay
-              loop
-              muted={isMuted}
-              playsInline
-              className="w-full h-full object-cover object-center filter brightness-105 contrast-[1.03] transition-all duration-700"
-              src={kataVideoUrl || "https://res.cloudinary.com/dlzdagymx/video/upload/v1784001539/WhatsApp_Video_2026-07-14_at_9.23.13_AM_sve0ia.mp4"}
-            />
-
-            {/* Media Action Overlays */}
-            <div className="absolute top-4 right-4 z-20 flex space-x-2">
-              <button
-                onClick={toggleMute}
-                className="bg-slate-950/90 hover:bg-slate-900 border border-stone-850 text-stone-300 hover:text-white p-2 rounded-full shadow-lg backdrop-blur-sm transition-all duration-300 cursor-pointer"
-                title={isMuted ? "Unmute sound" : "Mute sound"}
-              >
-                {isMuted ? <VolumeX className="w-3.5 h-3.5 text-red-500" /> : <Volume2 className="w-3.5 h-3.5 text-yellow-500 animate-pulse" />}
-              </button>
-            </div>
-
-            <div className="absolute bottom-4 left-4 z-20">
-              <button
-                onClick={togglePlay}
-                className="bg-slate-950/90 hover:bg-slate-900 border border-stone-850 text-stone-300 hover:text-white p-2 rounded-full shadow-lg backdrop-blur-sm transition-all duration-300 cursor-pointer"
-                title={isPlaying ? "Pause video" : "Play video"}
-              >
-                {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />}
-              </button>
-            </div>
-
-            {/* Premium floating tag */}
-            <div className="absolute top-4 left-4 bg-slate-950/90 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-yellow-500/30 text-yellow-500 font-heading text-[9px] uppercase tracking-wider font-bold">
-              • LIVE DRILL LOOP
-            </div>
+          {/* Header above both */}
+          <div className="w-full text-center pb-4 border-b border-zinc-900/60 mb-6 flex items-center justify-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-pulse"></span>
+            <span className="font-heading text-[10px] font-extrabold text-zinc-400 tracking-[0.2em] uppercase">STUDENT DRILL ARCHIVE</span>
           </div>
 
-          <p className="text-[11px] text-zinc-500 font-body mt-4 text-center">
-            Student practicing standard Kata loop. Admin-configurable dynamically in real-time.
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 w-full">
+            
+            {/* Player 1 */}
+            <div className="flex flex-col items-center space-y-2">
+              <span className="text-[9px] sm:text-[10px] font-heading font-extrabold text-yellow-500/80 tracking-widest uppercase text-center block h-8 sm:h-auto">1. Individual Drill</span>
+              <div className="relative w-full aspect-[9/16] rounded-xl border-2 sm:border-4 border-zinc-900 bg-black overflow-hidden shadow-[0_12px_35px_rgba(0,0,0,0.7)] group">
+                <video
+                  ref={videoRef1}
+                  key={kataVideoUrl || "WhatsApp_Video_2026-07-14_at_9.23.13_AM_sve0ia.mp4"}
+                  autoPlay
+                  loop
+                  muted={isMuted1}
+                  playsInline
+                  className="w-full h-full object-cover object-center filter brightness-105 contrast-[1.03] transition-all duration-700"
+                  src={kataVideoUrl || "https://res.cloudinary.com/dlzdagymx/video/upload/v1784001539/WhatsApp_Video_2026-07-14_at_9.23.13_AM_sve0ia.mp4"}
+                />
+
+                {/* Media Action Overlays */}
+                <div className="absolute top-2 right-2 z-20 flex space-x-1">
+                  <button
+                    onClick={toggleMute1}
+                    className="bg-slate-950/90 hover:bg-slate-900 border border-stone-850 text-stone-300 hover:text-white p-1.5 rounded-full shadow-lg backdrop-blur-sm transition-all duration-300 cursor-pointer"
+                    title={isMuted1 ? "Unmute sound" : "Mute sound"}
+                  >
+                    {isMuted1 ? <VolumeX className="w-3 h-3 text-red-500" /> : <Volume2 className="w-3 h-3 text-yellow-500 animate-pulse" />}
+                  </button>
+                </div>
+
+                <div className="absolute bottom-2 left-2 z-20">
+                  <button
+                    onClick={togglePlay1}
+                    className="bg-slate-950/90 hover:bg-slate-900 border border-stone-850 text-stone-300 hover:text-white p-1.5 rounded-full shadow-lg backdrop-blur-sm transition-all duration-300 cursor-pointer"
+                    title={isPlaying1 ? "Pause video" : "Play video"}
+                  >
+                    {isPlaying1 ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3 text-yellow-500 fill-yellow-500" />}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Player 2 */}
+            <div className="flex flex-col items-center space-y-2">
+              <span className="text-[9px] sm:text-[10px] font-heading font-extrabold text-yellow-500/80 tracking-widest uppercase text-center block h-8 sm:h-auto">2. Group Showcase</span>
+              <div className="relative w-full aspect-[9/16] rounded-xl border-2 sm:border-4 border-zinc-900 bg-black overflow-hidden shadow-[0_12px_35px_rgba(0,0,0,0.7)] group">
+                <video
+                  ref={videoRef2}
+                  key={kataVideoUrl2 || "Kata_hcvwxf.mp4"}
+                  autoPlay
+                  loop
+                  muted={isMuted2}
+                  playsInline
+                  className="w-full h-full object-cover object-center filter brightness-105 contrast-[1.03] transition-all duration-700"
+                  src={kataVideoUrl2 || "https://res.cloudinary.com/dlzdagymx/video/upload/v1783699434/Kata_hcvwxf.mp4"}
+                />
+
+                {/* Media Action Overlays */}
+                <div className="absolute top-2 right-2 z-20 flex space-x-1">
+                  <button
+                    onClick={toggleMute2}
+                    className="bg-slate-950/90 hover:bg-slate-900 border border-stone-850 text-stone-300 hover:text-white p-1.5 rounded-full shadow-lg backdrop-blur-sm transition-all duration-300 cursor-pointer"
+                    title={isMuted2 ? "Unmute sound" : "Mute sound"}
+                  >
+                    {isMuted2 ? <VolumeX className="w-3 h-3 text-red-500" /> : <Volume2 className="w-3 h-3 text-yellow-500 animate-pulse" />}
+                  </button>
+                </div>
+
+                <div className="absolute bottom-2 left-2 z-20">
+                  <button
+                    onClick={togglePlay2}
+                    className="bg-slate-950/90 hover:bg-slate-900 border border-stone-850 text-stone-300 hover:text-white p-1.5 rounded-full shadow-lg backdrop-blur-sm transition-all duration-300 cursor-pointer"
+                    title={isPlaying2 ? "Pause video" : "Play video"}
+                  >
+                    {isPlaying2 ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3 text-yellow-500 fill-yellow-500" />}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <p className="text-[11px] text-zinc-500 font-body mt-5 text-center leading-normal">
+            Side-by-side view showing the individual speed drill loop alongside the class group synchronization sequence.
           </p>
         </div>
 
         {/* Right Column: Descriptions & Objectives */}
-        <div className="lg:col-span-7 flex flex-col justify-between space-y-6">
+        <div className="lg:col-span-6 flex flex-col justify-between space-y-6">
           <div className="space-y-4">
             <div className="inline-flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-yellow-500 animate-pulse" />
