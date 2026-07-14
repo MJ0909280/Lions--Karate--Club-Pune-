@@ -1010,11 +1010,11 @@ export default function AdminPanel() {
         const data = snap.data();
         setHeroVideoInput(data.heroVideoUrl || 'https://res.cloudinary.com/dlzdagymx/video/upload/q_auto/f_auto/v1779342942/lions-karate-website-media/m3hfwi7bsfujadlsy5sl.mp4');
         setAboutVideoInput(data.aboutVideoUrl || 'https://res.cloudinary.com/dlzdagymx/video/upload/v1781891366/WhatsApp_Video_2026-06-19_at_9.51.10_PM_pog0dc.mp4');
-        setKataVideoInput(data.kataVideoUrl || 'https://res.cloudinary.com/dlzdagymx/video/upload/v1783699434/Kata_hcvwxf.mp4');
+        setKataVideoInput(data.kataVideoUrl || 'https://res.cloudinary.com/dlzdagymx/video/upload/v1784001539/WhatsApp_Video_2026-07-14_at_9.23.13_AM_sve0ia.mp4');
       } else {
         setHeroVideoInput('https://res.cloudinary.com/dlzdagymx/video/upload/q_auto/f_auto/v1779342942/lions-karate-website-media/m3hfwi7bsfujadlsy5sl.mp4');
         setAboutVideoInput('https://res.cloudinary.com/dlzdagymx/video/upload/v1781891366/WhatsApp_Video_2026-06-19_at_9.51.10_PM_pog0dc.mp4');
-        setKataVideoInput('https://res.cloudinary.com/dlzdagymx/video/upload/v1783699434/Kata_hcvwxf.mp4');
+        setKataVideoInput('https://res.cloudinary.com/dlzdagymx/video/upload/v1784001539/WhatsApp_Video_2026-07-14_at_9.23.13_AM_sve0ia.mp4');
       }
     }, (error) => {
       console.error("Firestore settings sync error: ", error);

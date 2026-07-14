@@ -107,7 +107,7 @@ export default function KataShowcase() {
               muted={isMuted}
               playsInline
               className="w-full h-full object-cover object-center filter brightness-105 contrast-[1.03] transition-all duration-700"
-              src={kataVideoUrl || "https://res.cloudinary.com/dlzdagymx/video/upload/v1783699434/Kata_hcvwxf.mp4"}
+              src={kataVideoUrl || "https://res.cloudinary.com/dlzdagymx/video/upload/v1784001539/WhatsApp_Video_2026-07-14_at_9.23.13_AM_sve0ia.mp4"}
             />
 
             {/* Media Action Overlays */}
