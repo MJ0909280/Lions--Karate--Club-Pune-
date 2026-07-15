@@ -74,82 +74,6 @@ import {
 // @ts-ignore
 import html2pdf from 'html2pdf.js';
 
-interface CustomDonutChartProps {
-  data: { name: string; count: number; percentage: number }[];
-  colors: string[];
-  total: number;
-}
-
-function CustomDonutChart({ data, colors, total }: CustomDonutChartProps) {
-  const [activeIndex, setActiveIndex] = useState<number | null>(null);
-
-  const r = 36;
-  const circumference = 2 * Math.PI * r;
-  let currentPercent = 0;
-
-  return (
-    <div className="relative w-full h-full flex items-center justify-center min-h-[180px]">
-      <svg viewBox="0 0 100 100" className="w-full h-full max-w-[170px] max-h-[170px] transform -rotate-90">
-        {data.map((item, index) => {
-          const itemPercentage = total > 0 ? (item.count / total) * 100 : 0;
-          if (itemPercentage <= 0) return null;
-          
-          const strokeLength = (itemPercentage / 100) * circumference;
-          const dashArray = `${strokeLength} ${circumference}`;
-          const dashOffset = - (currentPercent / 100) * circumference;
-          
-          currentPercent += itemPercentage;
-          const color = colors[index % colors.length];
-          const isActive = activeIndex === index;
-
-          return (
-            <circle
-              key={item.name}
-              cx="50"
-              cy="50"
-              r={r}
-              fill="transparent"
-              stroke={color}
-              strokeWidth={isActive ? 10 : 7}
-              strokeDasharray={dashArray}
-              strokeDashoffset={dashOffset}
-              className="transition-all duration-300 cursor-pointer origin-center"
-              onMouseEnter={() => setActiveIndex(index)}
-              onMouseLeave={() => setActiveIndex(null)}
-              style={{
-                filter: isActive ? `drop-shadow(0 0 3px ${color})` : 'none',
-              }}
-            />
-          );
-        })}
-      </svg>
-
-      {/* Center content inside donut hole */}
-      <div className="absolute flex flex-col items-center justify-center pointer-events-none text-center px-4 max-w-[130px] select-none">
-        {activeIndex !== null ? (
-          <>
-            <span className="text-[8px] font-bold uppercase text-zinc-400 truncate max-w-[100px] leading-tight">
-              {data[activeIndex].name}
-            </span>
-            <span className="text-base font-black text-white font-mono leading-none my-0.5">
-              {data[activeIndex].percentage}%
-            </span>
-            <span className="text-[8px] text-yellow-500 font-bold font-mono">
-              {data[activeIndex].count} {data[activeIndex].count === 1 ? 'Student' : 'Students'}
-            </span>
-          </>
-        ) : (
-          <>
-            <span className="text-zinc-500 text-[8px] font-bold uppercase tracking-widest leading-none">Total</span>
-            <span className="text-lg font-black text-white font-mono leading-none my-0.5">{total}</span>
-            <span className="text-zinc-550 text-[8px] font-semibold leading-none">Karatekas</span>
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
-
 // Required Admin check email literal configuration
 const AUTHORIZED_ADMIN_EMAIL = "writingandreserching18@gmail.com";
 
@@ -3095,158 +3019,51 @@ export default function AdminPanel() {
     );
   }
 
-  // A. Access-Denied / Secure Auth wall (Allows public stats visualization)
+  // A. Access-Denied / Secure Auth wall
   if (!user || isAdmin !== true) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col justify-center items-center px-4 py-24">
-        <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
-          {/* Admin Login Card */}
-          <div className="bg-slate-900/40 border border-zinc-900 rounded-2xl p-8 text-center shadow-2xl relative flex flex-col justify-center">
-            <div className="absolute top-0 left-0 right-0 h-1 bg-yellow-500 rounded-t-2xl" />
+      <div className="min-h-screen bg-slate-950 flex flex-col justify-center items-center px-4 py-12">
+        <div className="w-full max-w-md bg-slate-900/40 border border-zinc-900 rounded-2xl p-8 text-center shadow-2xl relative">
+          <div className="absolute top-0 left-0 right-0 h-1 bg-yellow-500 rounded-t-2xl" />
 
-            <div className="bg-yellow-500/10 p-4 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-6 text-yellow-500 glow-gold">
-              <ShieldCheck className="w-8 h-8" />
-            </div>
-
-            <h1 className="font-title text-2xl font-black text-white uppercase tracking-wider mb-2">Shihan Admin Area</h1>
-            <p className="text-zinc-500 text-xs px-2 mb-6 leading-relaxed">
-              Authentication is sandboxed to the secure administrator account. Please log in using your Google credentials below.
-            </p>
-
-            {loginError && (
-              <div className="mb-6 bg-red-950/40 border border-red-500/20 text-red-400 p-4 rounded-lg flex items-start space-x-2 text-left text-[11px] leading-relaxed max-h-[300px] overflow-y-auto">
-                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                <div className="whitespace-pre-line break-words flex-1 text-red-300 font-sans">
-                  {loginError}
-                </div>
-              </div>
-            )}
-
-            <div className="space-y-3">
-              <button
-                onClick={handleGoogleLogin}
-                className="w-full flex items-center justify-center space-x-3 bg-white hover:bg-zinc-100 text-slate-900 font-heading font-bold text-xs uppercase tracking-widest py-4 px-6 rounded-lg transition-all transform hover:-translate-y-0.5 shadow-md cursor-pointer"
-              >
-                <svg className="w-4 h-4 text-slate-900" viewBox="0 0 24 24">
-                  <path fill="currentColor" d="M12.24 10.285V13.4h6.887C18.2 15.614 15.645 18 12.24 18c-3.86 0-7-3.14-7-7s3.14-7 7-7c1.7 0 3.3.65 4.5 1.8l2.423-2.423C17.385 1.745 14.93 1 12.24 1 6.58 1 2 5.58 2 11.24s4.58 10.24 10.24 10.24c5.9 0 9.8-4.15 9.8-9.98 0-.67-.06-1.3-.16-1.9H12.24z" />
-                </svg>
-                <span>LOG IN WITH GOOGLE</span>
-              </button>
-
-              {user && (
-                <button
-                  onClick={handleLogout}
-                  className="w-full font-heading font-semibold text-xs text-zinc-400 hover:text-white pt-2 block text-center uppercase tracking-widest underline"
-                >
-                  Sign Out {user.email?.substring(0, 10)}...
-                </button>
-              )}
-            </div>
+          <div className="bg-yellow-500/10 p-4 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-6 text-yellow-500 glow-gold">
+            <ShieldCheck className="w-8 h-8" />
           </div>
 
-          {/* Public School Distribution Chart Card */}
-          {(() => {
-            // Extract and group school counts
-            const schoolCounts: { [key: string]: number } = {};
-            let specifiedCount = 0;
-            let unspecifiedCount = 0;
+          <h1 className="font-title text-2xl font-black text-white uppercase tracking-wider mb-2">Shihan Admin Area</h1>
+          <p className="text-zinc-500 text-xs px-2 mb-6 leading-relaxed">
+            Authentication is sandboxed to the secure administrator account. Please log in using your Google credentials below.
+          </p>
 
-            admissions.forEach((student) => {
-              const school = (student.schoolName || '').trim();
-              if (school) {
-                const normalized = school.toLowerCase()
-                  .replace(/\b\w/g, (char) => char.toUpperCase());
-                schoolCounts[normalized] = (schoolCounts[normalized] || 0) + 1;
-                specifiedCount++;
-              } else {
-                unspecifiedCount++;
-              }
-            });
-
-            const totalCount = admissions.length;
-
-            // Convert to array and sort
-            const sortedSchools = Object.entries(schoolCounts)
-              .map(([name, count]) => ({ name, count }))
-              .sort((a, b) => b.count - a.count);
-
-            const topSchoolsLimit = 4;
-            let pieData: { name: string; count: number; percentage: number }[] = [];
-            let otherCount = 0;
-
-            sortedSchools.forEach((school, index) => {
-              if (index < topSchoolsLimit) {
-                pieData.push({
-                  name: school.name,
-                  count: school.count,
-                  percentage: totalCount > 0 ? Math.round((school.count / totalCount) * 100) : 0,
-                });
-              } else {
-                otherCount += school.count;
-              }
-            });
-
-            if (otherCount > 0) {
-              pieData.push({
-                name: 'Other Institutions',
-                count: otherCount,
-                percentage: totalCount > 0 ? Math.round((otherCount / totalCount) * 100) : 0,
-              });
-            }
-
-            if (unspecifiedCount > 0) {
-              pieData.push({
-                name: 'Private/Not Specified',
-                count: unspecifiedCount,
-                percentage: totalCount > 0 ? Math.round((unspecifiedCount / totalCount) * 100) : 0,
-              });
-            }
-
-            pieData.sort((a, b) => b.count - a.count);
-
-            const PIE_COLORS = ['#F59E0B', '#EF4444', '#10B981', '#3B82F6', '#8B5CF6', '#64748B'];
-
-            return (
-              <div className="bg-slate-900/40 border border-zinc-900 p-6 rounded-2xl shadow-2xl flex flex-col justify-between">
-                <div>
-                  <h3 className="font-heading font-black text-xs uppercase tracking-wider text-yellow-500">
-                    Student School Distribution Analytics 📊
-                  </h3>
-                  <p className="text-zinc-500 text-[11px] mt-0.5 leading-relaxed">
-                    Public real-time statistics showing the schools & colleges our karatekas join from.
-                  </p>
-                </div>
-
-                {totalCount === 0 ? (
-                  <div className="h-[200px] flex items-center justify-center text-zinc-550 text-xs italic bg-slate-950/20 border border-zinc-900/50 rounded-xl my-4">
-                    Loading student registry statistics...
-                  </div>
-                ) : (
-                  <div className="space-y-4 my-4 flex-grow flex flex-col justify-center">
-                    <div className="h-[180px] flex items-center justify-center relative bg-slate-950/20 rounded-xl border border-zinc-900/50 p-2">
-                      <CustomDonutChart data={pieData} colors={PIE_COLORS} total={totalCount} />
-                    </div>
-
-                    <div className="max-h-[140px] overflow-y-auto pr-1 space-y-1">
-                      {pieData.map((item, index) => (
-                        <div key={item.name} className="flex items-center justify-between p-2 rounded bg-slate-950/40 border border-zinc-950 text-[11px]">
-                          <div className="flex items-center space-x-2 min-w-0">
-                            <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: PIE_COLORS[index % PIE_COLORS.length] }} />
-                            <span className="text-zinc-400 truncate">{item.name}</span>
-                          </div>
-                          <span className="text-yellow-500 font-bold font-mono ml-2 shrink-0">{item.percentage}%</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                
-                <div className="text-[10px] text-zinc-600 text-center font-mono">
-                  Anonymous aggregates derived from {totalCount} verified registers.
-                </div>
+          {loginError && (
+            <div className="mb-6 bg-red-950/40 border border-red-500/20 text-red-400 p-4 rounded-lg flex items-start space-x-2 text-left text-[11px] leading-relaxed max-h-[300px] overflow-y-auto">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <div className="whitespace-pre-line break-words flex-1 text-red-300 font-sans">
+                {loginError}
               </div>
-            );
-          })()}
+            </div>
+          )}
+
+          <div className="space-y-3">
+            <button
+              onClick={handleGoogleLogin}
+              className="w-full flex items-center justify-center space-x-3 bg-white hover:bg-zinc-100 text-slate-900 font-heading font-bold text-xs uppercase tracking-widest py-4 px-6 rounded-lg transition-all transform hover:-translate-y-0.5 shadow-md cursor-pointer"
+            >
+              <svg className="w-4 h-4 text-slate-900" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M12.24 10.285V13.4h6.887C18.2 15.614 15.645 18 12.24 18c-3.86 0-7-3.14-7-7s3.14-7 7-7c1.7 0 3.3.65 4.5 1.8l2.423-2.423C17.385 1.745 14.93 1 12.24 1 6.58 1 2 5.58 2 11.24s4.58 10.24 10.24 10.24c5.9 0 9.8-4.15 9.8-9.98 0-.67-.06-1.3-.16-1.9H12.24z" />
+              </svg>
+              <span>LOG IN WITH GOOGLE</span>
+            </button>
+
+            {user && (
+              <button
+                onClick={handleLogout}
+                className="w-full font-heading font-semibold text-xs text-zinc-400 hover:text-white pt-2 block text-center uppercase tracking-widest underline"
+              >
+                Sign Out {user.email?.substring(0, 10)}...
+              </button>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -4251,138 +4068,7 @@ export default function AdminPanel() {
               );
             })()}
 
-            {/* 📊 School Distribution Data Visualization Pie Chart */}
-            {(() => {
-              // Extract and group school counts
-              const schoolCounts: { [key: string]: number } = {};
-              let specifiedCount = 0;
-              let unspecifiedCount = 0;
 
-              admissions.forEach((student) => {
-                const school = (student.schoolName || '').trim();
-                if (school) {
-                  // Normalize for uniform counting (convert to Title Case)
-                  const normalized = school.toLowerCase()
-                    .replace(/\b\w/g, (char) => char.toUpperCase());
-                  schoolCounts[normalized] = (schoolCounts[normalized] || 0) + 1;
-                  specifiedCount++;
-                } else {
-                  unspecifiedCount++;
-                }
-              });
-
-              const totalCount = admissions.length;
-              if (totalCount === 0) return null;
-
-              // Convert to array and sort
-              const sortedSchools = Object.entries(schoolCounts)
-                .map(([name, count]) => ({ name, count }))
-                .sort((a, b) => b.count - a.count);
-
-              // Limit to top 5 and group others
-              const topSchoolsLimit = 5;
-              let pieData: { name: string; count: number; percentage: number }[] = [];
-              let otherCount = 0;
-
-              sortedSchools.forEach((school, index) => {
-                if (index < topSchoolsLimit) {
-                  pieData.push({
-                    name: school.name,
-                    count: school.count,
-                    percentage: Math.round((school.count / totalCount) * 100),
-                  });
-                } else {
-                  otherCount += school.count;
-                }
-              });
-
-              if (otherCount > 0) {
-                pieData.push({
-                  name: 'Other Institutions',
-                  count: otherCount,
-                  percentage: Math.round((otherCount / totalCount) * 100),
-                });
-              }
-
-              if (unspecifiedCount > 0) {
-                pieData.push({
-                  name: 'Private/Not Specified',
-                  count: unspecifiedCount,
-                  percentage: Math.round((unspecifiedCount / totalCount) * 100),
-                });
-              }
-
-              // Sort data by count for clean visualization
-              pieData.sort((a, b) => b.count - a.count);
-
-              // Standard color palette matching the Lions Dojo theme
-              const PIE_COLORS = [
-                '#F59E0B', // Amber
-                '#EF4444', // Red
-                '#10B981', // Emerald
-                '#3B82F6', // Blue
-                '#8B5CF6', // Purple
-                '#F97316', // Orange
-                '#64748B', // Slate
-              ];
-
-              return (
-                <div className="bg-slate-900/40 border border-zinc-900 p-6 rounded-2xl shadow-xl space-y-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-zinc-900/60 pb-4">
-                    <div>
-                      <h3 className="font-heading font-black text-xs uppercase tracking-wider text-yellow-500">
-                        Student School Distribution Analytics 📊
-                      </h3>
-                      <p className="text-zinc-400 text-xs mt-0.5 font-body">
-                        Real-time visualization showing which schools or colleges our karatekas are registering from.
-                      </p>
-                    </div>
-                    <span className="bg-yellow-500/10 border border-yellow-500/20 text-yellow-500 font-mono font-bold text-[10px] px-2.5 py-1 rounded-full self-start">
-                      Active: {specifiedCount} of {totalCount} specifies school
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-                    {/* Left: Interactive Recharts Pie Chart */}
-                    <div className="lg:col-span-5 h-[240px] sm:h-[260px] flex items-center justify-center relative bg-slate-950/20 rounded-xl border border-zinc-900/50 p-2">
-                      {pieData.length === 0 ? (
-                        <div className="text-zinc-500 text-xs italic">No school details registered yet.</div>
-                      ) : (
-                        <CustomDonutChart data={pieData} colors={PIE_COLORS} total={totalCount} />
-                      )}
-                    </div>
-
-                    {/* Right: Detailed Legend Table */}
-                    <div className="lg:col-span-7 space-y-2">
-                      <div className="max-h-[220px] overflow-y-auto pr-2 custom-scrollbar space-y-1.5">
-                        {pieData.map((item, index) => (
-                          <div 
-                            key={item.name} 
-                            className="flex items-center justify-between p-2.5 rounded-lg bg-slate-950/40 border border-zinc-900/60 hover:bg-slate-900/40 transition-all font-sans text-xs"
-                          >
-                            <div className="flex items-center space-x-2.5 min-w-0">
-                              <span 
-                                className="w-2.5 h-2.5 rounded-full shrink-0" 
-                                style={{ backgroundColor: PIE_COLORS[index % PIE_COLORS.length] }} 
-                              />
-                              <span className="text-zinc-300 font-medium truncate" title={item.name}>
-                                {item.name}
-                              </span>
-                            </div>
-                            <div className="flex items-center space-x-4 shrink-0 font-mono">
-                              <span className="text-zinc-500 text-[10px]">{item.count} student{item.count !== 1 ? 's' : ''}</span>
-                              <span className="text-yellow-500 font-extrabold text-[11px] bg-yellow-500/10 px-2 py-0.5 rounded border border-yellow-500/20 w-12 text-center">
-                                {item.percentage}%
-                              </span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })()}
 
             <div className="bg-slate-900/40 border border-zinc-900 rounded-2xl overflow-hidden shadow-xl">
           {/* Filtering bar */}
