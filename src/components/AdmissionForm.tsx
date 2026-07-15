@@ -26,6 +26,7 @@ export default function AdmissionForm({ preselectedBatch = "", onSuccess }: Admi
   const [beltLevel, setBeltLevel] = useState(BELT_LEVELS[0].name);
   const [photoUrl, setPhotoUrl] = useState(''); // Base64 data-url representing the compressed image
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [sendEmailNotification, setSendEmailNotification] = useState(true);
 
   // New states for branch and fees tracking
   const [selectedBranchId, setSelectedBranchId] = useState(DOJO_BRANCHES[0].id);
@@ -231,6 +232,7 @@ export default function AdmissionForm({ preselectedBatch = "", onSuccess }: Admi
         phone: phone.trim(),
         whatsApp: whatsApp.trim() || phone.trim(),
         email: email.trim(),
+        sendEmailNotification,
         address: address.trim(),
         batch,
         beltLevel,
@@ -511,6 +513,24 @@ export default function AdmissionForm({ preselectedBatch = "", onSuccess }: Admi
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full bg-[#1c1917]/50 border border-stone-850 text-stone-100 rounded-lg px-3.5 py-3 text-xs focus:ring-1 focus:ring-amber-500 focus:border-amber-500 transition-all font-sans outline-none placeholder:text-stone-600"
               />
+              <div className="mt-2.5 flex items-start space-x-2">
+                <input 
+                  type="checkbox"
+                  id="send-email-copy"
+                  checked={sendEmailNotification}
+                  onChange={(e) => setSendEmailNotification(e.target.checked)}
+                  className="mt-0.5 text-amber-500 accent-amber-500 cursor-pointer h-3.5 w-3.5 bg-stone-950 border-stone-800 rounded focus:ring-0 focus:ring-offset-0"
+                />
+                <label htmlFor="send-email-copy" className="text-stone-400 text-[10px] sm:text-xs leading-tight select-none cursor-pointer hover:text-stone-200 transition-colors">
+                  Send a digital copy of my registration & future notifications to this email.
+                </label>
+              </div>
+              {sendEmailNotification && (
+                <div className="mt-2 text-[10px] text-emerald-400 bg-emerald-950/20 border border-emerald-500/20 px-2.5 py-1.5 rounded flex items-center gap-1.5 font-sans">
+                  <CheckCircle2 className="w-3.5 h-3.5 shrink-0 text-emerald-500" />
+                  <span>Confirmation: You will receive a digital copy of your registration!</span>
+                </div>
+              )}
             </div>
 
             <div className="md:col-span-3">

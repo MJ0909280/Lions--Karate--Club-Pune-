@@ -21,7 +21,9 @@
         "status": { "type": "string", "enum": ["pending", "approved", "rejected"], "description": "Status of the admission" },
         "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp when the application was created" },
         "updatedAt": { "type": "string", "format": "date-time", "description": "Timestamp when the application was last updated" },
-        "joiningDate": { "type": "number", "description": "Timestamp when student was approved and joined" }
+        "joiningDate": { "type": "number", "description": "Timestamp when student was approved and joined" },
+        "sendEmailNotification": { "type": "boolean", "description": "Flag to opt-in for email notification copy of registration" },
+        "schoolName": { "type": "string", "description": "Name of the school/college of the student" }
       },
       "required": ["fullName", "dob", "age", "gender", "phone", "email", "batch", "beltLevel", "status"]
     },

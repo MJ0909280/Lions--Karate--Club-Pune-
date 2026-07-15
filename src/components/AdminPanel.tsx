@@ -73,6 +73,7 @@ import {
 
 // @ts-ignore
 import html2pdf from 'html2pdf.js';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 // Required Admin check email literal configuration
 const AUTHORIZED_ADMIN_EMAIL = "writingandreserching18@gmail.com";
@@ -4067,6 +4068,177 @@ export default function AdminPanel() {
                       })}
                     </div>
                   )}
+                </div>
+              );
+            })()}
+
+            {/* 📊 School Distribution Data Visualization Pie Chart */}
+            {(() => {
+              // Extract and group school counts
+              const schoolCounts: { [key: string]: number } = {};
+              let specifiedCount = 0;
+              let unspecifiedCount = 0;
+
+              admissions.forEach((student) => {
+                const school = (student.schoolName || '').trim();
+                if (school) {
+                  // Normalize for uniform counting (convert to Title Case)
+                  const normalized = school.toLowerCase()
+                    .replace(/\b\w/g, (char) => char.toUpperCase());
+                  schoolCounts[normalized] = (schoolCounts[normalized] || 0) + 1;
+                  specifiedCount++;
+                } else {
+                  unspecifiedCount++;
+                }
+              });
+
+              const totalCount = admissions.length;
+              if (totalCount === 0) return null;
+
+              // Convert to array and sort
+              const sortedSchools = Object.entries(schoolCounts)
+                .map(([name, count]) => ({ name, count }))
+                .sort((a, b) => b.count - a.count);
+
+              // Limit to top 5 and group others
+              const topSchoolsLimit = 5;
+              let pieData: { name: string; count: number; percentage: number }[] = [];
+              let otherCount = 0;
+
+              sortedSchools.forEach((school, index) => {
+                if (index < topSchoolsLimit) {
+                  pieData.push({
+                    name: school.name,
+                    count: school.count,
+                    percentage: Math.round((school.count / totalCount) * 100),
+                  });
+                } else {
+                  otherCount += school.count;
+                }
+              });
+
+              if (otherCount > 0) {
+                pieData.push({
+                  name: 'Other Institutions',
+                  count: otherCount,
+                  percentage: Math.round((otherCount / totalCount) * 100),
+                });
+              }
+
+              if (unspecifiedCount > 0) {
+                pieData.push({
+                  name: 'Private/Not Specified',
+                  count: unspecifiedCount,
+                  percentage: Math.round((unspecifiedCount / totalCount) * 100),
+                });
+              }
+
+              // Sort data by count for clean visualization
+              pieData.sort((a, b) => b.count - a.count);
+
+              // Standard color palette matching the Lions Dojo theme
+              const PIE_COLORS = [
+                '#F59E0B', // Amber
+                '#EF4444', // Red
+                '#10B981', // Emerald
+                '#3B82F6', // Blue
+                '#8B5CF6', // Purple
+                '#F97316', // Orange
+                '#64748B', // Slate
+              ];
+
+              return (
+                <div className="bg-slate-900/40 border border-zinc-900 p-6 rounded-2xl shadow-xl space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-zinc-900/60 pb-4">
+                    <div>
+                      <h3 className="font-heading font-black text-xs uppercase tracking-wider text-yellow-500">
+                        Student School Distribution Analytics 📊
+                      </h3>
+                      <p className="text-zinc-400 text-xs mt-0.5 font-body">
+                        Real-time visualization showing which schools or colleges our karatekas are registering from.
+                      </p>
+                    </div>
+                    <span className="bg-yellow-500/10 border border-yellow-500/20 text-yellow-500 font-mono font-bold text-[10px] px-2.5 py-1 rounded-full self-start">
+                      Active: {specifiedCount} of {totalCount} specifies school
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+                    {/* Left: Interactive Recharts Pie Chart */}
+                    <div className="lg:col-span-5 h-[240px] sm:h-[260px] flex items-center justify-center relative bg-slate-950/20 rounded-xl border border-zinc-900/50 p-2">
+                      {pieData.length === 0 ? (
+                        <div className="text-zinc-500 text-xs italic">No school details registered yet.</div>
+                      ) : (
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={pieData}
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={60}
+                              outerRadius={85}
+                              paddingAngle={3}
+                              dataKey="count"
+                            >
+                              {pieData.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} stroke="#0f172a" strokeWidth={2} />
+                              ))}
+                            </Pie>
+                            <Tooltip
+                              content={({ active, payload }) => {
+                                if (active && payload && payload.length) {
+                                  const data = payload[0].payload;
+                                  return (
+                                    <div className="bg-slate-950 border border-zinc-800 p-2.5 rounded-lg shadow-2xl text-xs font-mono">
+                                      <p className="text-white font-bold font-sans mb-1">{data.name}</p>
+                                      <p className="text-yellow-500">Students: <span className="font-bold text-white">{data.count}</span></p>
+                                      <p className="text-emerald-400">Share: <span className="font-bold text-white">{data.percentage}%</span></p>
+                                    </div>
+                                  );
+                                }
+                                return null;
+                              }}
+                            />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      )}
+                      
+                      {/* Center Badge inside Donut hole */}
+                      <div className="absolute flex flex-col items-center justify-center pointer-events-none">
+                        <span className="text-zinc-500 text-[9px] font-bold uppercase tracking-widest">Total</span>
+                        <span className="text-2xl font-black text-white font-mono">{totalCount}</span>
+                        <span className="text-zinc-500 text-[8px] font-semibold">karatekas</span>
+                      </div>
+                    </div>
+
+                    {/* Right: Detailed Legend Table */}
+                    <div className="lg:col-span-7 space-y-2">
+                      <div className="max-h-[220px] overflow-y-auto pr-2 custom-scrollbar space-y-1.5">
+                        {pieData.map((item, index) => (
+                          <div 
+                            key={item.name} 
+                            className="flex items-center justify-between p-2.5 rounded-lg bg-slate-950/40 border border-zinc-900/60 hover:bg-slate-900/40 transition-all font-sans text-xs"
+                          >
+                            <div className="flex items-center space-x-2.5 min-w-0">
+                              <span 
+                                className="w-2.5 h-2.5 rounded-full shrink-0" 
+                                style={{ backgroundColor: PIE_COLORS[index % PIE_COLORS.length] }} 
+                              />
+                              <span className="text-zinc-300 font-medium truncate" title={item.name}>
+                                {item.name}
+                              </span>
+                            </div>
+                            <div className="flex items-center space-x-4 shrink-0 font-mono">
+                              <span className="text-zinc-500 text-[10px]">{item.count} student{item.count !== 1 ? 's' : ''}</span>
+                              <span className="text-yellow-500 font-extrabold text-[11px] bg-yellow-500/10 px-2 py-0.5 rounded border border-yellow-500/20 w-12 text-center">
+                                {item.percentage}%
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               );
             })()}
