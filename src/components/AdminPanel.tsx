@@ -851,13 +851,8 @@ export default function AdminPanel() {
     return () => unsubscribe();
   }, []);
 
-  // 2. Manage Real-time Admissions synced listeners
+  // 2. Manage Real-time Admissions synced listeners for public stats and admin dashboard
   useEffect(() => {
-    if (!user || !isAdmin) {
-      setAdmissions([]);
-      return;
-    }
-
     setDataLoading(true);
     const admissionsRef = collection(db, 'admissions');
     
@@ -877,7 +872,9 @@ export default function AdminPanel() {
     }, (error) => {
       console.error("Firestore loading error: ", error);
       setDataLoading(false);
-      handleFirestoreError(error, OperationType.LIST, 'admissions');
+      if (user && isAdmin) {
+        handleFirestoreError(error, OperationType.LIST, 'admissions');
+      }
     });
 
     return () => unsubscribe();
@@ -3023,51 +3020,193 @@ export default function AdminPanel() {
     );
   }
 
-  // A. Access-Denied / Secure Auth wall
+  // A. Access-Denied / Secure Auth wall (Allows public stats visualization)
   if (!user || isAdmin !== true) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col justify-center items-center px-4 py-12">
-        <div className="w-full max-w-md bg-slate-900/40 border border-zinc-900 rounded-2xl p-8 text-center shadow-2xl relative">
-          <div className="absolute top-0 left-0 right-0 h-1 bg-yellow-500 rounded-t-2xl" />
+      <div className="min-h-screen bg-slate-950 flex flex-col justify-center items-center px-4 py-24">
+        <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
+          {/* Admin Login Card */}
+          <div className="bg-slate-900/40 border border-zinc-900 rounded-2xl p-8 text-center shadow-2xl relative flex flex-col justify-center">
+            <div className="absolute top-0 left-0 right-0 h-1 bg-yellow-500 rounded-t-2xl" />
 
-          <div className="bg-yellow-500/10 p-4 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-6 text-yellow-500 glow-gold">
-            <ShieldCheck className="w-8 h-8" />
-          </div>
-
-          <h1 className="font-title text-2xl font-black text-white uppercase tracking-wider mb-2">Shihan Admin Area</h1>
-          <p className="text-zinc-500 text-xs px-2 mb-6 leading-relaxed">
-            Authentication is sandboxed to the secure administrator account. Please log in using your Google credentials below.
-          </p>
-
-          {loginError && (
-            <div className="mb-6 bg-red-950/40 border border-red-500/20 text-red-400 p-4 rounded-lg flex items-start space-x-2 text-left text-[11px] leading-relaxed max-h-[300px] overflow-y-auto">
-              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-              <div className="whitespace-pre-line break-words flex-1 text-red-300 font-sans">
-                {loginError}
-              </div>
+            <div className="bg-yellow-500/10 p-4 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-6 text-yellow-500 glow-gold">
+              <ShieldCheck className="w-8 h-8" />
             </div>
-          )}
 
-          <div className="space-y-3">
-            <button
-              onClick={handleGoogleLogin}
-              className="w-full flex items-center justify-center space-x-3 bg-white hover:bg-zinc-100 text-slate-900 font-heading font-bold text-xs uppercase tracking-widest py-4 px-6 rounded-lg transition-all transform hover:-translate-y-0.5 shadow-md cursor-pointer"
-            >
-              <svg className="w-4 h-4 text-slate-900" viewBox="0 0 24 24">
-                <path fill="currentColor" d="M12.24 10.285V13.4h6.887C18.2 15.614 15.645 18 12.24 18c-3.86 0-7-3.14-7-7s3.14-7 7-7c1.7 0 3.3.65 4.5 1.8l2.423-2.423C17.385 1.745 14.93 1 12.24 1 6.58 1 2 5.58 2 11.24s4.58 10.24 10.24 10.24c5.9 0 9.8-4.15 9.8-9.98 0-.67-.06-1.3-.16-1.9H12.24z" />
-              </svg>
-              <span>LOG IN WITH GOOGLE</span>
-            </button>
+            <h1 className="font-title text-2xl font-black text-white uppercase tracking-wider mb-2">Shihan Admin Area</h1>
+            <p className="text-zinc-500 text-xs px-2 mb-6 leading-relaxed">
+              Authentication is sandboxed to the secure administrator account. Please log in using your Google credentials below.
+            </p>
 
-            {user && (
-              <button
-                onClick={handleLogout}
-                className="w-full font-heading font-semibold text-xs text-zinc-400 hover:text-white pt-2 block text-center uppercase tracking-widest underline"
-              >
-                Sign Out {user.email?.substring(0, 10)}...
-              </button>
+            {loginError && (
+              <div className="mb-6 bg-red-950/40 border border-red-500/20 text-red-400 p-4 rounded-lg flex items-start space-x-2 text-left text-[11px] leading-relaxed max-h-[300px] overflow-y-auto">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <div className="whitespace-pre-line break-words flex-1 text-red-300 font-sans">
+                  {loginError}
+                </div>
+              </div>
             )}
+
+            <div className="space-y-3">
+              <button
+                onClick={handleGoogleLogin}
+                className="w-full flex items-center justify-center space-x-3 bg-white hover:bg-zinc-100 text-slate-900 font-heading font-bold text-xs uppercase tracking-widest py-4 px-6 rounded-lg transition-all transform hover:-translate-y-0.5 shadow-md cursor-pointer"
+              >
+                <svg className="w-4 h-4 text-slate-900" viewBox="0 0 24 24">
+                  <path fill="currentColor" d="M12.24 10.285V13.4h6.887C18.2 15.614 15.645 18 12.24 18c-3.86 0-7-3.14-7-7s3.14-7 7-7c1.7 0 3.3.65 4.5 1.8l2.423-2.423C17.385 1.745 14.93 1 12.24 1 6.58 1 2 5.58 2 11.24s4.58 10.24 10.24 10.24c5.9 0 9.8-4.15 9.8-9.98 0-.67-.06-1.3-.16-1.9H12.24z" />
+                </svg>
+                <span>LOG IN WITH GOOGLE</span>
+              </button>
+
+              {user && (
+                <button
+                  onClick={handleLogout}
+                  className="w-full font-heading font-semibold text-xs text-zinc-400 hover:text-white pt-2 block text-center uppercase tracking-widest underline"
+                >
+                  Sign Out {user.email?.substring(0, 10)}...
+                </button>
+              )}
+            </div>
           </div>
+
+          {/* Public School Distribution Chart Card */}
+          {(() => {
+            // Extract and group school counts
+            const schoolCounts: { [key: string]: number } = {};
+            let specifiedCount = 0;
+            let unspecifiedCount = 0;
+
+            admissions.forEach((student) => {
+              const school = (student.schoolName || '').trim();
+              if (school) {
+                const normalized = school.toLowerCase()
+                  .replace(/\b\w/g, (char) => char.toUpperCase());
+                schoolCounts[normalized] = (schoolCounts[normalized] || 0) + 1;
+                specifiedCount++;
+              } else {
+                unspecifiedCount++;
+              }
+            });
+
+            const totalCount = admissions.length;
+
+            // Convert to array and sort
+            const sortedSchools = Object.entries(schoolCounts)
+              .map(([name, count]) => ({ name, count }))
+              .sort((a, b) => b.count - a.count);
+
+            const topSchoolsLimit = 4;
+            let pieData: { name: string; count: number; percentage: number }[] = [];
+            let otherCount = 0;
+
+            sortedSchools.forEach((school, index) => {
+              if (index < topSchoolsLimit) {
+                pieData.push({
+                  name: school.name,
+                  count: school.count,
+                  percentage: totalCount > 0 ? Math.round((school.count / totalCount) * 100) : 0,
+                });
+              } else {
+                otherCount += school.count;
+              }
+            });
+
+            if (otherCount > 0) {
+              pieData.push({
+                name: 'Other Institutions',
+                count: otherCount,
+                percentage: totalCount > 0 ? Math.round((otherCount / totalCount) * 100) : 0,
+              });
+            }
+
+            if (unspecifiedCount > 0) {
+              pieData.push({
+                name: 'Private/Not Specified',
+                count: unspecifiedCount,
+                percentage: totalCount > 0 ? Math.round((unspecifiedCount / totalCount) * 100) : 0,
+              });
+            }
+
+            pieData.sort((a, b) => b.count - a.count);
+
+            const PIE_COLORS = ['#F59E0B', '#EF4444', '#10B981', '#3B82F6', '#8B5CF6', '#64748B'];
+
+            return (
+              <div className="bg-slate-900/40 border border-zinc-900 p-6 rounded-2xl shadow-2xl flex flex-col justify-between">
+                <div>
+                  <h3 className="font-heading font-black text-xs uppercase tracking-wider text-yellow-500">
+                    Student School Distribution Analytics 📊
+                  </h3>
+                  <p className="text-zinc-500 text-[11px] mt-0.5 leading-relaxed">
+                    Public real-time statistics showing the schools & colleges our karatekas join from.
+                  </p>
+                </div>
+
+                {totalCount === 0 ? (
+                  <div className="h-[200px] flex items-center justify-center text-zinc-550 text-xs italic bg-slate-950/20 border border-zinc-900/50 rounded-xl my-4">
+                    Loading student registry statistics...
+                  </div>
+                ) : (
+                  <div className="space-y-4 my-4 flex-grow flex flex-col justify-center">
+                    <div className="h-[180px] flex items-center justify-center relative bg-slate-950/20 rounded-xl border border-zinc-900/50 p-2">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={pieData}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={50}
+                            outerRadius={70}
+                            paddingAngle={3}
+                            dataKey="count"
+                          >
+                            {pieData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} stroke="#0f172a" strokeWidth={2} />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            content={({ active, payload }) => {
+                              if (active && payload && payload.length) {
+                                const data = payload[0].payload;
+                                return (
+                                  <div className="bg-slate-950 border border-zinc-800 p-2.5 rounded-lg shadow-2xl text-xs font-mono text-left">
+                                    <p className="text-white font-bold mb-1">{data.name}</p>
+                                    <p className="text-yellow-500">Students: <span className="font-bold text-white">{data.count}</span></p>
+                                    <p className="text-emerald-400">Share: <span className="font-bold text-white">{data.percentage}%</span></p>
+                                  </div>
+                                );
+                              }
+                              return null;
+                            }}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                      <div className="absolute flex flex-col items-center justify-center pointer-events-none">
+                        <span className="text-zinc-500 text-[8px] font-bold uppercase">Total</span>
+                        <span className="text-xl font-black text-white font-mono">{totalCount}</span>
+                      </div>
+                    </div>
+
+                    <div className="max-h-[140px] overflow-y-auto pr-1 space-y-1">
+                      {pieData.map((item, index) => (
+                        <div key={item.name} className="flex items-center justify-between p-2 rounded bg-slate-950/40 border border-zinc-950 text-[11px]">
+                          <div className="flex items-center space-x-2 min-w-0">
+                            <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: PIE_COLORS[index % PIE_COLORS.length] }} />
+                            <span className="text-zinc-400 truncate">{item.name}</span>
+                          </div>
+                          <span className="text-yellow-500 font-bold font-mono ml-2 shrink-0">{item.percentage}%</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                <div className="text-[10px] text-zinc-600 text-center font-mono">
+                  Anonymous aggregates derived from {totalCount} verified registers.
+                </div>
+              </div>
+            );
+          })()}
         </div>
       </div>
     );
