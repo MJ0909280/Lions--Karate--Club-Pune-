@@ -73,7 +73,82 @@ import {
 
 // @ts-ignore
 import html2pdf from 'html2pdf.js';
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+
+interface CustomDonutChartProps {
+  data: { name: string; count: number; percentage: number }[];
+  colors: string[];
+  total: number;
+}
+
+function CustomDonutChart({ data, colors, total }: CustomDonutChartProps) {
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+
+  const r = 36;
+  const circumference = 2 * Math.PI * r;
+  let currentPercent = 0;
+
+  return (
+    <div className="relative w-full h-full flex items-center justify-center min-h-[180px]">
+      <svg viewBox="0 0 100 100" className="w-full h-full max-w-[170px] max-h-[170px] transform -rotate-90">
+        {data.map((item, index) => {
+          const itemPercentage = total > 0 ? (item.count / total) * 100 : 0;
+          if (itemPercentage <= 0) return null;
+          
+          const strokeLength = (itemPercentage / 100) * circumference;
+          const dashArray = `${strokeLength} ${circumference}`;
+          const dashOffset = - (currentPercent / 100) * circumference;
+          
+          currentPercent += itemPercentage;
+          const color = colors[index % colors.length];
+          const isActive = activeIndex === index;
+
+          return (
+            <circle
+              key={item.name}
+              cx="50"
+              cy="50"
+              r={r}
+              fill="transparent"
+              stroke={color}
+              strokeWidth={isActive ? 10 : 7}
+              strokeDasharray={dashArray}
+              strokeDashoffset={dashOffset}
+              className="transition-all duration-300 cursor-pointer origin-center"
+              onMouseEnter={() => setActiveIndex(index)}
+              onMouseLeave={() => setActiveIndex(null)}
+              style={{
+                filter: isActive ? `drop-shadow(0 0 3px ${color})` : 'none',
+              }}
+            />
+          );
+        })}
+      </svg>
+
+      {/* Center content inside donut hole */}
+      <div className="absolute flex flex-col items-center justify-center pointer-events-none text-center px-4 max-w-[130px] select-none">
+        {activeIndex !== null ? (
+          <>
+            <span className="text-[8px] font-bold uppercase text-zinc-400 truncate max-w-[100px] leading-tight">
+              {data[activeIndex].name}
+            </span>
+            <span className="text-base font-black text-white font-mono leading-none my-0.5">
+              {data[activeIndex].percentage}%
+            </span>
+            <span className="text-[8px] text-yellow-500 font-bold font-mono">
+              {data[activeIndex].count} {data[activeIndex].count === 1 ? 'Student' : 'Students'}
+            </span>
+          </>
+        ) : (
+          <>
+            <span className="text-zinc-500 text-[8px] font-bold uppercase tracking-widest leading-none">Total</span>
+            <span className="text-lg font-black text-white font-mono leading-none my-0.5">{total}</span>
+            <span className="text-zinc-550 text-[8px] font-semibold leading-none">Karatekas</span>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
 
 // Required Admin check email literal configuration
 const AUTHORIZED_ADMIN_EMAIL = "writingandreserching18@gmail.com";
@@ -3149,42 +3224,7 @@ export default function AdminPanel() {
                 ) : (
                   <div className="space-y-4 my-4 flex-grow flex flex-col justify-center">
                     <div className="h-[180px] flex items-center justify-center relative bg-slate-950/20 rounded-xl border border-zinc-900/50 p-2">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={pieData}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={50}
-                            outerRadius={70}
-                            paddingAngle={3}
-                            dataKey="count"
-                          >
-                            {pieData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} stroke="#0f172a" strokeWidth={2} />
-                            ))}
-                          </Pie>
-                          <Tooltip
-                            content={({ active, payload }) => {
-                              if (active && payload && payload.length) {
-                                const data = payload[0].payload;
-                                return (
-                                  <div className="bg-slate-950 border border-zinc-800 p-2.5 rounded-lg shadow-2xl text-xs font-mono text-left">
-                                    <p className="text-white font-bold mb-1">{data.name}</p>
-                                    <p className="text-yellow-500">Students: <span className="font-bold text-white">{data.count}</span></p>
-                                    <p className="text-emerald-400">Share: <span className="font-bold text-white">{data.percentage}%</span></p>
-                                  </div>
-                                );
-                              }
-                              return null;
-                            }}
-                          />
-                        </PieChart>
-                      </ResponsiveContainer>
-                      <div className="absolute flex flex-col items-center justify-center pointer-events-none">
-                        <span className="text-zinc-500 text-[8px] font-bold uppercase">Total</span>
-                        <span className="text-xl font-black text-white font-mono">{totalCount}</span>
-                      </div>
+                      <CustomDonutChart data={pieData} colors={PIE_COLORS} total={totalCount} />
                     </div>
 
                     <div className="max-h-[140px] overflow-y-auto pr-1 space-y-1">
@@ -4308,46 +4348,8 @@ export default function AdminPanel() {
                       {pieData.length === 0 ? (
                         <div className="text-zinc-500 text-xs italic">No school details registered yet.</div>
                       ) : (
-                        <ResponsiveContainer width="100%" height="100%">
-                          <PieChart>
-                            <Pie
-                              data={pieData}
-                              cx="50%"
-                              cy="50%"
-                              innerRadius={60}
-                              outerRadius={85}
-                              paddingAngle={3}
-                              dataKey="count"
-                            >
-                              {pieData.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} stroke="#0f172a" strokeWidth={2} />
-                              ))}
-                            </Pie>
-                            <Tooltip
-                              content={({ active, payload }) => {
-                                if (active && payload && payload.length) {
-                                  const data = payload[0].payload;
-                                  return (
-                                    <div className="bg-slate-950 border border-zinc-800 p-2.5 rounded-lg shadow-2xl text-xs font-mono">
-                                      <p className="text-white font-bold font-sans mb-1">{data.name}</p>
-                                      <p className="text-yellow-500">Students: <span className="font-bold text-white">{data.count}</span></p>
-                                      <p className="text-emerald-400">Share: <span className="font-bold text-white">{data.percentage}%</span></p>
-                                    </div>
-                                  );
-                                }
-                                return null;
-                              }}
-                            />
-                          </PieChart>
-                        </ResponsiveContainer>
+                        <CustomDonutChart data={pieData} colors={PIE_COLORS} total={totalCount} />
                       )}
-                      
-                      {/* Center Badge inside Donut hole */}
-                      <div className="absolute flex flex-col items-center justify-center pointer-events-none">
-                        <span className="text-zinc-500 text-[9px] font-bold uppercase tracking-widest">Total</span>
-                        <span className="text-2xl font-black text-white font-mono">{totalCount}</span>
-                        <span className="text-zinc-500 text-[8px] font-semibold">karatekas</span>
-                      </div>
                     </div>
 
                     {/* Right: Detailed Legend Table */}
