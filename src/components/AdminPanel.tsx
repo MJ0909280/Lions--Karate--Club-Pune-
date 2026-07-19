@@ -2645,24 +2645,37 @@ export default function AdminPanel() {
                       </span>
                     </div>
 
-                    <div className="bg-zinc-950 p-4 border border-zinc-900 rounded-xl flex items-center justify-between">
+                    <div className="bg-zinc-950 p-4 border border-zinc-900 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
                       <div className="space-y-0.5">
                         <span className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">Unresolved Candidate ID:</span>
                         <div className="font-mono text-sm font-black text-orange-400">{exam.studentId || 'N/A'}</div>
                       </div>
 
-                      <div className="flex flex-col items-end gap-1">
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                         <button
                           type="button"
                           disabled={isSaving}
                           onClick={() => handleCreateProfileFromExam(exam)}
-                          className="bg-yellow-500 hover:bg-yellow-400 text-slate-950 disabled:opacity-50 font-heading font-black text-[10px] uppercase tracking-wider px-4 py-2.5 rounded-lg transition-all active:scale-95 cursor-pointer flex items-center gap-1"
+                          className="bg-yellow-500 hover:bg-yellow-400 text-slate-950 disabled:opacity-50 font-heading font-black text-[10px] uppercase tracking-wider px-4 py-2.5 rounded-lg transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-1"
                         >
                           {isSaving ? 'Creating...' : 'Auto-Create Student Profile'}
                         </button>
-                        {errorMsg && <span className="text-red-500 text-[10px] font-medium font-sans mt-1">{errorMsg}</span>}
-                        {successMsg && <span className="text-emerald-400 text-[10px] font-bold font-sans mt-1">{successMsg}</span>}
+
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteExamRecord(exam.id)}
+                          className="bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-slate-950 font-heading font-black text-[10px] uppercase tracking-wider px-4 py-2.5 rounded-lg border border-red-500/20 transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-1"
+                        >
+                          Delete Exam Record
+                        </button>
                       </div>
+
+                      {(errorMsg || successMsg) && (
+                        <div className="w-full text-right text-[10px] mt-1">
+                          {errorMsg && <span className="text-red-500 font-medium font-sans">{errorMsg}</span>}
+                          {successMsg && <span className="text-emerald-400 font-bold font-sans">{successMsg}</span>}
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
@@ -2795,14 +2808,42 @@ export default function AdminPanel() {
     setConfirmDialog({
       isOpen: true,
       title: "Erase Student Admission File",
-      message: "Are you absolutely sure you want to permanently erase this student's admission files? This action is irreversible.",
+      message: "Are you absolutely sure you want to permanently erase this student's admission files? This action is irreversible. All related exam records for this student will also be deleted.",
       confirmText: "Erase Entry",
       cancelText: "Cancel",
       onConfirm: async () => {
         try {
+          // Find the student profile in memory before deleting to get identifiers
+          const student = admissions.find(a => a.id === docId);
+
+          // Delete the student admission record
           await deleteDoc(doc(db, 'admissions', docId));
           setSelectedAdmission(null);
           setViewingIDCard(null);
+
+          // Cascade delete related exam records matching studentId or fullName
+          if (student) {
+            const studentIdToMatch = (student.studentId || '').trim().toUpperCase();
+            const fullNameToMatch = (student.fullName || '').trim().toLowerCase();
+
+            const relatedExams = exams.filter(exam => {
+              const examId = (exam.studentId || '').trim().toUpperCase();
+              const examName = (exam.studentName || '').trim().toLowerCase();
+              
+              const matchesId = studentIdToMatch && examId === studentIdToMatch;
+              const matchesName = fullNameToMatch && examName === fullNameToMatch;
+              
+              return matchesId || matchesName;
+            });
+
+            for (const relatedExam of relatedExams) {
+              try {
+                await deleteDoc(doc(db, 'exams', relatedExam.id));
+              } catch (err) {
+                console.error(`Failed to cascade delete exam record ${relatedExam.id}:`, err);
+              }
+            }
+          }
         } catch (error) {
           console.error("Failed to delete record: ", error);
           handleFirestoreError(error, OperationType.DELETE, `admissions/${docId}`);
@@ -2872,7 +2913,27 @@ export default function AdminPanel() {
 
   // Helper to get all students with birthdays this month
   const getBirthdayStudents = () => {
-    return admissions.filter(student => student.status === 'approved' && isBirthdayThisMonth(student.dob));
+    const currentYear = new Date().getFullYear();
+    return admissions.filter(student => 
+      student.status === 'approved' && 
+      isBirthdayThisMonth(student.dob) &&
+      student.lastCelebratedYear !== currentYear
+    );
+  };
+
+  // Helper to mark birthday as celebrated for the current year
+  const markBirthdayAsCelebrated = async (admissionId: string) => {
+    const currentYear = new Date().getFullYear();
+    try {
+      await updateDoc(doc(db, 'admissions', admissionId), {
+        lastCelebratedYear: currentYear,
+        updatedAt: Date.now()
+      });
+      // Update local memory state
+      setAdmissions(prev => prev.map(item => item.id === admissionId ? { ...item, lastCelebratedYear: currentYear } : item));
+    } catch (error) {
+      console.error("Failed to mark birthday as celebrated: ", error);
+    }
   };
 
   // Helper to format birthday nicely (e.g. "July 12")
@@ -4051,14 +4112,28 @@ export default function AdminPanel() {
                               </div>
                             </div>
 
-                            <button
-                              type="button"
-                              onClick={() => sendWhatsAppBirthdayGreeting(student)}
-                              className="shrink-0 bg-emerald-500 hover:bg-emerald-600 text-slate-950 p-2 rounded-lg transition-all shadow-md flex items-center justify-center cursor-pointer active:scale-95 group/btn"
-                              title={`Send Birthday Wish on WhatsApp to ${student.fullName}`}
-                            >
-                              <MessageSquare className="w-4 h-4 text-black group-hover/btn:scale-110 transition-transform" />
-                            </button>
+                            <div className="flex items-center space-x-1.5 shrink-0">
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  sendWhatsAppBirthdayGreeting(student);
+                                  await markBirthdayAsCelebrated(student.id);
+                                }}
+                                className="bg-emerald-500 hover:bg-emerald-600 text-slate-950 p-2 rounded-lg transition-all shadow-md flex items-center justify-center cursor-pointer active:scale-95 group/btn"
+                                title={`Send WhatsApp Greeting and mark done`}
+                              >
+                                <MessageSquare className="w-4 h-4 text-black group-hover/btn:scale-110 transition-transform" />
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => markBirthdayAsCelebrated(student.id)}
+                                className="bg-rose-500/10 hover:bg-rose-500 text-rose-400 hover:text-slate-950 p-2 rounded-lg border border-rose-500/25 transition-all shadow-md flex items-center justify-center cursor-pointer active:scale-95"
+                                title="Mark as Celebrated/Done"
+                              >
+                                <Check className="w-4 h-4" />
+                              </button>
+                            </div>
                           </div>
                         );
                       })}

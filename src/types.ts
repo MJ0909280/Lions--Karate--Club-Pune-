@@ -26,6 +26,7 @@ export interface Admission {
   coachName?: string;     // Automated assigned coach based on branch selection
   feesStatus?: 'Paid' | 'Unpaid'; // Track student fee status
   schoolName?: string;    // School / college / institution name
+  lastCelebratedYear?: number; // The calendar year in which the student's birthday was marked celebrated
 }
 
 export interface BranchInfoStatic {
