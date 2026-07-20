@@ -2103,6 +2103,19 @@ export default function AdminPanel() {
       
       // Also update the local admissions array
       setAdmissions(prev => prev.map(item => item.id === selectedAdmission.id ? { ...item, studentId: trimmedId } : item));
+
+      // Also update local exams array state so it reflects instantly across other tabs in the Admin Panel
+      setExams(prev => prev.map(exam => {
+        const examNameLower = (exam.studentName || '').trim().toLowerCase();
+        const examStudentId = (exam.studentId || '').trim().toUpperCase();
+        if (examStudentId === (oldId || '').trim().toUpperCase() && examNameLower === studentNameLower) {
+          return {
+            ...exam,
+            studentId: trimmedId
+          };
+        }
+        return exam;
+      }));
       
       setIdEditSuccess('Student Roll ID successfully updated across admissions and exams!');
       setTimeout(() => {
@@ -2188,6 +2201,60 @@ export default function AdminPanel() {
 
       await updateDoc(docRef, updateData);
 
+      // Cascade these profile updates to matching exam registrations in 'exams' collection
+      try {
+        const examsQ = query(collection(db, 'exams'));
+        const examsSnap = await getDocs(examsQ);
+        const examUpdatePromises: Promise<void>[] = [];
+        
+        const oldIdUpper = (selectedAdmission.studentId || '').trim().toUpperCase();
+        const oldNameLower = (selectedAdmission.fullName || '').trim().toLowerCase();
+        
+        const examUpdatesMap: { [examId: string]: any } = {};
+
+        examsSnap.forEach((examDoc) => {
+          const examData = examDoc.data();
+          const examStudentId = (examData.studentId || '').trim().toUpperCase();
+          const examStudentName = (examData.studentName || '').trim().toLowerCase();
+
+          const matchesId = oldIdUpper && examStudentId === oldIdUpper;
+          const matchesName = oldNameLower && examStudentName === oldNameLower;
+
+          if (matchesId || matchesName) {
+            const examUpdate = {
+              studentName: editFullName.trim(),
+              parentName: editParentName.trim(),
+              parentPhone: editPhone.trim(),
+              branch: editBranch,
+              coachName: editCoachName,
+              currentBelt: editBeltLevel,
+              schoolName: editSchoolName.trim(),
+              updatedAt: Date.now()
+            };
+            examUpdatesMap[examDoc.id] = examUpdate;
+            examUpdatePromises.push(
+              updateDoc(doc(db, 'exams', examDoc.id), examUpdate)
+            );
+          }
+        });
+
+        if (examUpdatePromises.length > 0) {
+          await Promise.all(examUpdatePromises);
+          // Update local exams array state so it reflects instantly across other tabs in the Admin Panel
+          setExams(prev => prev.map(exam => {
+            if (examUpdatesMap[exam.id]) {
+              return {
+                ...exam,
+                ...examUpdatesMap[exam.id]
+              };
+            }
+            return exam;
+          }));
+        }
+      } catch (cascadeErr) {
+        console.error("Cascade update to exam registrations failed:", cascadeErr);
+      }
+
       // Update local state to immediately show updated values
       const updatedAdmission = {
         ...selectedAdmission,
@@ -2265,6 +2332,19 @@ export default function AdminPanel() {
       
       // Dynamically update the student's ID inside local admissions array state as well
       setAdmissions(prev => prev.map(item => item.id === student.id ? { ...item, studentId: trimmedId } : item));
+
+      // Also update local exams array state so it reflects instantly across other tabs in the Admin Panel
+      setExams(prev => prev.map(exam => {
+        const examNameLower = (exam.studentName || '').trim().toLowerCase();
+        const examStudentId = (exam.studentId || '').trim().toUpperCase();
+        if (examStudentId === (oldId || '').trim().toUpperCase() && examNameLower === studentNameLower) {
+          return {
+            ...exam,
+            studentId: trimmedId
+          };
+        }
+        return exam;
+      }));
 
       setTimeout(() => {
         setDiagSuccesses(prev => ({ ...prev, [student.id]: '' }));
