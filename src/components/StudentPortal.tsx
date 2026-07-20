@@ -444,6 +444,7 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
 
   const [studentIdInput, setStudentIdInput] = useState('');
   const [searching, setSearching] = useState(false);
+  const [activeStudentId, setActiveStudentId] = useState<string | null>(null);
   const [activeStudent, setActiveStudent] = useState<Admission | null>(null);
   const [searchError, setSearchError] = useState('');
   
@@ -1451,14 +1452,70 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
     return () => unsubscribe();
   }, []);
 
-  // Auto-lookup if there's a stored ID in localStorage to keep sessions fast & premium
+  // Real-time active student snapshot listener for instant profile updates
   useEffect(() => {
+    // 1. Initial check on mount
     const savedId = safeLocalStorage.getItem('lkcp_portal_student_id');
     if (savedId) {
       setStudentIdInput(savedId);
-      performLookup(savedId);
+      setActiveStudentId(savedId);
     }
   }, []);
+
+  useEffect(() => {
+    if (!activeStudentId) {
+      setActiveStudent(null);
+      return;
+    }
+
+    setSearching(true);
+    setSearchError('');
+    const admissionsRef = collection(db, 'admissions');
+    const q = query(
+      admissionsRef, 
+      where('studentId', '==', activeStudentId)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      setSearching(false);
+      const approvedDocs = snapshot.docs.filter(doc => doc.data().status === 'approved');
+
+      if (approvedDocs.length === 0) {
+        setSearchError('No approved student found matching this Roll ID. (Note: Admission must be Approved by the coach first).');
+        setActiveStudent(null);
+      } else {
+        const studentDoc = approvedDocs[0];
+        const studentData = {
+          id: studentDoc.id,
+          ...studentDoc.data()
+        } as Admission;
+        
+        setActiveStudent(studentData);
+        setSearchError('');
+        
+        // Pre-fill exam form details
+        setParentName(studentData.parentName || '');
+        setParentPhone(studentData.phone || '');
+        setBranch(studentData.branch || DOJO_BRANCHES[0].name);
+        setSchoolName(studentData.schoolName || '');
+
+        // Intelligently guess the next belt rank for the student
+        const studentBeltLevel = studentData.beltLevel || '';
+        const currentIdx = BELT_LEVELS.findIndex(b => b.name && studentBeltLevel && (studentBeltLevel.trim().toLowerCase() === b.name.toLowerCase() || studentBeltLevel.toLowerCase().includes(b.name.toLowerCase())));
+        if (currentIdx !== -1 && currentIdx < BELT_LEVELS.length - 1) {
+          setTargetBelt(BELT_LEVELS[currentIdx + 1].name);
+        } else {
+          setTargetBelt(BELT_LEVELS[1].name); // Fallback to Yellow Belt
+        }
+      }
+    }, (error) => {
+      console.error("Real-time student lookup connection error: ", error);
+      setSearching(false);
+      setSearchError("A server connection error occurred. Reconnecting...");
+    });
+
+    return () => unsubscribe();
+  }, [activeStudentId]);
 
   // Fetch student exams list dynamically when activeStudent changes
   useEffect(() => {
@@ -1493,59 +1550,12 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
     return () => unsubscribe();
   }, [activeStudent]);
 
-  const performLookup = async (idToSearch: string) => {
+  const performLookup = (idToSearch: string) => {
     const searchId = idToSearch.trim().toUpperCase();
     if (!searchId) return;
 
-    setSearching(true);
-    setSearchError('');
-    setActiveStudent(null);
-
-    try {
-      const admissionsRef = collection(db, 'admissions');
-      // Search for admissions by formatted studentId
-      const q = query(
-        admissionsRef, 
-        where('studentId', '==', searchId)
-      );
-      
-      const snap = await getDocs(q);
-      const approvedDocs = snap.docs.filter(doc => doc.data().status === 'approved');
-
-      if (approvedDocs.length === 0) {
-        setSearchError('No approved student found matching this Roll ID. (Note: Admission must be Approved by the coach first).');
-      } else {
-        const studentDoc = approvedDocs[0];
-        const studentData = {
-          id: studentDoc.id,
-          ...studentDoc.data()
-        } as Admission;
-        
-        setActiveStudent(studentData);
-        safeLocalStorage.setItem('lkcp_portal_student_id', searchId);
-        
-        // Pre-fill exam form details
-        setParentName(studentData.parentName || '');
-        setParentPhone(studentData.phone || '');
-        setBranch(studentData.branch || DOJO_BRANCHES[0].name);
-        setSchoolName(studentData.schoolName || '');
-
-        // Intelligently guess the next belt rank for the student
-        const studentBeltLevel = studentData.beltLevel || '';
-        const currentIdx = BELT_LEVELS.findIndex(b => b.name && studentBeltLevel && (studentBeltLevel.trim().toLowerCase() === b.name.toLowerCase() || studentBeltLevel.toLowerCase().includes(b.name.toLowerCase())));
-        if (currentIdx !== -1 && currentIdx < BELT_LEVELS.length - 1) {
-          setTargetBelt(BELT_LEVELS[currentIdx + 1].name);
-        } else {
-          setTargetBelt(BELT_LEVELS[1].name); // Fallback to Yellow Belt
-        }
-      }
-    } catch (err: any) {
-      console.error("Error looking up student ID:", err);
-      const errorMessage = err instanceof Error ? err.message : String(err);
-      setSearchError(`An unexpected server error occurred: ${errorMessage}. Please try searching again.`);
-    } finally {
-      setSearching(false);
-    }
+    safeLocalStorage.setItem('lkcp_portal_student_id', searchId);
+    setActiveStudentId(searchId);
   };
 
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -1555,6 +1565,7 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
 
   const handleLogoutPortal = () => {
     setActiveStudent(null);
+    setActiveStudentId(null);
     setStudentIdInput('');
     setSearchError('');
     safeLocalStorage.removeItem('lkcp_portal_student_id');
@@ -1731,6 +1742,7 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
       };
 
       safeLocalStorage.setItem('lkcp_portal_student_id', studentId);
+      setActiveStudentId(studentId);
       setActiveStudent(newStudentData);
       setStudentIdInput(studentId);
 
