@@ -111,7 +111,12 @@ export default function App() {
     }
 
     if (nextView === 'home') {
-      window.location.hash = '';
+      const currentHash = window.location.hash;
+      const sectionHashes = ['#about', '#kata', '#batches', '#coaches', '#gallery', '#testimonials', '#contact'];
+      if (!sectionHashes.includes(currentHash)) {
+        window.location.hash = '';
+      }
+      setView('home');
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else if (nextView === 'admission') {
       window.location.hash = 'admission';

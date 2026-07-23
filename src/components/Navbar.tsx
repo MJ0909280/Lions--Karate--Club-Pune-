@@ -48,6 +48,10 @@ export default function Navbar({ currentView, studentPortalTab, onNavigate }: Na
 
   const handleItemClick = (href: string, view: string) => {
     setIsOpen(false);
+    if (href.startsWith('#')) {
+      window.location.hash = href;
+      window.dispatchEvent(new HashChangeEvent('hashchange'));
+    }
     onNavigate(view);
     if (view === 'home' && href.startsWith('#')) {
       setTimeout(() => {
@@ -107,25 +111,15 @@ export default function Navbar({ currentView, studentPortalTab, onNavigate }: Na
 
           {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center space-x-2 xl:space-x-4 2xl:space-x-6">
-            {currentView === 'home' &&
-              menuItems.map((item) => (
-                <button
-                  key={item.name}
-                  onClick={() => handleItemClick(item.href, item.view)}
-                  className="font-heading text-xs xl:text-sm text-zinc-300 hover:text-yellow-500 hover:scale-105 active:scale-95 transition-all uppercase tracking-wider cursor-pointer py-1 font-semibold whitespace-nowrap"
-                >
-                  {item.name}
-                </button>
-              ))}
-
-            {currentView !== 'home' && (
+            {menuItems.map((item) => (
               <button
-                onClick={() => onNavigate('home')}
-                className="font-heading text-xs xl:text-sm text-zinc-300 hover:text-yellow-500 hover:scale-105 transition-all uppercase tracking-wider cursor-pointer font-semibold whitespace-nowrap"
+                key={item.name}
+                onClick={() => handleItemClick(item.href, item.view)}
+                className="font-heading text-xs xl:text-sm text-zinc-300 hover:text-yellow-500 hover:scale-105 active:scale-95 transition-all uppercase tracking-wider cursor-pointer py-1 font-semibold whitespace-nowrap"
               >
-                Back to Website
+                {item.name}
               </button>
-            )}
+            ))}
 
             {/* Compact Portal Dropdown */}
             <div className="relative">
@@ -290,41 +284,24 @@ export default function Navbar({ currentView, studentPortalTab, onNavigate }: Na
               <div className="absolute top-0 right-0 w-[3px] h-full bg-[#FF3B3F]" />
               
               <div className="flex flex-col space-y-6 flex-grow overflow-y-auto">
-                {currentView === 'home' && (
-                  <div className="space-y-2">
-                    <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-[0.25em] font-black block mb-4 border-b border-zinc-900 pb-2">
-                      NAVIGATION SECTIONS
-                    </span>
-                    {menuItems.map((item, index) => (
-                      <motion.button
-                        key={item.name}
-                        initial={{ opacity: 0, x: 15 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.04 }}
-                        onClick={() => handleItemClick(item.href, item.view)}
-                        className="w-full text-left font-heading text-xs font-bold uppercase py-3 tracking-wider px-3 rounded-lg flex items-center justify-between group cursor-pointer transition-all text-zinc-300 hover:text-yellow-500 hover:bg-slate-900/60"
-                      >
-                        <span>{item.name}</span>
-                        <span className="text-zinc-700 group-hover:text-yellow-500 transition-colors font-mono text-sm">&rarr;</span>
-                      </motion.button>
-                    ))}
-                  </div>
-                )}
-
-                {currentView !== 'home' && (
-                  <motion.button
-                    initial={{ opacity: 0, x: 15 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    onClick={() => {
-                      setIsOpen(false);
-                      onNavigate('home');
-                    }}
-                    className="w-full text-left font-heading text-xs font-bold text-zinc-350 hover:text-yellow-500 uppercase py-3.5 tracking-wider px-3 rounded-lg hover:bg-slate-900/60 flex items-center justify-between group cursor-pointer border border-zinc-900/40"
-                  >
-                    <span>Back to Website</span>
-                    <span className="text-zinc-650 font-mono text-xs">&rarr;</span>
-                  </motion.button>
-                )}
+                <div className="space-y-2">
+                  <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-[0.25em] font-black block mb-4 border-b border-zinc-900 pb-2">
+                    NAVIGATION SECTIONS
+                  </span>
+                  {menuItems.map((item, index) => (
+                    <motion.button
+                      key={item.name}
+                      initial={{ opacity: 0, x: 15 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.04 }}
+                      onClick={() => handleItemClick(item.href, item.view)}
+                      className="w-full text-left font-heading text-xs font-bold uppercase py-3 tracking-wider px-3 rounded-lg flex items-center justify-between group cursor-pointer transition-all text-zinc-300 hover:text-yellow-500 hover:bg-slate-900/60"
+                    >
+                      <span>{item.name}</span>
+                      <span className="text-zinc-700 group-hover:text-yellow-500 transition-colors font-mono text-sm">&rarr;</span>
+                    </motion.button>
+                  ))}
+                </div>
 
                 {/* Bottom interactive elements / buttons */}
                 <div className="mt-auto space-y-4 border-t border-zinc-900/80 pt-6">
