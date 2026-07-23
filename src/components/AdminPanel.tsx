@@ -1432,36 +1432,73 @@ export default function AdminPanel() {
   };
 
   const compressAndProcessMImage = (file: File) => {
-    if (!file.type.startsWith('image/')) {
-      setManualFormError('Please select a valid image file (.png, .jpg, .webp).');
+    const isImageType = file.type ? file.type.startsWith('image/') : false;
+    const isImageExt = /\.(jpg|jpeg|png|webp|heic|heif|bmp|svg|gif)$/i.test(file.name);
+
+    if (!isImageType && !isImageExt) {
+      setManualFormError('Please select a valid image file (.png, .jpg, .jpeg, .webp).');
+      return;
+    }
+
+    if (file.size > 25 * 1024 * 1024) {
+      setManualFormError('Image file is too large (max 25MB). Please select a smaller photo.');
       return;
     }
 
     const reader = new FileReader();
+    reader.onerror = () => {
+      setManualFormError('Could not read photo file. Please try a different photo.');
+    };
+
     reader.onload = (event) => {
+      const dataUrlResult = event.target?.result as string;
+      if (!dataUrlResult) return;
+
       const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 250;
-        const MAX_HEIGHT = 250;
-        let width = img.width;
-        let height = img.height;
-
-        const size = Math.min(width, height);
-        const offsetX = (width - size) / 2;
-        const offsetY = (height - size) / 2;
-
-        canvas.width = MAX_WIDTH;
-        canvas.height = MAX_HEIGHT;
-
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          ctx.drawImage(img, offsetX, offsetY, size, size, 0, 0, MAX_WIDTH, MAX_HEIGHT);
-          const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
-          setMPhotoUrl(dataUrl);
+      img.onerror = () => {
+        if (dataUrlResult.length < 3 * 1024 * 1024) {
+          setMPhotoUrl(dataUrlResult);
+          setManualFormError('');
+        } else {
+          setMPhotoUrl(DEFAULT_STUDENT_AVATAR);
+          setManualFormError('');
         }
       };
-      img.src = event.target?.result as string;
+
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 300;
+          const MAX_HEIGHT = 300;
+          let width = img.width || MAX_WIDTH;
+          let height = img.height || MAX_HEIGHT;
+
+          const size = Math.min(width, height);
+          const offsetX = (width - size) / 2;
+          const offsetY = (height - size) / 2;
+
+          canvas.width = MAX_WIDTH;
+          canvas.height = MAX_HEIGHT;
+
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            ctx.drawImage(img, offsetX, offsetY, size, size, 0, 0, MAX_WIDTH, MAX_HEIGHT);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+            setMPhotoUrl(dataUrl);
+            setManualFormError('');
+          } else {
+            setMPhotoUrl(dataUrlResult);
+            setManualFormError('');
+          }
+        } catch (canvasErr) {
+          console.warn('Manual photo canvas fallback:', canvasErr);
+          setMPhotoUrl(dataUrlResult);
+          setManualFormError('');
+        }
+      };
+      img.src = dataUrlResult;
     };
     reader.readAsDataURL(file);
   };

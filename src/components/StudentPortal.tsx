@@ -8,6 +8,8 @@ import {
   where, 
   getDocs, 
   addDoc, 
+  updateDoc,
+  doc,
   onSnapshot 
 } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType, generateSequentialStudentId } from '../firebase';
@@ -1655,10 +1657,21 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
         }
 
         if (foundAdmission) {
-          // RESTRICT DUPLICATE: Notify the parent that the student is already registered, showing their existing Student ID
-          setFormError(`You are an existing student. Your Student ID is: ${foundAdmission.studentId}. Please login using your Student ID in the "Existing Student" tab to register for exams.`);
-          setFormLoading(false);
-          return;
+          // Seamlessly auto-link existing student record so parents face ZERO errors or friction
+          studentId = foundAdmission.studentId;
+          studentName = foundAdmission.fullName;
+          currentBeltVal = foundAdmission.beltLevel || newStudentCurrentBelt;
+
+          try {
+            await updateDoc(doc(db, 'admissions', foundAdmission.id), {
+              parentName: parentName.trim() || foundAdmission.parentName || 'Parent / Legal Guardian',
+              phone: parentPhone.trim() || foundAdmission.phone,
+              whatsApp: parentPhone.trim() || foundAdmission.whatsApp,
+              updatedAt: Date.now()
+            });
+          } catch (updErr) {
+            console.warn("Minor background admission sync on re-registration:", updErr);
+          }
         } else {
           // Standard brand-new student path
           studentId = await generateSequentialStudentId();

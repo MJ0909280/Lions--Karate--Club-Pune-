@@ -118,47 +118,83 @@ export default function AdmissionForm({ preselectedBatch = "", onSuccess }: Admi
     setAge(calculatedAge >= 0 ? calculatedAge : 0);
   };
 
-  // Safe Image Compressor (Canvas Offscreen)
+  // Safe Image Compressor (Canvas Offscreen with Fallback)
   const compressAndProcessImage = (file: File) => {
-    if (!file.type.startsWith('image/')) {
-      setErrorMess('Please provide a valid image file (.png, .jpg, .webp).');
+    // Check if image type or extension is image-like
+    const isImageType = file.type ? file.type.startsWith('image/') : false;
+    const isImageExt = /\.(jpg|jpeg|png|webp|heic|heif|bmp|svg|gif)$/i.test(file.name);
+
+    if (!isImageType && !isImageExt) {
+      setErrorMess('Please select a valid image file (.png, .jpg, .jpeg, .webp).');
+      return;
+    }
+
+    if (file.size > 25 * 1024 * 1024) {
+      setErrorMess('Image file is too large (max 25MB). Please pick a smaller image.');
       return;
     }
 
     const reader = new FileReader();
+    reader.onerror = () => {
+      setErrorMess('Could not read photo file. Please try selecting a different photo.');
+    };
+
     reader.onload = (event) => {
+      const dataUrlResult = event.target?.result as string;
+      if (!dataUrlResult) {
+        setErrorMess('Could not read image content.');
+        return;
+      }
+
       const img = new Image();
-      img.onload = () => {
-        // Create an offscreen canvas
-        const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 250;
-        const MAX_HEIGHT = 250;
-        let width = img.width;
-        let height = img.height;
-
-        // Force cropping or perfect bounding square to keep ID cards beautiful
-        const size = Math.min(width, height);
-        const offsetX = (width - size) / 2;
-        const offsetY = (height - size) / 2;
-
-        canvas.width = MAX_WIDTH;
-        canvas.height = MAX_HEIGHT;
-
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          ctx.imageSmoothingEnabled = true;
-          ctx.imageSmoothingQuality = 'high';
-          // Draw standard centered square
-          ctx.drawImage(img, offsetX, offsetY, size, size, 0, 0, MAX_WIDTH, MAX_HEIGHT);
-          
-          // Yield compressed JPEG representation
-          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.82);
-          setPhotoUrl(compressedDataUrl);
+      img.onerror = () => {
+        // Fallback: If canvas fails or image format is non-standard, use DataURL directly if within safe length
+        if (dataUrlResult.length < 3 * 1024 * 1024) {
+          setPhotoUrl(dataUrlResult);
+          setErrorMess('');
+        } else {
+          setPhotoUrl(DEFAULT_STUDENT_AVATAR);
           setErrorMess('');
         }
       };
-      img.src = event.target?.result as string;
+
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 300;
+          const MAX_HEIGHT = 300;
+          let width = img.width || MAX_WIDTH;
+          let height = img.height || MAX_HEIGHT;
+
+          const size = Math.min(width, height);
+          const offsetX = (width - size) / 2;
+          const offsetY = (height - size) / 2;
+
+          canvas.width = MAX_WIDTH;
+          canvas.height = MAX_HEIGHT;
+
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            ctx.drawImage(img, offsetX, offsetY, size, size, 0, 0, MAX_WIDTH, MAX_HEIGHT);
+            const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.82);
+            setPhotoUrl(compressedDataUrl);
+            setErrorMess('');
+          } else {
+            setPhotoUrl(dataUrlResult);
+            setErrorMess('');
+          }
+        } catch (canvasErr) {
+          console.warn('Canvas compression fallback active:', canvasErr);
+          setPhotoUrl(dataUrlResult);
+          setErrorMess('');
+        }
+      };
+
+      img.src = dataUrlResult;
     };
+
     reader.readAsDataURL(file);
   };
 
@@ -201,7 +237,7 @@ export default function AdmissionForm({ preselectedBatch = "", onSuccess }: Admi
     if (!phone.trim()) return setErrorMess('Contact phone is required.');
     if (!email.trim()) return setErrorMess('Email is required.');
     if (!address.trim()) return setErrorMess('Physical address is required.');
-    if (!photoUrl) return setErrorMess('Student photo upload is required.');
+    const finalPhotoUrl = photoUrl || DEFAULT_STUDENT_AVATAR;
     if (!termsAccepted) return setErrorMess('You must accept the terms and conditions.');
 
     setLoading(true);
@@ -236,7 +272,7 @@ export default function AdmissionForm({ preselectedBatch = "", onSuccess }: Admi
         address: address.trim(),
         batch,
         beltLevel,
-        photoUrl,
+        photoUrl: finalPhotoUrl,
         studentId,
         status: 'pending',
         createdAt: currentTimestamp,
@@ -337,15 +373,15 @@ export default function AdmissionForm({ preselectedBatch = "", onSuccess }: Admi
                 type="file"
                 ref={fileInputRef}
                 onChange={handlePhotoSelect}
-                accept="image/*"
+                accept="image/*,image/heic,image/heif,.jpg,.jpeg,.png,.webp,.heic,.heif"
                 className="hidden"
               />
               <Upload className="w-6 h-6 text-amber-500 mb-2 animate-pulse" />
               <p className="text-stone-300 text-xs font-semibold">
-                Drag & Drop student photo here or <span className="text-amber-500 font-extrabold underline decoration-amber-500/30">Browse Files</span>
+                Tap to Take Photo / Choose File or <span className="text-amber-500 font-extrabold underline decoration-amber-500/30">Browse Gallery</span>
               </p>
               <span className="text-stone-500 text-[10px] mt-1 block">
-                Supports PNG, JPG, JPEG, WEBP. Photo will be auto-framed nicely for the pass card.
+                Supports PNG, JPG, JPEG, WEBP, HEIC. Auto-cropped & compressed for ID pass cards.
               </span>
             </div>
 
