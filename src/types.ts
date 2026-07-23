@@ -136,6 +136,18 @@ export interface ExamSchedule {
   updatedAt: number;
 }
 
+export type GradeValue = 'A+' | 'A' | 'B+' | 'B' | 'C' | 'F';
+
+export interface DisciplineGrades {
+  run?: GradeValue;
+  jump?: GradeValue;
+  sidesitups?: GradeValue;
+  kicks?: GradeValue;
+  conditionChecking?: GradeValue;
+  kata?: GradeValue;
+  kumite?: GradeValue;
+}
+
 export interface ExamRegistration {
   id: string; // Document ID in Firestore
   studentId: string;
@@ -154,8 +166,42 @@ export interface ExamRegistration {
   grade?: string;
   remarks?: string;
   schoolName?: string;
+  disciplinesGrades?: DisciplineGrades;
+  examinerName?: string;
+  gradedAt?: number;
+  checkedIn?: boolean;
+  checkInTime?: string;
+  checkInTimestamp?: number;
   createdAt: number;
   updatedAt: number;
+}
+
+export const GRADE_POINTS: Record<GradeValue, number> = {
+  'A+': 4.3,
+  'A': 4.0,
+  'B+': 3.3,
+  'B': 3.0,
+  'C': 2.0,
+  'F': 0.0
+};
+
+export function calculateOverallGrade(disciplines?: DisciplineGrades): GradeValue | undefined {
+  if (!disciplines) return undefined;
+  const values = Object.values(disciplines).filter((v): v is GradeValue => Boolean(v));
+  if (values.length === 0) return undefined;
+
+  let totalPoints = 0;
+  values.forEach((g) => {
+    totalPoints += GRADE_POINTS[g] ?? 0;
+  });
+
+  const avg = totalPoints / values.length;
+  if (avg >= 4.1) return 'A+';
+  if (avg >= 3.6) return 'A';
+  if (avg >= 3.1) return 'B+';
+  if (avg >= 2.5) return 'B';
+  if (avg >= 1.5) return 'C';
+  return 'F';
 }
 
 export interface ReceiptItem {

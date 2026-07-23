@@ -20,7 +20,7 @@ import TrailerOverlay from './components/TrailerOverlay';
 
 import { Award, ShieldAlert, ShieldCheck, ArrowLeft, RefreshCw, Star, MapPin, Instagram, Youtube, MessageCircle } from 'lucide-react';
 
-type ViewType = 'home' | 'admission' | 'success' | 'admin' | 'student-portal' | 'checkin';
+type ViewType = 'home' | 'admission' | 'success' | 'admin' | 'student-portal' | 'checkin' | 'examiner-scoring';
 
 export default function App() {
   const [view, setView] = useState<ViewType>('home');
@@ -52,6 +52,8 @@ export default function App() {
         setStudentPortalTab('attendance');
       } else if (hash.startsWith('#checkin')) {
         setView('checkin');
+      } else if (hash.startsWith('#examiner-scoring') || hash.startsWith('#scoring')) {
+        setView('examiner-scoring');
       } else if (hash.startsWith('#admission')) {
         setView('admission');
       } else if (hash.startsWith('#success')) {
@@ -127,6 +129,9 @@ export default function App() {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else if (nextView === 'checkin') {
       window.location.hash = 'checkin';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else if (nextView === 'examiner-scoring') {
+      window.location.hash = 'examiner-scoring';
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else if (nextView === 'attendance') {
       setStudentPortalTab('attendance');
@@ -293,7 +298,14 @@ export default function App() {
       {/* RENDER VIEW 6: BELT EXAM DAY PORTABLE SMARTPHONE CHECK-IN */}
       {view === 'checkin' && (
         <main className="flex-grow pt-32 pb-20">
-          <ExamCheckIn onBackToHome={() => navigateTo('home')} />
+          <ExamCheckIn onBackToHome={() => navigateTo('home')} initialTab="checkin" />
+        </main>
+      )}
+
+      {/* RENDER VIEW 7: EXAMINER SCORING & DISCIPLINE GRADING PORTAL */}
+      {view === 'examiner-scoring' && (
+        <main className="flex-grow pt-32 pb-20">
+          <ExamCheckIn onBackToHome={() => navigateTo('home')} initialTab="grading" />
         </main>
       )}
 

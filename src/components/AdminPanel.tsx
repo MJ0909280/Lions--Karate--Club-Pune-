@@ -19,7 +19,7 @@ import {
   User
 } from 'firebase/auth';
 import { db, auth, handleFirestoreError, OperationType, checkFirestoreConnection, generateSequentialStudentId } from '../firebase';
-import { Admission, BatchInfo, BATCH_TIMINGS, DOJO_BRANCHES, BELT_LEVELS, Receipt, ReceiptItem, ParentQuery } from '../types';
+import { Admission, BatchInfo, BATCH_TIMINGS, DOJO_BRANCHES, BELT_LEVELS, Receipt, ReceiptItem, ParentQuery, DisciplineGrades, GradeValue, calculateOverallGrade } from '../types';
 import IDCard from './IDCard';
 import ProgressCard from './ProgressCard';
 import SEOVisibilityConsole from './SEOVisibilityConsole';
@@ -693,10 +693,20 @@ export default function AdminPanel() {
   const [exams, setExams] = useState<any[]>([]);
   const [examsLoading, setExamsLoading] = useState(false);
   const [gradingExam, setGradingExam] = useState<any | null>(null);
+  const [adminDisciplinesGrades, setAdminDisciplinesGrades] = useState<DisciplineGrades>({});
   const [enteredGrade, setEnteredGrade] = useState('');
   const [enteredRemarks, setEnteredRemarks] = useState('');
   const [gradingSaving, setGradingSaving] = useState(false);
   const [gradingError, setGradingError] = useState('');
+
+  const openGradingModal = (item: any, statusAction: 'passed' | 'failed') => {
+    setGradingExam({ ...item, statusAction });
+    const initialDisciplines = item.disciplinesGrades || {};
+    setAdminDisciplinesGrades(initialDisciplines);
+    const calculated = calculateOverallGrade(initialDisciplines);
+    setEnteredGrade(item.grade || calculated || (statusAction === 'passed' ? 'A' : 'Fail (Requires Re-try)'));
+    setEnteredRemarks(item.remarks || '');
+  };
 
   // Live Exam Schedules State
   const [examSchedules, setExamSchedules] = useState<any[]>([]);
@@ -1579,6 +1589,7 @@ export default function AdminPanel() {
       await updateDoc(examRef, {
         status: gradingExam.statusAction,
         grade: enteredGrade.trim(),
+        disciplinesGrades: adminDisciplinesGrades,
         remarks: enteredRemarks.trim(),
         updatedAt: Date.now()
       });
@@ -5147,14 +5158,14 @@ export default function AdminPanel() {
                                       {item.status === 'approved' && (
                                         <div className="flex items-center gap-1">
                                           <button
-                                            onClick={() => setGradingExam({ ...item, statusAction: 'passed' })}
+                                            onClick={() => openGradingModal(item, 'passed')}
                                             className="bg-emerald-600 hover:bg-emerald-500 text-white text-[9px] font-heading font-black uppercase tracking-widest px-2 py-1 rounded transition-all cursor-pointer"
                                             title="Assessed and passed"
                                           >
                                             Pass
                                           </button>
                                           <button
-                                            onClick={() => setGradingExam({ ...item, statusAction: 'failed' })}
+                                            onClick={() => openGradingModal(item, 'failed')}
                                             className="bg-red-650 hover:bg-red-600 text-white text-[9px] font-heading font-black uppercase tracking-widest px-2 py-1 rounded transition-all cursor-pointer"
                                             title="Assessed and failed"
                                           >
@@ -7190,33 +7201,73 @@ export default function AdminPanel() {
               )}
 
               <div className="space-y-4 text-left">
+                {/* 7 Disciplines Admin Edit Grid */}
+                <div className="bg-slate-950 p-3 rounded-xl border border-zinc-800 space-y-2">
+                  <span className="text-[9px] font-heading font-black text-yellow-500 uppercase tracking-wider block">
+                    7-Discipline Assessment Scores
+                  </span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                    {[
+                      { key: 'run', label: '1. RUN' },
+                      { key: 'jump', label: '2. JUMP' },
+                      { key: 'sidesitups', label: '3. SIDESITUPS' },
+                      { key: 'kicks', label: '4. KICKS' },
+                      { key: 'conditionChecking', label: '5. CONDITION CHECKING' },
+                      { key: 'kata', label: '6. KATA' },
+                      { key: 'kumite', label: '7. KUMITE' },
+                    ].map(disc => {
+                      const currentVal = (adminDisciplinesGrades as any)?.[disc.key] || '';
+                      return (
+                        <div key={disc.key} className="flex items-center justify-between bg-slate-900 p-1.5 rounded border border-zinc-850">
+                          <span className="text-[10px] font-mono text-zinc-350">{disc.label}:</span>
+                          <select
+                            value={currentVal}
+                            onChange={(e) => {
+                              const newVal = e.target.value as GradeValue;
+                              const updated = { ...adminDisciplinesGrades, [disc.key]: newVal };
+                              setAdminDisciplinesGrades(updated);
+                              const autoCalc = calculateOverallGrade(updated);
+                              if (autoCalc) {
+                                setEnteredGrade(autoCalc);
+                              }
+                            }}
+                            className="bg-slate-950 text-yellow-400 font-black text-[10px] px-1.5 py-0.5 rounded border border-zinc-800 focus:outline-none"
+                          >
+                            <option value="">None</option>
+                            <option value="A+">A+</option>
+                            <option value="A">A</option>
+                            <option value="B+">B+</option>
+                            <option value="B">B</option>
+                            <option value="C">C</option>
+                            <option value="F">F</option>
+                          </select>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
                 <div>
-                  <label className="text-zinc-400 text-[9px] uppercase tracking-wider font-bold mb-1.5 block">Kyu Performance Grade *</label>
-                  <select
+                  <label className="text-zinc-400 text-[9px] uppercase tracking-wider font-bold mb-1.5 block">Overall Kyu Performance Grade *</label>
+                  <input
+                    type="text"
                     required
                     value={enteredGrade}
                     onChange={(e) => setEnteredGrade(e.target.value)}
-                    className="w-full bg-slate-950 border border-zinc-800 text-zinc-305 text-xs px-3 py-2.5 rounded-lg focus:outline-none focus:border-yellow-500"
-                  >
-                    <option value="">Choose grade (e.g. A, B+, C)</option>
-                    <option value="A+ (Outstanding Pass)">A+ (Outstanding Pass)</option>
-                    <option value="A (Excellent Pass)">A (Excellent Pass)</option>
-                    <option value="B+ (Very Good Pass)">B+ (Very Good Pass)</option>
-                    <option value="B (Good Pass)">B (Good Pass)</option>
-                    <option value="C (Pass with Review)">C (Pass with Review)</option>
-                    <option value="Fail (Requires Re-try)">Fail (Requires Re-try)</option>
-                  </select>
+                    placeholder="Overall Grade e.g. A+, A, B+, B, C, F"
+                    className="w-full bg-slate-950 border border-zinc-800 text-yellow-400 font-black text-xs px-3 py-2.5 rounded-lg focus:outline-none focus:border-yellow-500 uppercase"
+                  />
                 </div>
 
                 <div>
                   <label className="text-zinc-400 text-[9px] uppercase tracking-wider font-bold mb-1.5 block">Sensei Remarks & feedback comments *</label>
                   <textarea
                     required
-                    rows={4}
+                    rows={3}
                     value={enteredRemarks}
                     onChange={(e) => setEnteredRemarks(e.target.value)}
                     placeholder="e.g. Magnificent execution of Heian Shodan kata, crisp blocks but core needs minor focus..."
-                    className="w-full bg-slate-950 border border-zinc-800 text-zinc-305 text-xs px-3 py-2.5 rounded-lg focus:outline-none focus:border-yellow-500 h-24 placeholder:text-zinc-700"
+                    className="w-full bg-slate-950 border border-zinc-800 text-zinc-305 text-xs px-3 py-2.5 rounded-lg focus:outline-none focus:border-yellow-500 h-20 placeholder:text-zinc-700"
                   />
                 </div>
               </div>

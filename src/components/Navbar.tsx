@@ -166,6 +166,13 @@ export default function Navbar({ currentView, studentPortalTab, onNavigate }: Na
                       <span className="font-semibold text-white/90">Exam Day Check-In</span>
                     </button>
                     <button
+                      onClick={() => { onNavigate('examiner-scoring'); setIsPortalsOpen(false); }}
+                      className="flex items-center space-x-2.5 font-heading text-xs text-zinc-350 hover:text-yellow-400 hover:bg-zinc-900/30 p-2.5 rounded-lg transition-colors text-left w-full cursor-pointer"
+                    >
+                      <Award className="w-4 h-4 text-yellow-500 shrink-0" />
+                      <span className="font-semibold text-yellow-400">Examiner Scoring</span>
+                    </button>
+                    <button
                       onClick={() => { onNavigate('admin'); setIsPortalsOpen(false); }}
                       className="flex items-center space-x-2.5 font-heading text-xs text-zinc-350 hover:text-yellow-400 hover:bg-zinc-900/30 p-2.5 rounded-lg transition-colors text-left w-full cursor-pointer"
                     >

@@ -3011,6 +3011,35 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
                           )}
                         </div>
 
+                        {/* 7-Discipline Marksheet Breakdown */}
+                        {exam.disciplinesGrades && (
+                          <div className="bg-slate-950/80 p-3 border border-zinc-900 rounded-xl mt-3 text-xs w-full">
+                            <span className="text-[8px] font-heading font-black text-yellow-500 uppercase tracking-widest block mb-1.5">
+                              OFFICIAL 7-DISCIPLINE EVALUATION
+                            </span>
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                              {[
+                                { label: 'RUN', key: 'run' },
+                                { label: 'JUMP', key: 'jump' },
+                                { label: 'SIDE SIT-UPS', key: 'sidesitups' },
+                                { label: 'KICKS', key: 'kicks' },
+                                { label: 'CONDITIONING', key: 'conditionChecking' },
+                                { label: 'KATA', key: 'kata' },
+                                { label: 'KUMITE', key: 'kumite' }
+                              ].map(disc => {
+                                const val = (exam.disciplinesGrades as any)?.[disc.key];
+                                if (!val) return null;
+                                return (
+                                  <div key={disc.key} className="bg-slate-900 px-2 py-1 rounded border border-zinc-800 flex items-center justify-between">
+                                    <span className="text-[8px] font-mono text-zinc-400">{disc.label}:</span>
+                                    <span className="text-[9px] font-heading font-black text-yellow-400">{val}</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+
                         {/* Coach Remarks */}
                         {exam.status === 'passed' && (
                           <div className="bg-slate-950/60 p-3 border border-zinc-900 rounded-xl mt-3 text-xs w-full">
@@ -3257,8 +3286,47 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
                   )}
                 </div>
 
+                {/* Official 7-Discipline Evaluation Marksheet Table */}
+                {selectedCert.disciplinesGrades && (
+                  <div className="my-2 sm:my-3 max-w-xl mx-auto bg-amber-100/60 p-2 sm:p-2.5 rounded-lg border border-amber-300/80 relative z-10 font-sans text-left shadow-2xs">
+                    <div className="flex items-center justify-between border-b border-amber-300/60 pb-1 mb-1.5">
+                      <span className="text-[8px] sm:text-[9px] font-bold text-amber-950 uppercase tracking-wider">
+                        Official 7-Discipline Grade Marksheet
+                      </span>
+                      {selectedCert.examinerName && (
+                        <span className="text-[8px] font-bold text-amber-800">
+                          Evaluated by: {selectedCert.examinerName}
+                        </span>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-7 gap-1 text-center">
+                      {[
+                        { label: 'RUN', key: 'run' },
+                        { label: 'JUMP', key: 'jump' },
+                        { label: 'SIDE SITUPS', key: 'sidesitups' },
+                        { label: 'KICKS', key: 'kicks' },
+                        { label: 'CONDITION', key: 'conditionChecking' },
+                        { label: 'KATA', key: 'kata' },
+                        { label: 'KUMITE', key: 'kumite' },
+                      ].map((disc) => {
+                        const gradeVal = (selectedCert.disciplinesGrades as any)?.[disc.key] || 'A';
+                        return (
+                          <div key={disc.key} className="bg-amber-50/90 p-1 rounded border border-amber-250">
+                            <span className="text-[6.5px] sm:text-[7.5px] font-black text-amber-900 block truncate leading-none">
+                              {disc.label}
+                            </span>
+                            <span className="text-[9px] sm:text-[10px] font-black text-emerald-800 block mt-0.5 leading-none">
+                              {gradeVal}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 {/* Beautiful Engaging Karate Journey Note */}
-                <div className="my-3 sm:my-4 max-w-lg mx-auto bg-amber-100/40 p-2 rounded-lg border border-amber-200/50 relative z-10 text-center font-serif">
+                <div className="my-2 sm:my-3 max-w-lg mx-auto bg-amber-100/40 p-2 rounded-lg border border-amber-200/50 relative z-10 text-center font-serif">
                   <p className="italic text-[8px] sm:text-[10px] text-zinc-650 leading-snug">
                     "The ultimate aim of Karate lies not in victory or defeat, but in the perfection of the character of its participants." Remain humble, stay focused, and persist with determination.
                   </p>
