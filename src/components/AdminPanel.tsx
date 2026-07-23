@@ -1736,7 +1736,10 @@ export default function AdminPanel() {
   const handleDownloadExamsCSV = () => {
     const filteredExams = exams.filter(item => {
       const sQuery = examSearch.toLowerCase();
-      const matchQuery = item.studentId.toLowerCase().includes(sQuery) || item.studentName.toLowerCase().includes(sQuery);
+      const matchQuery = item.studentId.toLowerCase().includes(sQuery) || 
+        item.studentName.toLowerCase().includes(sQuery) ||
+        (item.parentName && item.parentName.toLowerCase().includes(sQuery)) ||
+        (item.parentPhone && item.parentPhone.includes(sQuery));
       const matchStatus = examStatusFilter === 'all' || item.status === examStatusFilter;
       return matchQuery && matchStatus;
     });
@@ -2958,10 +2961,11 @@ export default function AdminPanel() {
     // 1. Search Query
     const searchLower = searchQuery.toLowerCase().trim();
     const nameMatch = student.fullName?.toLowerCase().includes(searchLower) || false;
-    const phoneMatch = student.phone?.includes(searchLower) || false;
+    const parentMatch = student.parentName?.toLowerCase().includes(searchLower) || false;
+    const phoneMatch = student.phone?.includes(searchLower) || student.whatsApp?.includes(searchLower) || false;
     const idMatch = student.studentId?.toLowerCase().includes(searchLower) || false;
     const beltMatch = student.beltLevel?.toLowerCase().includes(searchLower) || false;
-    const matchesSearch = !searchLower || nameMatch || phoneMatch || idMatch || beltMatch;
+    const matchesSearch = !searchLower || nameMatch || parentMatch || phoneMatch || idMatch || beltMatch;
 
     // 2. Status Match
     const matchesStatus = statusFilter === 'all' 
@@ -4372,6 +4376,11 @@ export default function AdminPanel() {
                             </span>
                           )}
                         </div>
+                        {student.parentName && (
+                          <div className="text-[10px] text-zinc-400 font-medium">
+                            Parent: <span className="text-zinc-300 font-semibold">{student.parentName}</span>
+                          </div>
+                        )}
                         <div className="flex items-center space-x-3 text-[10px] text-zinc-500">
                           <span>Age: {student.age} yrs</span>
                           <span>•</span>
@@ -4980,7 +4989,10 @@ export default function AdminPanel() {
                           {exams
                             .filter(item => {
                               const sQuery = examSearch.toLowerCase();
-                              const matchQuery = item.studentId.toLowerCase().includes(sQuery) || item.studentName.toLowerCase().includes(sQuery);
+                              const matchQuery = item.studentId.toLowerCase().includes(sQuery) || 
+                                item.studentName.toLowerCase().includes(sQuery) ||
+                                (item.parentName && item.parentName.toLowerCase().includes(sQuery)) ||
+                                (item.parentPhone && item.parentPhone.includes(sQuery));
                               const matchStatus = examStatusFilter === 'all' || item.status === examStatusFilter;
                               return matchQuery && matchStatus;
                             })
@@ -5031,6 +5043,7 @@ export default function AdminPanel() {
                                       </div>
                                     )}
                                     <span className="text-white font-extrabold uppercase mt-1 block">{item.studentName}</span>
+                                    {item.parentName && <span className="text-zinc-400 text-[10px] font-medium mt-0.5 block">Parent: <strong className="text-zinc-300 font-semibold">{item.parentName}</strong></span>}
                                     {item.schoolName && <span className="text-yellow-500/80 text-[10px] font-semibold mt-0.5 block">School: {item.schoolName}</span>}
                                     {item.parentPhone && <span className="text-zinc-500 text-[10px] mt-0.5 block">Phone: {item.parentPhone}</span>}
                                     {item.coachName && <span className="text-zinc-500 text-[10px] mt-0.5 block">Coach: {item.coachName}</span>}
