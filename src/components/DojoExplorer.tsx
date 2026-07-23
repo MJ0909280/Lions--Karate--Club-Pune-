@@ -65,6 +65,7 @@ export default function DojoExplorer({ onSelectBatch }: DojoExplorerProps) {
   // Update active tab inside the component
   const handleTabChange = (tab: TabType) => {
     setActiveTab(tab);
+    window.history.replaceState(null, '', `#${tab}`);
   };
 
   const tabs = [
@@ -209,43 +210,43 @@ export default function DojoExplorer({ onSelectBatch }: DojoExplorerProps) {
               transition={{ duration: 0.35, ease: 'easeOut' }}
             >
               {activeTab === 'about' && (
-                <div className="relative animate-fadeIn">
+                <div id="about" className="relative animate-fadeIn scroll-mt-28">
                   <About />
                 </div>
               )}
               
               {activeTab === 'kata' && (
-                <div className="relative animate-fadeIn">
+                <div id="kata" className="relative animate-fadeIn scroll-mt-28">
                   <KataShowcase />
                 </div>
               )}
               
               {activeTab === 'batches' && (
-                <div className="relative animate-fadeIn">
+                <div id="batches" className="relative animate-fadeIn scroll-mt-28">
                   <Batches onSelectBatch={onSelectBatch} />
                 </div>
               )}
               
               {activeTab === 'coaches' && (
-                <div className="relative animate-fadeIn">
+                <div id="coaches" className="relative animate-fadeIn scroll-mt-28">
                   <Coaches />
                 </div>
               )}
               
               {activeTab === 'gallery' && (
-                <div className="relative animate-fadeIn">
+                <div id="gallery" className="relative animate-fadeIn scroll-mt-28">
                   <Gallery />
                 </div>
               )}
               
               {activeTab === 'testimonials' && (
-                <div className="relative animate-fadeIn">
+                <div id="testimonials" className="relative animate-fadeIn scroll-mt-28">
                   <Testimonials />
                 </div>
               )}
               
               {activeTab === 'contact' && (
-                <div className="relative animate-fadeIn">
+                <div id="contact" className="relative animate-fadeIn scroll-mt-28">
                   <Contact />
                 </div>
               )}

@@ -48,18 +48,20 @@ export default function Navbar({ currentView, studentPortalTab, onNavigate }: Na
 
   const handleItemClick = (href: string, view: string) => {
     setIsOpen(false);
+    onNavigate(view);
     if (href.startsWith('#')) {
       window.location.hash = href;
       window.dispatchEvent(new HashChangeEvent('hashchange'));
-    }
-    onNavigate(view);
-    if (view === 'home' && href.startsWith('#')) {
       setTimeout(() => {
-        const element = document.getElementById(href.substring(1));
-        if (element) {
-          element.scrollIntoView({ behavior: 'smooth' });
+        const secElement = document.getElementById(href.substring(1));
+        const centerElement = document.getElementById('experience-center');
+        const target = secElement || centerElement;
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
       }, 100);
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 

@@ -115,9 +115,9 @@ export default function App() {
       const sectionHashes = ['#about', '#kata', '#batches', '#coaches', '#gallery', '#testimonials', '#contact'];
       if (!sectionHashes.includes(currentHash)) {
         window.location.hash = '';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       }
       setView('home');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
     } else if (nextView === 'admission') {
       window.location.hash = 'admission';
       window.scrollTo({ top: 0, behavior: 'smooth' });
