@@ -727,6 +727,7 @@ export default function AdminPanel() {
   // Search/Filters for exams tab
   const [examSearch, setExamSearch] = useState('');
   const [examStatusFilter, setExamStatusFilter] = useState<'all' | 'pending' | 'approved' | 'passed' | 'failed'>('all');
+  const [examAttendanceFilter, setExamAttendanceFilter] = useState<'all' | 'present' | 'absent'>('all');
 
   // Site Video Configuration Inputs
   const [heroVideoInput, setHeroVideoInput] = useState('');
@@ -4918,20 +4919,50 @@ export default function AdminPanel() {
                       </p>
                     </div>
 
-                    {/* Live Statistics Counter */}
+                    {/* Live Statistics Counter with Interactive Filter Toggles */}
                     <div className="grid grid-cols-3 gap-3.5 pt-1.5">
-                      <div className="bg-slate-950 p-3 rounded-xl border border-zinc-850">
+                      <button
+                        type="button"
+                        onClick={() => setExamAttendanceFilter('all')}
+                        className={`text-left p-3 rounded-xl border transition-all cursor-pointer ${
+                          examAttendanceFilter === 'all'
+                            ? 'bg-slate-900 border-yellow-500 shadow-md ring-1 ring-yellow-500/50'
+                            : 'bg-slate-950 border-zinc-850 hover:border-zinc-700'
+                        }`}
+                      >
                         <span className="text-[9px] font-mono text-zinc-550 uppercase tracking-wider block">Registered</span>
                         <span className="font-heading font-black text-xs text-white block mt-0.5 truncate">{exams.length} Students</span>
-                      </div>
-                      <div className="bg-emerald-950/10 p-3 rounded-xl border border-emerald-900/30">
-                        <span className="text-[9px] font-mono text-emerald-500 uppercase tracking-wider block">Present (Checked In)</span>
-                        <span className="font-heading font-black text-xs text-emerald-400 block mt-0.5 truncate">{exams.filter((e: any) => e.checkedIn).length} Students</span>
-                      </div>
-                      <div className="bg-red-950/10 p-3 rounded-xl border border-red-900/20">
-                        <span className="text-[9px] font-mono text-red-400 uppercase tracking-wider block">Absent (Waiting)</span>
-                        <span className="font-heading font-black text-xs text-red-400 block mt-0.5 truncate">{exams.filter((e: any) => !e.checkedIn).length} Students</span>
-                      </div>
+                      </button>
+                      
+                      <button
+                        type="button"
+                        onClick={() => setExamAttendanceFilter('present')}
+                        className={`text-left p-3 rounded-xl border transition-all cursor-pointer ${
+                          examAttendanceFilter === 'present'
+                            ? 'bg-emerald-950/30 border-emerald-500 shadow-md ring-1 ring-emerald-500/50'
+                            : 'bg-emerald-950/10 border-emerald-900/30 hover:border-emerald-700/50'
+                        }`}
+                      >
+                        <span className="text-[9px] font-mono text-emerald-500 uppercase tracking-wider block">✓ Present ({exams.filter((e: any) => e.checkedIn).length})</span>
+                        <span className="font-heading font-black text-xs text-emerald-400 block mt-0.5 truncate">
+                          {exams.filter((e: any) => e.checkedIn).length} Students
+                        </span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setExamAttendanceFilter('absent')}
+                        className={`text-left p-3 rounded-xl border transition-all cursor-pointer ${
+                          examAttendanceFilter === 'absent'
+                            ? 'bg-red-950/30 border-red-500 shadow-md ring-1 ring-red-500/50'
+                            : 'bg-red-950/10 border-red-900/20 hover:border-red-700/50'
+                        }`}
+                      >
+                        <span className="text-[9px] font-mono text-red-400 uppercase tracking-wider block">✗ Absent ({exams.filter((e: any) => !e.checkedIn).length})</span>
+                        <span className="font-heading font-black text-xs text-red-400 block mt-0.5 truncate">
+                          {exams.filter((e: any) => !e.checkedIn).length} Students
+                        </span>
+                      </button>
                     </div>
 
                     <div className="flex flex-wrap gap-2 pt-1">
@@ -4964,13 +4995,50 @@ export default function AdminPanel() {
                   </div>
                 </div>
 
-                {/* Filter Bar */}
+                {/* Filter & Attendance View Toggle Bar */}
                 <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-slate-900/40 border border-zinc-900 p-4.5 rounded-xl">
-                  <div className="relative w-full md:max-w-sm">
+                  {/* Attendance Mode Segmented Toggle Buttons */}
+                  <div className="flex items-center bg-slate-950 p-1 rounded-xl border border-zinc-850 w-full md:w-auto">
+                    <button
+                      type="button"
+                      onClick={() => setExamAttendanceFilter('all')}
+                      className={`flex-1 md:flex-none px-3.5 py-1.5 rounded-lg text-[10px] font-heading font-black uppercase tracking-wider transition-all cursor-pointer ${
+                        examAttendanceFilter === 'all'
+                          ? 'bg-yellow-500 text-slate-950 shadow-md font-extrabold'
+                          : 'text-zinc-400 hover:text-white'
+                      }`}
+                    >
+                      All ({exams.length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setExamAttendanceFilter('present')}
+                      className={`flex-1 md:flex-none px-3.5 py-1.5 rounded-lg text-[10px] font-heading font-black uppercase tracking-wider transition-all cursor-pointer ${
+                        examAttendanceFilter === 'present'
+                          ? 'bg-emerald-500 text-slate-950 shadow-md font-extrabold'
+                          : 'text-emerald-400/80 hover:text-emerald-300'
+                      }`}
+                    >
+                      ✓ Present ({exams.filter((e: any) => e.checkedIn).length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setExamAttendanceFilter('absent')}
+                      className={`flex-1 md:flex-none px-3.5 py-1.5 rounded-lg text-[10px] font-heading font-black uppercase tracking-wider transition-all cursor-pointer ${
+                        examAttendanceFilter === 'absent'
+                          ? 'bg-red-500 text-white shadow-md font-extrabold'
+                          : 'text-red-400/80 hover:text-red-300'
+                      }`}
+                    >
+                      ✗ Absent ({exams.filter((e: any) => !e.checkedIn).length})
+                    </button>
+                  </div>
+
+                  <div className="relative w-full md:max-w-xs">
                     <Search className="absolute left-3.5 top-3 w-4 h-4 text-zinc-550 pointer-events-none" />
                     <input
                       type="text"
-                      placeholder="Query Student LKCP Roll ID or Name..."
+                      placeholder="Query Roll ID or Name..."
                       value={examSearch}
                       onChange={(e) => setExamSearch(e.target.value)}
                       className="w-full bg-slate-950 border border-zinc-855 py-2 pl-10 pr-4 rounded-lg text-xs font-medium text-white focus:outline-none focus:border-yellow-500 placeholder:text-zinc-650"
@@ -4995,7 +5063,7 @@ export default function AdminPanel() {
 
                     <button
                       onClick={handleDownloadExamsCSV}
-                      className="bg-yellow-500/10 hover:bg-yellow-500 text-yellow-500 hover:text-slate-950 border border-yellow-500/20 px-4.5 py-2 rounded-lg text-xs font-heading font-black uppercase tracking-wider transition-all flex items-center justify-center space-x-2 cursor-pointer"
+                      className="bg-yellow-500/10 hover:bg-yellow-500 text-yellow-500 hover:text-slate-950 border border-yellow-500/20 px-4 py-2 rounded-lg text-xs font-heading font-black uppercase tracking-wider transition-all flex items-center justify-center space-x-2 cursor-pointer shrink-0"
                       title="Download the currently filtered list as an Excel/CSV Sheet"
                     >
                       <Download className="w-4 h-4" />
@@ -5003,6 +5071,67 @@ export default function AdminPanel() {
                     </button>
                   </div>
                 </div>
+
+                {/* Absent Students Quick Roster Callout Banner if 'absent' filter is active */}
+                {examAttendanceFilter === 'absent' && (
+                  <div className="bg-red-950/20 border border-red-500/30 rounded-xl p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2 text-red-400">
+                        <span className="w-2 h-2 bg-red-500 rounded-full animate-ping" />
+                        <h4 className="font-heading font-black text-xs uppercase tracking-wider">
+                          Absent Candidates List ({exams.filter((e: any) => !e.checkedIn).length} Students)
+                        </h4>
+                      </div>
+                      <span className="text-[10px] font-mono text-zinc-400">
+                        Showing students who have NOT checked in yet
+                      </span>
+                    </div>
+
+                    {exams.filter((e: any) => !e.checkedIn).length === 0 ? (
+                      <p className="text-xs text-emerald-400 font-bold">🎉 All registered students are PRESENT! Zero candidates absent.</p>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-48 overflow-y-auto pr-1">
+                        {exams
+                          .filter((e: any) => !e.checkedIn)
+                          .map((absentCandidate: any) => (
+                            <div key={absentCandidate.id} className="bg-slate-950 border border-zinc-850 p-2.5 rounded-lg flex items-center justify-between text-left">
+                              <div className="space-y-0.5 min-w-0 pr-2">
+                                <span className="font-heading font-black text-xs text-white uppercase block truncate">
+                                  {absentCandidate.studentName}
+                                </span>
+                                <span className="font-mono text-[10px] text-yellow-500 block">
+                                  ID: {absentCandidate.studentId}
+                                </span>
+                                {absentCandidate.parentPhone && (
+                                  <span className="text-[10px] text-zinc-400 block truncate">
+                                    📞 {absentCandidate.parentPhone}
+                                  </span>
+                                )}
+                              </div>
+                              <button
+                                onClick={async () => {
+                                  try {
+                                    const timeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                                    await updateDoc(doc(db, 'exams', absentCandidate.id), {
+                                      checkedIn: true,
+                                      checkInTime: timeString,
+                                      checkInTimestamp: Date.now(),
+                                      updatedAt: Date.now()
+                                    });
+                                  } catch (err) {
+                                    console.error("Failed to mark present:", err);
+                                  }
+                                }}
+                                className="bg-emerald-600 hover:bg-emerald-500 text-white text-[9px] font-heading font-black uppercase px-2.5 py-1.5 rounded transition-all cursor-pointer shrink-0"
+                              >
+                                Mark Present
+                              </button>
+                            </div>
+                          ))}
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {examsLoading && (
                   <ExamsTableSkeleton />
@@ -5031,7 +5160,11 @@ export default function AdminPanel() {
                                 (item.parentName && item.parentName.toLowerCase().includes(sQuery)) ||
                                 (item.parentPhone && item.parentPhone.includes(sQuery));
                               const matchStatus = examStatusFilter === 'all' || item.status === examStatusFilter;
-                              return matchQuery && matchStatus;
+                              const matchAttendance = 
+                                examAttendanceFilter === 'all' ? true :
+                                examAttendanceFilter === 'present' ? item.checkedIn :
+                                !item.checkedIn;
+                              return matchQuery && matchStatus && matchAttendance;
                             })
                             .map((item) => {
                               return (

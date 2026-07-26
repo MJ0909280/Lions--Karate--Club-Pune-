@@ -27,6 +27,7 @@ export default function ExamCheckIn({ onBackToHome, initialTab = 'checkin' }: Ex
   
   // Roster state
   const [searchQuery, setSearchQuery] = useState('');
+  const [checkInFilterMode, setCheckInFilterMode] = useState<'all' | 'absent' | 'present'>('all');
   const [candidates, setCandidates] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedStudent, setSelectedStudent] = useState<any | null>(null);
@@ -166,17 +167,28 @@ export default function ExamCheckIn({ onBackToHome, initialTab = 'checkin' }: Ex
     setCheckInSuccess(false);
   };
 
+  // Count totals
+  const absentCount = candidates.filter(c => !c.checkedIn).length;
+  const presentCount = candidates.filter(c => c.checkedIn).length;
+
   // Filter candidates for check-in
   const filteredCandidates = candidates.filter(c => {
     const queryStr = searchQuery.toLowerCase().trim();
-    if (!queryStr) return false;
     
-    const idMatch = (c.studentId || '').toLowerCase().includes(queryStr);
-    const nameMatch = (c.studentName || '').toLowerCase().includes(queryStr);
-    const parentMatch = (c.parentName || '').toLowerCase().includes(queryStr);
-    const phoneMatch = (c.parentPhone || '').toLowerCase().includes(queryStr);
+    // If no search query and mode is 'all', require typing or show list if user explicitly chooses absent/present
+    const matchesSearch = !queryStr
+      ? checkInFilterMode !== 'all'
+      : (c.studentId || '').toLowerCase().includes(queryStr) ||
+        (c.studentName || '').toLowerCase().includes(queryStr) ||
+        (c.parentName || '').toLowerCase().includes(queryStr) ||
+        (c.parentPhone || '').toLowerCase().includes(queryStr);
 
-    return idMatch || nameMatch || parentMatch || phoneMatch;
+    const matchesStatus = 
+      checkInFilterMode === 'all' ? true :
+      checkInFilterMode === 'present' ? c.checkedIn :
+      !c.checkedIn;
+
+    return matchesSearch && matchesStatus;
   });
 
   // Filter candidates for grading
@@ -405,9 +417,48 @@ export default function ExamCheckIn({ onBackToHome, initialTab = 'checkin' }: Ex
               className="space-y-5 text-left"
             >
               <div className="bg-slate-900 border border-zinc-900 p-5 rounded-2xl space-y-4 shadow-xl">
-                <label className="block text-[11px] font-heading font-black uppercase tracking-wider text-zinc-400">
-                  Search Student For Attendance
-                </label>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <label className="block text-[11px] font-heading font-black uppercase tracking-wider text-zinc-400">
+                    Search Student For Attendance
+                  </label>
+
+                  {/* Attendance Mode Filter Pills */}
+                  <div className="flex items-center bg-slate-950 p-1 rounded-xl border border-zinc-800 text-[10px] font-heading font-black uppercase">
+                    <button
+                      type="button"
+                      onClick={() => setCheckInFilterMode('all')}
+                      className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+                        checkInFilterMode === 'all'
+                          ? 'bg-yellow-500 text-slate-950 font-black'
+                          : 'text-zinc-400 hover:text-white'
+                      }`}
+                    >
+                      All
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCheckInFilterMode('present')}
+                      className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+                        checkInFilterMode === 'present'
+                          ? 'bg-emerald-500 text-slate-950 font-black'
+                          : 'text-emerald-400 hover:text-emerald-300'
+                      }`}
+                    >
+                      ✓ Present ({presentCount})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCheckInFilterMode('absent')}
+                      className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+                        checkInFilterMode === 'absent'
+                          ? 'bg-red-500 text-white font-black'
+                          : 'text-red-400 hover:text-red-300'
+                      }`}
+                    >
+                      ✗ Absent ({absentCount})
+                    </button>
+                  </div>
+                </div>
                 
                 <div className="relative">
                   <Search className="absolute left-3.5 top-3.5 w-4.5 h-4.5 text-zinc-500" />
@@ -425,8 +476,8 @@ export default function ExamCheckIn({ onBackToHome, initialTab = 'checkin' }: Ex
                     <div className="w-5 h-5 border-2 border-red-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
                     <span>Loading candidates roster...</span>
                   </div>
-                ) : searchQuery.trim().length > 0 ? (
-                  <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                ) : (searchQuery.trim().length > 0 || checkInFilterMode !== 'all') ? (
+                  <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
                     {filteredCandidates.length > 0 ? (
                       filteredCandidates.map((c) => (
                         <button
@@ -435,9 +486,16 @@ export default function ExamCheckIn({ onBackToHome, initialTab = 'checkin' }: Ex
                           className="w-full text-left bg-slate-950 hover:bg-zinc-900 border border-zinc-850 hover:border-zinc-700 p-3.5 rounded-xl transition-all flex items-center justify-between group cursor-pointer"
                         >
                           <div className="space-y-1">
-                            <span className="font-heading font-black text-xs text-white block group-hover:text-red-400 transition-colors uppercase">
-                              {c.studentName}
-                            </span>
+                            <div className="flex items-center space-x-2">
+                              <span className="font-heading font-black text-xs text-white group-hover:text-red-400 transition-colors uppercase">
+                                {c.studentName}
+                              </span>
+                              {!c.checkedIn && (
+                                <span className="text-[9px] font-mono font-bold bg-red-500/10 text-red-400 border border-red-500/20 px-1.5 py-0.5 rounded">
+                                  Absent
+                                </span>
+                              )}
+                            </div>
                             <span className="font-mono text-[10px] text-zinc-500 block">
                               ID: {c.studentId} • Parent: {c.parentName || 'N/A'}
                             </span>
@@ -448,7 +506,7 @@ export default function ExamCheckIn({ onBackToHome, initialTab = 'checkin' }: Ex
                             </span>
                             {c.checkedIn && (
                               <span className="text-[9px] font-mono font-bold text-emerald-400 mt-1 block">
-                                ✓ Present
+                                ✓ Present ({c.checkInTime || 'Gate'})
                               </span>
                             )}
                           </div>
@@ -456,14 +514,14 @@ export default function ExamCheckIn({ onBackToHome, initialTab = 'checkin' }: Ex
                       ))
                     ) : (
                       <div className="text-center py-6 border border-dashed border-zinc-850 rounded-xl text-xs text-zinc-500">
-                        No matching student found. Please verify spelling or ID.
+                        {checkInFilterMode === 'absent' ? '🎉 All students are present! No absent candidates.' : 'No matching student found. Please verify spelling or ID.'}
                       </div>
                     )}
                   </div>
                 ) : (
-                  <div className="text-center py-8 border border-dashed border-zinc-850 rounded-xl text-zinc-500 text-xs">
-                    <UserCheck className="w-6 h-6 text-zinc-650 mx-auto mb-2" />
-                    <span>Please type student name above to select and check in.</span>
+                  <div className="text-center py-8 border border-dashed border-zinc-850 rounded-xl text-zinc-500 text-xs space-y-2">
+                    <UserCheck className="w-6 h-6 text-zinc-650 mx-auto" />
+                    <p>Type student name above or click <strong className="text-red-400">"✗ Absent ({absentCount})"</strong> to view absent list.</p>
                   </div>
                 )}
               </div>
