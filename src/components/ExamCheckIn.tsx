@@ -206,7 +206,7 @@ export default function ExamCheckIn({ onBackToHome, initialTab = 'checkin' }: Ex
       const timeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       let targetDocId = selectedStudent.id;
 
-      if (selectedStudent.isFromAdmissionsOnly) {
+      if (selectedStudent.isFromAdmissionsOnly || String(selectedStudent.id || '').startsWith('adm_')) {
         // Automatically create an exam record for this student on the fly
         const newExamRecord = {
           studentId: selectedStudent.studentId,
@@ -233,6 +233,27 @@ export default function ExamCheckIn({ onBackToHome, initialTab = 'checkin' }: Ex
           checkInTimestamp: timestamp,
           updatedAt: timestamp
         }, { merge: true });
+      }
+
+      // Also record in daily attendance collection so it is visible in attendance logs
+      try {
+        const todayDateStr = new Date().toISOString().split('T')[0];
+        const attRecordId = `${selectedStudent.studentId}_${todayDateStr}`;
+        const attRef = doc(db, 'attendance', attRecordId);
+        await setDoc(attRef, {
+          id: attRecordId,
+          studentId: selectedStudent.studentId,
+          studentName: selectedStudent.studentName,
+          date: todayDateStr,
+          status: 'Present',
+          checkInTime: timeString,
+          checkInTimestamp: timestamp,
+          batchName: selectedStudent.batch || 'Belt Exam Day',
+          updatedAt: timestamp,
+          createdAt: timestamp
+        }, { merge: true });
+      } catch (attErr) {
+        console.warn("Attendance log backup notice:", attErr);
       }
 
       setSelectedStudent(prev => prev ? { ...prev, id: targetDocId, checkedIn: true, checkInTime: timeString, isFromAdmissionsOnly: false } : null);

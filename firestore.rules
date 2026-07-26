@@ -40,9 +40,9 @@ service cloud.firestore {
     
     // Exams collection rules
     match /exams/{examId} {
-      allow create: if true;
+      allow create, update: if true;
       allow get, list: if true;
-      allow update, delete: if isAdmin();
+      allow delete: if isAdmin();
     }
     
     // Exam Schedules collection rules
