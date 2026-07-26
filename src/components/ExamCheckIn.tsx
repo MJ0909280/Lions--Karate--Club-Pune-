@@ -80,12 +80,36 @@ export default function ExamCheckIn({ onBackToHome, initialTab = 'checkin' }: Ex
     let admissionsList: any[] = [];
 
     const mergeCandidates = () => {
-      const merged: any[] = [...examsList];
+      // 1. First deduplicate examsList so each student only has one record (preferring checkedIn = true)
+      const examMap = new Map<string, any>();
+      examsList.forEach(exam => {
+        const idKey = (exam.studentId || '').toLowerCase().trim();
+        const nameKey = (exam.studentName || '').toLowerCase().trim();
+        const primaryKey = idKey || nameKey;
+        if (!primaryKey) return;
+
+        if (!examMap.has(primaryKey)) {
+          examMap.set(primaryKey, { ...exam });
+        } else {
+          // Merge duplicates: prefer checkedIn status or latest entry
+          const existing = examMap.get(primaryKey);
+          const isCheckedIn = existing.checkedIn || exam.checkedIn;
+          const checkInTime = existing.checkInTime || exam.checkInTime;
+          if (exam.checkedIn && !existing.checkedIn) {
+            examMap.set(primaryKey, { ...existing, ...exam, checkedIn: true, checkInTime });
+          } else {
+            examMap.set(primaryKey, { ...existing, checkedIn: isCheckedIn, checkInTime: checkInTime || existing.checkInTime });
+          }
+        }
+      });
+
+      const merged: any[] = Array.from(examMap.values());
+
       const existingExamStudentIds = new Set(
-        examsList.map(e => (e.studentId || '').toLowerCase().trim()).filter(Boolean)
+        merged.map(e => (e.studentId || '').toLowerCase().trim()).filter(Boolean)
       );
       const existingExamStudentNames = new Set(
-        examsList.map(e => (e.studentName || '').toLowerCase().trim()).filter(Boolean)
+        merged.map(e => (e.studentName || '').toLowerCase().trim()).filter(Boolean)
       );
 
       admissionsList.forEach(adm => {
@@ -105,6 +129,8 @@ export default function ExamCheckIn({ onBackToHome, initialTab = 'checkin' }: Ex
             isFromAdmissionsOnly: true,
             admissionDocId: adm.id
           });
+          existingExamStudentIds.add(idLower);
+          existingExamStudentNames.add(nameLower);
         }
       });
 
