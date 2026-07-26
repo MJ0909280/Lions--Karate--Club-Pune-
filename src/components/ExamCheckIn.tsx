@@ -190,7 +190,7 @@ export default function ExamCheckIn({ onBackToHome, initialTab = 'checkin' }: Ex
       return;
     }
 
-    const validPins = ['EXAM2025', 'LIONS2025', '1234', 'SENSI2025', 'COACH2025'];
+    const validPins = ['EXAM2026', 'LIONS2026', 'SENSI2026', 'COACH2026', '2026', 'EXAM2025', 'LIONS2025', '1234', '0000', 'SENSI2025', 'COACH2025', 'MARUTI', 'SHIVRAJ'];
     if (!validPins.includes(trimmedPin)) {
       setExaminerAuthError("Invalid Examiner Password. Please enter valid password.");
       return;
