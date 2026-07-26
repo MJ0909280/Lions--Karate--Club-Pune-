@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { collection, onSnapshot, doc, updateDoc } from 'firebase/firestore';
+import { collection, onSnapshot, doc, setDoc, addDoc, query, where } from 'firebase/firestore';
 import { db } from '../firebase';
 import { motion, AnimatePresence } from 'motion/react';
 import { CheckCircle2, Search, UserCheck, Calendar, ShieldCheck, ArrowLeft, Trophy, MapPin, Sparkles, Award, Lock, Check, Edit2, User, Star } from 'lucide-react';
@@ -72,24 +72,69 @@ export default function ExamCheckIn({ onBackToHome, initialTab = 'checkin' }: Ex
     }
   };
 
-  // Synchronize candidate list from Firestore exams collection in real time
+  // Synchronize candidate list from Firestore exams and admissions collections in real time
   useEffect(() => {
-    const examsRef = collection(db, 'exams');
-    const unsubscribe = onSnapshot(examsRef, (snapshot) => {
-      const list: any[] = [];
-      snapshot.forEach((doc) => {
-        list.push({ id: doc.id, ...doc.data() });
+    setLoading(true);
+    let examsList: any[] = [];
+    let admissionsList: any[] = [];
+
+    const mergeCandidates = () => {
+      const merged: any[] = [...examsList];
+      const existingExamStudentIds = new Set(
+        examsList.map(e => (e.studentId || '').toLowerCase().trim()).filter(Boolean)
+      );
+      const existingExamStudentNames = new Set(
+        examsList.map(e => (e.studentName || '').toLowerCase().trim()).filter(Boolean)
+      );
+
+      admissionsList.forEach(adm => {
+        const idLower = (adm.studentId || '').toLowerCase().trim();
+        const nameLower = (adm.fullName || '').toLowerCase().trim();
+        if (idLower && !existingExamStudentIds.has(idLower) && !existingExamStudentNames.has(nameLower)) {
+          merged.push({
+            id: `adm_${adm.id}`,
+            studentId: adm.studentId,
+            studentName: adm.fullName,
+            parentName: adm.parentName || '',
+            parentPhone: adm.phone || adm.whatsApp || '',
+            currentBelt: adm.beltLevel || 'White Belt (10th Kyu)',
+            targetBelt: adm.beltLevel || 'Yellow Belt (9th Kyu)',
+            branch: adm.branch || 'Manaji Nagar Branch',
+            checkedIn: false,
+            isFromAdmissionsOnly: true,
+            admissionDocId: adm.id
+          });
+        }
       });
-      // Sort candidates alphabetically by name
-      list.sort((a, b) => (a.studentName || '').localeCompare(b.studentName || ''));
-      setCandidates(list);
+
+      merged.sort((a, b) => (a.studentName || '').localeCompare(b.studentName || ''));
+      setCandidates(merged);
       setLoading(false);
+    };
+
+    const unsubExams = onSnapshot(collection(db, 'exams'), (snapshot) => {
+      examsList = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      mergeCandidates();
     }, (error) => {
-      console.error("Failed to load candidates:", error);
+      console.error("Failed to load exams:", error);
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    const unsubAdmissions = onSnapshot(
+      query(collection(db, 'admissions'), where('status', '==', 'approved')),
+      (snapshot) => {
+        admissionsList = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        mergeCandidates();
+      },
+      (error) => {
+        console.error("Failed to load admissions for exam checkin:", error);
+      }
+    );
+
+    return () => {
+      unsubExams();
+      unsubAdmissions();
+    };
   }, []);
 
   // Countdown timer for automatic redirect back to roster search
@@ -123,24 +168,24 @@ export default function ExamCheckIn({ onBackToHome, initialTab = 'checkin' }: Ex
 
   // Filter candidates for check-in
   const filteredCandidates = candidates.filter(c => {
-    const query = searchQuery.toLowerCase().trim();
-    if (!query) return false;
+    const queryStr = searchQuery.toLowerCase().trim();
+    if (!queryStr) return false;
     
-    const idMatch = (c.studentId || '').toLowerCase().includes(query);
-    const nameMatch = (c.studentName || '').toLowerCase().includes(query);
-    const parentMatch = (c.parentName || '').toLowerCase().includes(query);
-    const phoneMatch = (c.parentPhone || '').toLowerCase().includes(query);
+    const idMatch = (c.studentId || '').toLowerCase().includes(queryStr);
+    const nameMatch = (c.studentName || '').toLowerCase().includes(queryStr);
+    const parentMatch = (c.parentName || '').toLowerCase().includes(queryStr);
+    const phoneMatch = (c.parentPhone || '').toLowerCase().includes(queryStr);
 
     return idMatch || nameMatch || parentMatch || phoneMatch;
   });
 
   // Filter candidates for grading
   const filteredGradingCandidates = candidates.filter(c => {
-    const query = gradingSearch.toLowerCase().trim();
-    if (!query) return false;
+    const queryStr = gradingSearch.toLowerCase().trim();
+    if (!queryStr) return false;
     
-    const idMatch = (c.studentId || '').toLowerCase().includes(query);
-    const nameMatch = (c.studentName || '').toLowerCase().includes(query);
+    const idMatch = (c.studentId || '').toLowerCase().includes(queryStr);
+    const nameMatch = (c.studentName || '').toLowerCase().includes(queryStr);
 
     return idMatch || nameMatch;
   });
@@ -157,22 +202,44 @@ export default function ExamCheckIn({ onBackToHome, initialTab = 'checkin' }: Ex
     setErrorMsg('');
 
     try {
-      const examRef = doc(db, 'exams', selectedStudent.id);
       const timestamp = Date.now();
-      const timeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-      
-      await updateDoc(examRef, {
-        checkedIn: true,
-        checkInTime: timeString,
-        checkInTimestamp: timestamp,
-        updatedAt: timestamp
-      });
+      const timeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      let targetDocId = selectedStudent.id;
 
-      setSelectedStudent(prev => prev ? { ...prev, checkedIn: true, checkInTime: timeString } : null);
+      if (selectedStudent.isFromAdmissionsOnly) {
+        // Automatically create an exam record for this student on the fly
+        const newExamRecord = {
+          studentId: selectedStudent.studentId,
+          studentName: selectedStudent.studentName,
+          parentName: selectedStudent.parentName || '',
+          parentPhone: selectedStudent.parentPhone || '',
+          currentBelt: selectedStudent.currentBelt || 'White Belt (10th Kyu)',
+          targetBelt: selectedStudent.targetBelt || 'Yellow Belt (9th Kyu)',
+          branch: selectedStudent.branch || 'Manaji Nagar Branch',
+          status: 'registered',
+          checkedIn: true,
+          checkInTime: timeString,
+          checkInTimestamp: timestamp,
+          createdAt: timestamp,
+          updatedAt: timestamp
+        };
+        const newDoc = await addDoc(collection(db, 'exams'), newExamRecord);
+        targetDocId = newDoc.id;
+      } else {
+        const examRef = doc(db, 'exams', selectedStudent.id);
+        await setDoc(examRef, {
+          checkedIn: true,
+          checkInTime: timeString,
+          checkInTimestamp: timestamp,
+          updatedAt: timestamp
+        }, { merge: true });
+      }
+
+      setSelectedStudent(prev => prev ? { ...prev, id: targetDocId, checkedIn: true, checkInTime: timeString, isFromAdmissionsOnly: false } : null);
       setCheckInSuccess(true);
     } catch (err: any) {
       console.error("Check-in error:", err);
-      setErrorMsg("Failed to complete check-in. Please try again or ask sensei.");
+      setErrorMsg("Failed to complete check-in: " + (err.message || "Please try again or contact coach."));
     } finally {
       setIsSubmitting(false);
     }
@@ -522,22 +589,33 @@ export default function ExamCheckIn({ onBackToHome, initialTab = 'checkin' }: Ex
               </div>
 
               <div className="space-y-3">
-                {!selectedStudent.checkedIn && (
-                  <button
-                    onClick={handleConfirmAttendance}
-                    disabled={isSubmitting}
-                    className="w-full py-4 bg-gradient-to-r from-red-600 to-rose-500 hover:from-rose-600 hover:to-red-600 text-white font-heading font-black uppercase tracking-widest rounded-xl transition-all shadow-lg cursor-pointer text-center text-xs flex items-center justify-center space-x-2"
-                  >
-                    {isSubmitting ? (
-                      <span>Recording Presenti...</span>
-                    ) : (
-                      <>
-                        <UserCheck className="w-4.5 h-4.5 text-white" />
-                        <span>Confirm Present & Check-In</span>
-                      </>
-                    )}
-                  </button>
+                {errorMsg && (
+                  <div className="p-3 bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-bold rounded-xl text-center">
+                    {errorMsg}
+                  </div>
                 )}
+
+                {selectedStudent.checkedIn && (
+                  <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold rounded-xl text-center flex items-center justify-center space-x-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>Marked present at {selectedStudent.checkInTime || 'Exam Gate'}. Tap below to re-confirm.</span>
+                  </div>
+                )}
+
+                <button
+                  onClick={handleConfirmAttendance}
+                  disabled={isSubmitting}
+                  className="w-full py-4 bg-gradient-to-r from-red-600 to-rose-500 hover:from-rose-600 hover:to-red-600 text-white font-heading font-black uppercase tracking-widest rounded-xl transition-all shadow-lg cursor-pointer text-center text-xs flex items-center justify-center space-x-2 active:scale-98"
+                >
+                  {isSubmitting ? (
+                    <span>Recording Attendance...</span>
+                  ) : (
+                    <>
+                      <UserCheck className="w-4.5 h-4.5 text-white" />
+                      <span>{selectedStudent.checkedIn ? 'Re-confirm Present & Check-In' : 'Confirm Present & Check-In'}</span>
+                    </>
+                  )}
+                </button>
 
                 <button
                   onClick={() => setSelectedStudent(null)}
