@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { collection, onSnapshot, doc, setDoc, addDoc, query, where } from 'firebase/firestore';
+import React, { useState, useEffect } from 'react';
+import { collection, onSnapshot, doc, setDoc, updateDoc, addDoc, query, where } from 'firebase/firestore';
 import { db } from '../firebase';
 import { motion, AnimatePresence } from 'motion/react';
 import { CheckCircle2, Search, UserCheck, Calendar, ShieldCheck, ArrowLeft, Trophy, MapPin, Sparkles, Award, Lock, Check, Edit2, User, Star } from 'lucide-react';
