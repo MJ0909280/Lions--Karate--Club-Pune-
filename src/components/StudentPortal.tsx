@@ -3424,13 +3424,13 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
 
                 {/* Official 7-Discipline Evaluation Marksheet Table */}
                 {selectedCert.disciplinesGrades && (
-                  <div className="my-2 sm:my-3 max-w-xl mx-auto bg-amber-100/60 p-2 sm:p-2.5 rounded-lg border border-amber-300/80 relative z-10 font-sans text-left shadow-2xs">
-                    <div className="flex items-center justify-between border-b border-amber-300/60 pb-1 mb-1.5">
-                      <span className="text-[8px] sm:text-[9px] font-bold text-amber-950 uppercase tracking-wider">
+                  <div className="my-2 sm:my-3 max-w-xl mx-auto bg-amber-100/70 p-2 sm:p-2.5 rounded-lg border border-amber-300 relative z-10 font-sans text-left shadow-2xs">
+                    <div className="flex items-center justify-between border-b border-amber-300/80 pb-1 mb-1.5">
+                      <span className="text-[9px] sm:text-[10px] font-black text-amber-950 uppercase tracking-wider">
                         Official 7-Discipline Grade Marksheet
                       </span>
                       {selectedCert.examinerName && (
-                        <span className="text-[8px] font-bold text-amber-800">
+                        <span className="text-[8.5px] sm:text-[9.5px] font-extrabold text-amber-900">
                           Evaluated by: {selectedCert.examinerName}
                         </span>
                       )}
@@ -3439,19 +3439,19 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
                       {[
                         { label: 'RUN', key: 'run' },
                         { label: 'JUMP', key: 'jump' },
-                        { label: 'SIDE SITUPS', key: 'sidesitups' },
+                        { label: 'SIT-UPS', key: 'sidesitups' },
                         { label: 'KICKS', key: 'kicks' },
-                        { label: 'CONDITION', key: 'conditionChecking' },
+                        { label: 'STAMINA', key: 'conditionChecking' },
                         { label: 'KATA', key: 'kata' },
                         { label: 'KUMITE', key: 'kumite' },
                       ].map((disc) => {
                         const gradeVal = (selectedCert.disciplinesGrades as any)?.[disc.key] || 'A';
                         return (
-                          <div key={disc.key} className="bg-amber-50/90 p-1 rounded border border-amber-250">
-                            <span className="text-[6.5px] sm:text-[7.5px] font-black text-amber-900 block truncate leading-none">
+                          <div key={disc.key} className="bg-amber-50 p-1 rounded border border-amber-300 flex flex-col justify-between items-center text-center">
+                            <span className="text-[7.5px] sm:text-[9px] font-black text-amber-950 block uppercase tracking-tight leading-snug whitespace-nowrap">
                               {disc.label}
                             </span>
-                            <span className="text-[9px] sm:text-[10px] font-black text-emerald-800 block mt-0.5 leading-none">
+                            <span className="text-[10px] sm:text-[11px] font-black text-emerald-800 block mt-0.5 leading-none">
                               {gradeVal}
                             </span>
                           </div>
