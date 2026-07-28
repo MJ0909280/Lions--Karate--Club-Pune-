@@ -7761,17 +7761,17 @@ export default function AdminPanel() {
               }}
               className="p-6 space-y-5"
             >
-              <div className="bg-amber-500/10 border border-amber-500/30 p-3 rounded-xl flex items-start space-x-2.5 text-xs text-amber-300">
-                <span className="text-base shrink-0">🛡️</span>
+              <div className="bg-emerald-500/10 border border-emerald-500/30 p-3 rounded-xl flex items-start space-x-2.5 text-xs text-emerald-300">
+                <span className="text-base shrink-0">🥋</span>
                 <p className="leading-relaxed">
-                  <strong className="font-bold text-amber-200">Strict Candidate Isolation:</strong> Bulk grading strictly evaluates candidates who submitted an <strong>Exam Application / Registration Form</strong>. Non-applied general students are automatically excluded.
+                  <strong className="font-bold text-emerald-200">Strict Exam Applicant Filter:</strong> Bulk grading applies <strong className="underline">ONLY</strong> to students who submitted an official Belt Exam Registration Form. General Dojo members who did not register for the exam are strictly excluded.
                 </p>
               </div>
 
               {/* Target Candidate Selection */}
               <div className="space-y-2">
                 <label className="text-[10px] font-heading font-black text-zinc-300 uppercase tracking-wider block">
-                  1. Select Target Candidates Batch
+                  1. Select Target Exam Candidates Batch
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   <button
@@ -7783,8 +7783,8 @@ export default function AdminPanel() {
                         : 'bg-slate-950 border-zinc-800 text-zinc-400 hover:border-zinc-700'
                     }`}
                   >
-                    <span className="text-xs font-black block text-emerald-400">✓ Present Only ({exams.filter(e => e.checkedIn).length})</span>
-                    <span className="text-[9px] text-zinc-400">Checked-in at exam gate</span>
+                    <span className="text-xs font-black block text-emerald-400">✓ Present Exam Candidates ({exams.filter(e => e.checkedIn).length})</span>
+                    <span className="text-[9px] text-zinc-400 block mt-0.5">Applied + Gate Checked-In Only</span>
                   </button>
 
                   <button
@@ -7796,8 +7796,8 @@ export default function AdminPanel() {
                         : 'bg-slate-950 border-zinc-800 text-zinc-400 hover:border-zinc-700'
                     }`}
                   >
-                    <span className="text-xs font-black block text-purple-300">⏳ Un-graded Only ({exams.filter(e => e.checkedIn && (e.status === 'approved' || e.status === 'pending' || !e.grade)).length})</span>
-                    <span className="text-[9px] text-zinc-400">Present & pending score</span>
+                    <span className="text-xs font-black block text-purple-300">⏳ Present & Pending Grade ({exams.filter(e => e.checkedIn && (e.status === 'approved' || e.status === 'pending' || !e.grade)).length})</span>
+                    <span className="text-[9px] text-zinc-400 block mt-0.5">Applied + Checked-in + Un-evaluated</span>
                   </button>
 
                   <button
@@ -7809,15 +7809,15 @@ export default function AdminPanel() {
                         : 'bg-slate-950 border-zinc-800 text-zinc-400 hover:border-zinc-700'
                     }`}
                   >
-                    <span className="text-xs font-black block">All Applied ({exams.length})</span>
-                    <span className="text-[9px] text-zinc-400">Registered exam list</span>
+                    <span className="text-xs font-black block">All Exam Applicants ({exams.length})</span>
+                    <span className="text-[9px] text-zinc-400 block mt-0.5">All belt exam registrants</span>
                   </button>
                 </div>
 
                 {/* Candidate Count Preview Box */}
                 <div className="bg-slate-950 p-2.5 rounded-xl border border-zinc-850 flex items-center justify-between text-xs">
                   <span className="text-zinc-400 text-[11px]">
-                    Candidates to be graded in this batch:
+                    Verified belt exam applicants to grade in this batch:
                   </span>
                   <span className="font-heading font-black text-amber-400 text-xs px-2.5 py-0.5 rounded bg-zinc-900 border border-zinc-800">
                     {bulkGradingScope === 'present'
@@ -7825,7 +7825,7 @@ export default function AdminPanel() {
                       : bulkGradingScope === 'ungraded'
                       ? exams.filter(e => e.checkedIn && (e.status === 'approved' || e.status === 'pending' || !e.grade)).length
                       : exams.length}{' '}
-                    Registered Candidates
+                    Exam Candidates (0 General Dojo Members)
                   </span>
                 </div>
               </div>
