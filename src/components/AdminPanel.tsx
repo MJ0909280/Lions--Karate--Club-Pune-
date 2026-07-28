@@ -5069,6 +5069,32 @@ export default function AdminPanel() {
                       <Download className="w-4 h-4" />
                       <span>Download Sheet</span>
                     </button>
+
+                    <button
+                      onClick={async () => {
+                        const hasUnpublished = exams.some((e: any) => !e.isPublished && (e.status === 'passed' || e.status === 'failed'));
+                        const targetState = hasUnpublished;
+                        const actionName = targetState ? 'PUBLISH' : 'UNPUBLISH';
+                        if (!window.confirm(`Are you sure you want to ${actionName} all graded exam results for parent portal view?`)) return;
+                        try {
+                          await Promise.all(
+                            exams.map((e: any) => updateDoc(doc(db, 'exams', e.id), { isPublished: targetState, updatedAt: Date.now() }))
+                          );
+                          alert(`Successfully ${actionName.toLowerCase()}ed all exam results!`);
+                        } catch (err) {
+                          console.error("Bulk publish error:", err);
+                        }
+                      }}
+                      className={`px-4 py-2 rounded-lg text-xs font-heading font-black uppercase tracking-wider transition-all flex items-center justify-center space-x-1.5 cursor-pointer shrink-0 ${
+                        exams.some((e: any) => e.isPublished)
+                          ? 'bg-purple-600/20 text-purple-300 border border-purple-500/30 hover:bg-purple-600/30'
+                          : 'bg-purple-600 text-white hover:bg-purple-500 shadow-md'
+                      }`}
+                      title="Publish or unpublish all exam results for parent portal"
+                    >
+                      <Award className="w-4 h-4" />
+                      <span>{exams.some((e: any) => !e.isPublished && (e.status === 'passed' || e.status === 'failed')) ? '📢 Publish All Results' : '🔒 Unpublish All'}</span>
+                    </button>
                   </div>
                 </div>
 
@@ -5337,6 +5363,31 @@ export default function AdminPanel() {
                                       >
                                         {item.checkedIn ? 'Mark Absent' : 'Check In'}
                                       </button>
+
+                                      {/* Publish Result toggle for parents view */}
+                                      {(item.status === 'passed' || item.status === 'failed') && (
+                                        <button
+                                          onClick={async () => {
+                                            try {
+                                              const newPublished = !item.isPublished;
+                                              await updateDoc(doc(db, 'exams', item.id), {
+                                                isPublished: newPublished,
+                                                updatedAt: Date.now()
+                                              });
+                                            } catch (err) {
+                                              console.error("Failed to toggle publish status:", err);
+                                            }
+                                          }}
+                                          className={`text-[9px] font-heading font-black uppercase tracking-wider px-2 py-1 rounded transition-all cursor-pointer ${
+                                            item.isPublished
+                                              ? 'bg-purple-600/30 text-purple-300 border border-purple-500/30 hover:bg-purple-600/40'
+                                              : 'bg-purple-600 text-white hover:bg-purple-500'
+                                          }`}
+                                          title={item.isPublished ? "Click to unpublish result from parent portal" : "Click to publish result to parent portal"}
+                                        >
+                                          {item.isPublished ? '📢 Published' : '🔒 Publish Result'}
+                                        </button>
+                                      )}
                                       
                                       {item.status === 'approved' && (
                                         <div className="flex items-center gap-1">

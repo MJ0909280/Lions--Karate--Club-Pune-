@@ -46,6 +46,7 @@ export default function ExamCheckIn({ onBackToHome, initialTab = 'checkin' }: Ex
   const [gradingSearch, setGradingSearch] = useState('');
   const [selectedGradingStudent, setSelectedGradingStudent] = useState<any | null>(null);
   const [gradesInput, setGradesInput] = useState<DisciplineGrades>({});
+  const [publishOnSave, setPublishOnSave] = useState(false);
   const [gradeSaveSuccess, setGradeSaveSuccess] = useState(false);
   const [gradeSaveError, setGradeSaveError] = useState('');
 
@@ -336,6 +337,7 @@ export default function ExamCheckIn({ onBackToHome, initialTab = 'checkin' }: Ex
   const handleSelectGradingStudent = (student: any) => {
     setSelectedGradingStudent(student);
     setGradesInput(student.disciplinesGrades || {});
+    setPublishOnSave(student.isPublished || false);
     setGradeSaveSuccess(false);
     setGradeSaveError('');
   };
@@ -365,6 +367,7 @@ export default function ExamCheckIn({ onBackToHome, initialTab = 'checkin' }: Ex
         disciplinesGrades: gradesInput,
         grade: overallGrade,
         status: status,
+        isPublished: publishOnSave,
         examinerName: examinerName.trim() || 'Sensei Examiner',
         gradedAt: timestamp,
         updatedAt: timestamp
@@ -1025,6 +1028,24 @@ export default function ExamCheckIn({ onBackToHome, initialTab = 'checkin' }: Ex
                         {gradeSaveError}
                       </div>
                     )}
+
+                    {/* Publish Result Toggle Checkbox */}
+                    <div className="bg-slate-950 p-3 rounded-xl border border-zinc-850 flex items-center justify-between">
+                      <label className="flex items-center space-x-2.5 cursor-pointer text-xs font-heading font-black uppercase text-zinc-300">
+                        <input
+                          type="checkbox"
+                          checked={publishOnSave}
+                          onChange={(e) => setPublishOnSave(e.target.checked)}
+                          className="w-4 h-4 rounded accent-purple-600 cursor-pointer"
+                        />
+                        <span>Publish results immediately to Student/Parent Portal</span>
+                      </label>
+                      <span className={`text-[9px] font-heading font-black uppercase px-2 py-0.5 rounded border ${
+                        publishOnSave ? 'bg-purple-600/20 text-purple-300 border-purple-500/30' : 'bg-zinc-900 text-zinc-500 border-zinc-800'
+                      }`}>
+                        {publishOnSave ? '📢 Will Publish' : '🔒 Draft / Private'}
+                      </span>
+                    </div>
 
                     <div className="flex flex-col sm:flex-row gap-3 pt-1">
                       <button
