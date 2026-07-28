@@ -5000,13 +5000,13 @@ export default function AdminPanel() {
                 </div>
 
                 {/* Filter & Attendance View Toggle Bar */}
-                <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-slate-900/40 border border-zinc-900 p-4.5 rounded-xl">
+                <div className="flex flex-col xl:flex-row gap-4 items-stretch xl:items-center justify-between bg-slate-900/40 border border-zinc-900 p-4.5 rounded-xl overflow-x-auto scrollbar-thin scroll-smooth">
                   {/* Attendance Mode Segmented Toggle Buttons */}
-                  <div className="flex items-center bg-slate-950 p-1 rounded-xl border border-zinc-850 w-full md:w-auto">
+                  <div className="flex items-center bg-slate-950 p-1 rounded-xl border border-zinc-850 shrink-0">
                     <button
                       type="button"
                       onClick={() => setExamAttendanceFilter('all')}
-                      className={`flex-1 md:flex-none px-3.5 py-1.5 rounded-lg text-[10px] font-heading font-black uppercase tracking-wider transition-all cursor-pointer ${
+                      className={`px-3.5 py-1.5 rounded-lg text-[10px] font-heading font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${
                         examAttendanceFilter === 'all'
                           ? 'bg-yellow-500 text-slate-950 shadow-md font-extrabold'
                           : 'text-zinc-400 hover:text-white'
@@ -5017,7 +5017,7 @@ export default function AdminPanel() {
                     <button
                       type="button"
                       onClick={() => setExamAttendanceFilter('present')}
-                      className={`flex-1 md:flex-none px-3.5 py-1.5 rounded-lg text-[10px] font-heading font-black uppercase tracking-wider transition-all cursor-pointer ${
+                      className={`px-3.5 py-1.5 rounded-lg text-[10px] font-heading font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${
                         examAttendanceFilter === 'present'
                           ? 'bg-emerald-500 text-slate-950 shadow-md font-extrabold'
                           : 'text-emerald-400/80 hover:text-emerald-300'
@@ -5028,7 +5028,7 @@ export default function AdminPanel() {
                     <button
                       type="button"
                       onClick={() => setExamAttendanceFilter('absent')}
-                      className={`flex-1 md:flex-none px-3.5 py-1.5 rounded-lg text-[10px] font-heading font-black uppercase tracking-wider transition-all cursor-pointer ${
+                      className={`px-3.5 py-1.5 rounded-lg text-[10px] font-heading font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${
                         examAttendanceFilter === 'absent'
                           ? 'bg-red-500 text-white shadow-md font-extrabold'
                           : 'text-red-400/80 hover:text-red-300'
@@ -5038,7 +5038,7 @@ export default function AdminPanel() {
                     </button>
                   </div>
 
-                  <div className="relative w-full md:max-w-xs">
+                  <div className="relative w-full xl:w-64 shrink-0">
                     <Search className="absolute left-3.5 top-3 w-4 h-4 text-zinc-550 pointer-events-none" />
                     <input
                       type="text"
@@ -5049,9 +5049,9 @@ export default function AdminPanel() {
                     />
                   </div>
 
-                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
-                    <div className="flex items-center space-x-3">
-                      <span className="text-[10px] text-zinc-500 uppercase font-bold shrink-0 font-mono">STATUS:</span>
+                  <div className="flex flex-wrap items-center gap-3 shrink-0">
+                    <div className="flex items-center space-x-2 shrink-0">
+                      <span className="text-[10px] text-zinc-500 uppercase font-bold font-mono whitespace-nowrap">STATUS:</span>
                       <select
                         value={examStatusFilter}
                         onChange={(e: any) => setExamStatusFilter(e.target.value)}
@@ -5067,7 +5067,7 @@ export default function AdminPanel() {
 
                     <button
                       onClick={handleDownloadExamsCSV}
-                      className="bg-yellow-500/10 hover:bg-yellow-500 text-yellow-500 hover:text-slate-950 border border-yellow-500/20 px-4 py-2 rounded-lg text-xs font-heading font-black uppercase tracking-wider transition-all flex items-center justify-center space-x-2 cursor-pointer shrink-0"
+                      className="bg-yellow-500/10 hover:bg-yellow-500 text-yellow-500 hover:text-slate-950 border border-yellow-500/20 px-3.5 py-2 rounded-lg text-xs font-heading font-black uppercase tracking-wider transition-all flex items-center justify-center space-x-2 cursor-pointer shrink-0 whitespace-nowrap"
                       title="Download the currently filtered list as an Excel/CSV Sheet"
                     >
                       <Download className="w-4 h-4" />
@@ -5104,7 +5104,7 @@ export default function AdminPanel() {
                           console.error("Bulk publish error:", err);
                         }
                       }}
-                      className={`px-4 py-2 rounded-lg text-xs font-heading font-black uppercase tracking-wider transition-all flex items-center justify-center space-x-1.5 cursor-pointer shrink-0 ${
+                      className={`px-3.5 py-2 rounded-lg text-xs font-heading font-black uppercase tracking-wider transition-all flex items-center justify-center space-x-1.5 cursor-pointer shrink-0 whitespace-nowrap ${
                         exams.some((e: any) => e.isPublished)
                           ? 'bg-purple-600/20 text-purple-300 border border-purple-500/30 hover:bg-purple-600/30'
                           : 'bg-purple-600 text-white hover:bg-purple-500 shadow-md'
@@ -5128,7 +5128,7 @@ export default function AdminPanel() {
 
                         window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
                       }}
-                      className="bg-emerald-600/20 text-emerald-300 hover:bg-emerald-600/30 border border-emerald-500/30 px-4 py-2 rounded-lg text-xs font-heading font-black uppercase tracking-wider transition-all flex items-center justify-center space-x-1.5 cursor-pointer shrink-0"
+                      className="bg-emerald-600/20 text-emerald-300 hover:bg-emerald-600/30 border border-emerald-500/30 px-3.5 py-2 rounded-lg text-xs font-heading font-black uppercase tracking-wider transition-all flex items-center justify-center space-x-1.5 cursor-pointer shrink-0 whitespace-nowrap"
                       title="Copy general exam results checking link to share on WhatsApp broadcast group"
                     >
                       <MessageCircle className="w-4 h-4 text-emerald-400" />
