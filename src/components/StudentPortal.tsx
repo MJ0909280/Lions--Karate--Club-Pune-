@@ -434,10 +434,11 @@ function ExamsHistoricalSkeleton() {
 
 interface StudentPortalProps {
   initialTab?: 'progress' | 'exam' | 'attendance';
+  initialStudentId?: string;
   onNavigate?: (view: 'home' | 'admission' | 'student-portal' | 'admin') => void;
 }
 
-export default function StudentPortal({ initialTab = 'progress', onNavigate }: StudentPortalProps) {
+export default function StudentPortal({ initialTab = 'progress', initialStudentId, onNavigate }: StudentPortalProps) {
   const [activeTab, setActiveTabState] = useState<'progress' | 'exam' | 'attendance'>(initialTab);
 
   useEffect(() => {
@@ -1456,13 +1457,14 @@ export default function StudentPortal({ initialTab = 'progress', onNavigate }: S
 
   // Real-time active student snapshot listener for instant profile updates
   useEffect(() => {
-    // 1. Initial check on mount
-    const savedId = safeLocalStorage.getItem('lkcp_portal_student_id');
-    if (savedId) {
-      setStudentIdInput(savedId);
-      setActiveStudentId(savedId);
+    // 1. Initial check on mount - prefer initialStudentId prop if provided via URL deep link
+    const targetId = initialStudentId || safeLocalStorage.getItem('lkcp_portal_student_id');
+    if (targetId) {
+      setStudentIdInput(targetId);
+      setActiveStudentId(targetId);
+      safeLocalStorage.setItem('lkcp_portal_student_id', targetId);
     }
-  }, []);
+  }, [initialStudentId]);
 
   useEffect(() => {
     if (!activeStudentId) {

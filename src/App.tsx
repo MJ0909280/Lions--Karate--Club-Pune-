@@ -35,15 +35,31 @@ export default function App() {
   const [successAdmission, setSuccessAdmission] = useState<Admission | null>(null);
   const [successLoading, setSuccessLoading] = useState(false);
 
+  const [urlStudentId, setUrlStudentId] = useState<string | null>(null);
+
   // 1. Sync React View state with window hash location
   useEffect(() => {
     const parseLocationAndHash = () => {
       const hash = window.location.hash;
+      const urlParams = new URLSearchParams(window.location.search);
+      
+      // Parse query params from hash if hash contains '?'
+      let hashParams = new URLSearchParams();
+      if (hash.includes('?')) {
+        const queryString = hash.substring(hash.indexOf('?'));
+        hashParams = new URLSearchParams(queryString);
+      }
+      
+      const targetStudentId = hashParams.get('studentId') || urlParams.get('studentId') || hashParams.get('id') || urlParams.get('id');
+      if (targetStudentId) {
+        setUrlStudentId(targetStudentId);
+      }
+
       if (hash.startsWith('#admin')) {
         setView('admin');
-      } else if (hash.startsWith('#student-portal')) {
+      } else if (hash.startsWith('#student-portal') || hash.startsWith('#check-results') || hash.startsWith('#results')) {
         setView('student-portal');
-        setStudentPortalTab('progress');
+        setStudentPortalTab('exam');
       } else if (hash.startsWith('#belt-exam')) {
         setView('student-portal');
         setStudentPortalTab('exam');
@@ -295,7 +311,7 @@ export default function App() {
               <ArrowLeft className="w-4 h-4" />
               <span>Back to Dojo Landing</span>
             </button>
-            <StudentPortal initialTab={studentPortalTab} onNavigate={(v) => navigateTo(v)} />
+            <StudentPortal initialTab={studentPortalTab} initialStudentId={urlStudentId || undefined} onNavigate={(v) => navigateTo(v)} />
           </div>
         </main>
       )}

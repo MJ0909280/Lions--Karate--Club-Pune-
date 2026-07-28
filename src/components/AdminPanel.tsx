@@ -59,6 +59,7 @@ import {
   Download,
   Printer,
   MessageSquare,
+  MessageCircle,
   CheckCircle2,
   ChevronDown,
   ChevronUp,
@@ -5098,6 +5099,26 @@ export default function AdminPanel() {
                       <Award className="w-4 h-4" />
                       <span>{exams.some((e: any) => !e.isPublished && (e.status === 'passed' || e.status === 'failed')) ? '📢 Publish All Results' : '🔒 Unpublish All'}</span>
                     </button>
+
+                    <button
+                      onClick={() => {
+                        const generalUrl = `${window.location.origin}${window.location.pathname}#check-results`;
+                        const msg = `🥋 *LIONS KARATE CLUB PUNE - CHECK BELT EXAM RESULTS* 🥋\n\nDear Parents & Students,\nThe official Karate Belt Grading Exam results have been published!\n\n👇 *Click link below and enter your Student ID / Roll No to check results & certificates:* \n${generalUrl}\n\nOSS! 🥋`;
+                        
+                        if (navigator.clipboard) {
+                          navigator.clipboard.writeText(msg).then(() => {
+                            alert("General Result Checking Link & WhatsApp message copied to clipboard!");
+                          }).catch(() => {});
+                        }
+
+                        window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+                      }}
+                      className="bg-emerald-600/20 text-emerald-300 hover:bg-emerald-600/30 border border-emerald-500/30 px-4 py-2 rounded-lg text-xs font-heading font-black uppercase tracking-wider transition-all flex items-center justify-center space-x-1.5 cursor-pointer shrink-0"
+                      title="Copy general exam results checking link to share on WhatsApp broadcast group"
+                    >
+                      <MessageCircle className="w-4 h-4 text-emerald-400" />
+                      <span>📲 Share Group Link</span>
+                    </button>
                   </div>
                 </div>
 
@@ -5365,6 +5386,27 @@ export default function AdminPanel() {
                                         title="Toggle student present/absent state manually"
                                       >
                                         {item.checkedIn ? 'Mark Absent' : 'Check In'}
+                                      </button>
+
+                                      {/* Share direct WhatsApp result link button */}
+                                      <button
+                                        onClick={() => {
+                                          const directUrl = `${window.location.origin}${window.location.pathname}#check-results?studentId=${encodeURIComponent(item.studentId || '')}`;
+                                          const msg = `🥋 *LIONS KARATE CLUB PUNE - BELT EXAM RESULT* 🥋\n\nDear Parent/Student (${item.studentName}),\nYour karate belt grading exam result for *${item.targetBelt}* has been published!\n\n👇 *Click link to check official result & belt certificate:* \n${directUrl}\n\nOSS! 🥋`;
+                                          
+                                          if (navigator.clipboard) {
+                                            navigator.clipboard.writeText(msg).catch(() => {});
+                                          }
+
+                                          const phoneClean = (item.parentPhone || '').replace(/\D/g, '');
+                                          const waUrl = phoneClean ? `https://wa.me/${phoneClean}?text=${encodeURIComponent(msg)}` : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+                                          window.open(waUrl, '_blank');
+                                        }}
+                                        className="bg-emerald-600/20 text-emerald-300 hover:bg-emerald-600/30 border border-emerald-500/30 text-[9px] font-heading font-black uppercase tracking-wider px-2 py-1 rounded transition-all cursor-pointer flex items-center gap-1 shrink-0"
+                                        title="Send direct result link to parent on WhatsApp"
+                                      >
+                                        <MessageCircle className="w-3 h-3 text-emerald-400" />
+                                        <span>Share Link</span>
                                       </button>
 
                                       {/* Publish Result toggle for parents view */}
