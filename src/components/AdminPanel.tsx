@@ -734,7 +734,7 @@ export default function AdminPanel() {
 
   // Bulk Grading state managers
   const [bulkGradingModalOpen, setBulkGradingModalOpen] = useState(false);
-  const [bulkGradingScope, setBulkGradingScope] = useState<'all' | 'present' | 'ungraded'>('all');
+  const [bulkGradingScope, setBulkGradingScope] = useState<'present' | 'ungraded' | 'all_registered'>('present');
   const [bulkStatus, setBulkStatus] = useState<'passed' | 'failed'>('passed');
   const [bulkGrade, setBulkGrade] = useState<GradeValue>('A');
   const [bulkDisciplines, setBulkDisciplines] = useState<DisciplineGrades>({
@@ -7707,7 +7707,7 @@ export default function AdminPanel() {
                 if (bulkGradingScope === 'present') {
                   targetExams = targetExams.filter(item => item.checkedIn === true);
                 } else if (bulkGradingScope === 'ungraded') {
-                  targetExams = targetExams.filter(item => item.status === 'approved' || item.status === 'pending' || !item.grade);
+                  targetExams = targetExams.filter(item => item.checkedIn === true && (item.status === 'approved' || item.status === 'pending' || !item.grade));
                 }
 
                 if (targetExams.length === 0) {
@@ -7761,9 +7761,12 @@ export default function AdminPanel() {
               }}
               className="p-6 space-y-5"
             >
-              <p className="text-xs text-zinc-400 leading-relaxed">
-                Apply standardized 7-discipline physical performance evaluation and overall grade to multiple candidates simultaneously.
-              </p>
+              <div className="bg-amber-500/10 border border-amber-500/30 p-3 rounded-xl flex items-start space-x-2.5 text-xs text-amber-300">
+                <span className="text-base shrink-0">🛡️</span>
+                <p className="leading-relaxed">
+                  <strong className="font-bold text-amber-200">Strict Candidate Isolation:</strong> Bulk grading strictly evaluates candidates who submitted an <strong>Exam Application / Registration Form</strong>. Non-applied general students are automatically excluded.
+                </p>
+              </div>
 
               {/* Target Candidate Selection */}
               <div className="space-y-2">
@@ -7773,28 +7776,15 @@ export default function AdminPanel() {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   <button
                     type="button"
-                    onClick={() => setBulkGradingScope('all')}
-                    className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
-                      bulkGradingScope === 'all'
-                        ? 'bg-amber-500/15 border-amber-500 text-amber-300'
-                        : 'bg-slate-950 border-zinc-800 text-zinc-400 hover:border-zinc-700'
-                    }`}
-                  >
-                    <span className="text-xs font-bold block">All List ({exams.length})</span>
-                    <span className="text-[9px] text-zinc-500">Every student in active list</span>
-                  </button>
-
-                  <button
-                    type="button"
                     onClick={() => setBulkGradingScope('present')}
                     className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
                       bulkGradingScope === 'present'
-                        ? 'bg-emerald-500/15 border-emerald-500 text-emerald-300'
+                        ? 'bg-emerald-500/15 border-emerald-500 text-emerald-300 ring-1 ring-emerald-500/50'
                         : 'bg-slate-950 border-zinc-800 text-zinc-400 hover:border-zinc-700'
                     }`}
                   >
-                    <span className="text-xs font-bold block">Present Only ({exams.filter(e => e.checkedIn).length})</span>
-                    <span className="text-[9px] text-zinc-500">Checked-in candidates</span>
+                    <span className="text-xs font-black block text-emerald-400">✓ Present Only ({exams.filter(e => e.checkedIn).length})</span>
+                    <span className="text-[9px] text-zinc-400">Checked-in at exam gate</span>
                   </button>
 
                   <button
@@ -7802,13 +7792,41 @@ export default function AdminPanel() {
                     onClick={() => setBulkGradingScope('ungraded')}
                     className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
                       bulkGradingScope === 'ungraded'
-                        ? 'bg-purple-500/15 border-purple-500 text-purple-300'
+                        ? 'bg-purple-500/15 border-purple-500 text-purple-300 ring-1 ring-purple-500/50'
                         : 'bg-slate-950 border-zinc-800 text-zinc-400 hover:border-zinc-700'
                     }`}
                   >
-                    <span className="text-xs font-bold block">Un-graded Only ({exams.filter(e => e.status === 'approved' || e.status === 'pending' || !e.grade).length})</span>
-                    <span className="text-[9px] text-zinc-500">Pending evaluation</span>
+                    <span className="text-xs font-black block text-purple-300">⏳ Un-graded Only ({exams.filter(e => e.checkedIn && (e.status === 'approved' || e.status === 'pending' || !e.grade)).length})</span>
+                    <span className="text-[9px] text-zinc-400">Present & pending score</span>
                   </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setBulkGradingScope('all_registered')}
+                    className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                      bulkGradingScope === 'all_registered'
+                        ? 'bg-amber-500/15 border-amber-500 text-amber-300 ring-1 ring-amber-500/50'
+                        : 'bg-slate-950 border-zinc-800 text-zinc-400 hover:border-zinc-700'
+                    }`}
+                  >
+                    <span className="text-xs font-black block">All Applied ({exams.length})</span>
+                    <span className="text-[9px] text-zinc-400">Registered exam list</span>
+                  </button>
+                </div>
+
+                {/* Candidate Count Preview Box */}
+                <div className="bg-slate-950 p-2.5 rounded-xl border border-zinc-850 flex items-center justify-between text-xs">
+                  <span className="text-zinc-400 text-[11px]">
+                    Candidates to be graded in this batch:
+                  </span>
+                  <span className="font-heading font-black text-amber-400 text-xs px-2.5 py-0.5 rounded bg-zinc-900 border border-zinc-800">
+                    {bulkGradingScope === 'present'
+                      ? exams.filter(e => e.checkedIn).length
+                      : bulkGradingScope === 'ungraded'
+                      ? exams.filter(e => e.checkedIn && (e.status === 'approved' || e.status === 'pending' || !e.grade)).length
+                      : exams.length}{' '}
+                    Registered Candidates
+                  </span>
                 </div>
               </div>
 
