@@ -732,6 +732,38 @@ export default function AdminPanel() {
   const [examStatusFilter, setExamStatusFilter] = useState<'all' | 'pending' | 'approved' | 'passed' | 'failed'>('all');
   const [examAttendanceFilter, setExamAttendanceFilter] = useState<'all' | 'present' | 'absent'>('all');
 
+  // Bulk Grading state managers
+  const [bulkGradingModalOpen, setBulkGradingModalOpen] = useState(false);
+  const [bulkGradingScope, setBulkGradingScope] = useState<'all' | 'present' | 'ungraded'>('all');
+  const [bulkStatus, setBulkStatus] = useState<'passed' | 'failed'>('passed');
+  const [bulkGrade, setBulkGrade] = useState<GradeValue>('A');
+  const [bulkDisciplines, setBulkDisciplines] = useState<DisciplineGrades>({
+    run: 'A',
+    jump: 'A',
+    sidesitups: 'A',
+    kicks: 'A',
+    conditionChecking: 'A',
+    kata: 'A',
+    kumite: 'A'
+  });
+  const [bulkRemarks, setBulkRemarks] = useState('Excellent effort, discipline, and execution shown during the Karate examination.');
+  const [bulkPublish, setBulkPublish] = useState(true);
+  const [bulkGradingSaving, setBulkGradingSaving] = useState(false);
+  const [bulkGradingProgress, setBulkGradingProgress] = useState({ current: 0, total: 0 });
+
+  const setAllBulkDisciplines = (gradeVal: GradeValue) => {
+    setBulkDisciplines({
+      run: gradeVal,
+      jump: gradeVal,
+      sidesitups: gradeVal,
+      kicks: gradeVal,
+      conditionChecking: gradeVal,
+      kata: gradeVal,
+      kumite: gradeVal
+    });
+    setBulkGrade(gradeVal);
+  };
+
   // Site Video Configuration Inputs
   const [heroVideoInput, setHeroVideoInput] = useState('');
   const [aboutVideoInput, setAboutVideoInput] = useState('');
@@ -5075,6 +5107,15 @@ export default function AdminPanel() {
                     </button>
 
                     <button
+                      onClick={() => setBulkGradingModalOpen(true)}
+                      className="bg-amber-500 hover:bg-amber-400 text-slate-950 border border-amber-400/30 px-3.5 py-2 rounded-lg text-xs font-heading font-black uppercase tracking-wider transition-all flex items-center justify-center space-x-1.5 cursor-pointer shrink-0 whitespace-nowrap shadow-md hover:shadow-amber-500/20 active:scale-95"
+                      title="Grade all students at once with 7-discipline evaluation and custom grades"
+                    >
+                      <Award className="w-4 h-4 text-slate-950 stroke-[2.5]" />
+                      <span>⚡ Bulk Grade Students</span>
+                    </button>
+
+                    <button
                       onClick={async () => {
                         const hasUnpublished = exams.some((e: any) => !e.isPublished && (e.status === 'passed' || e.status === 'failed'));
                         const targetState = hasUnpublished;
@@ -7630,6 +7671,301 @@ export default function AdminPanel() {
                     <>
                       <Check className="w-3.5 h-3.5" />
                       <span>Confirm Assessment Grade</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: BULK GRADE STUDENTS OVERLAY */}
+      {bulkGradingModalOpen && (
+        <div className="fixed inset-0 z-55 overflow-y-auto bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-slate-900 border border-amber-500/30 w-full max-w-2xl rounded-2xl overflow-hidden shadow-2xl relative my-8 text-left">
+            <div className="bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 px-6 py-4 flex items-center justify-between text-slate-950">
+              <div className="flex items-center space-x-2">
+                <Award className="w-5 h-5 text-slate-950 stroke-[2.5]" />
+                <h3 className="font-heading font-black text-sm uppercase tracking-wider text-slate-950">
+                  ⚡ BULK GRADE CANDIDATES - BATCH EVALUATOR
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setBulkGradingModalOpen(false)}
+                className="text-slate-950/70 hover:text-slate-950 text-xl font-bold transition-colors cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                let targetExams = [...exams];
+                if (bulkGradingScope === 'present') {
+                  targetExams = targetExams.filter(item => item.checkedIn === true);
+                } else if (bulkGradingScope === 'ungraded') {
+                  targetExams = targetExams.filter(item => item.status === 'approved' || item.status === 'pending' || !item.grade);
+                }
+
+                if (targetExams.length === 0) {
+                  alert("No matching candidates found for this batch evaluation scope.");
+                  return;
+                }
+
+                if (!window.confirm(`Are you sure you want to grade ${targetExams.length} student(s) as "${bulkStatus.toUpperCase()}" with Grade "${bulkGrade}"?`)) {
+                  return;
+                }
+
+                setBulkGradingSaving(true);
+                setBulkGradingProgress({ current: 0, total: targetExams.length });
+
+                try {
+                  let completed = 0;
+                  for (const examDoc of targetExams) {
+                    await updateDoc(doc(db, 'exams', examDoc.id), {
+                      status: bulkStatus,
+                      grade: bulkGrade,
+                      disciplinesGrades: bulkDisciplines,
+                      remarks: bulkRemarks.trim(),
+                      isPublished: bulkPublish,
+                      updatedAt: Date.now()
+                    });
+
+                    if (bulkStatus === 'passed' && bulkPublish) {
+                      const targetStudent = admissions.find(s =>
+                        (s.studentId || '').trim().toUpperCase() === (examDoc.studentId || '').trim().toUpperCase()
+                      );
+                      if (targetStudent) {
+                        await updateDoc(doc(db, 'admissions', targetStudent.id), {
+                          beltLevel: examDoc.targetBelt,
+                          updatedAt: Date.now()
+                        });
+                      }
+                    }
+
+                    completed++;
+                    setBulkGradingProgress({ current: completed, total: targetExams.length });
+                  }
+
+                  alert(`Successfully evaluated and saved grades for ${completed} candidate(s)!`);
+                  setBulkGradingModalOpen(false);
+                } catch (err) {
+                  console.error("Bulk grading failed:", err);
+                  alert("Failed to save bulk grades. Please check network connection and try again.");
+                } finally {
+                  setBulkGradingSaving(false);
+                }
+              }}
+              className="p-6 space-y-5"
+            >
+              <p className="text-xs text-zinc-400 leading-relaxed">
+                Apply standardized 7-discipline physical performance evaluation and overall grade to multiple candidates simultaneously.
+              </p>
+
+              {/* Target Candidate Selection */}
+              <div className="space-y-2">
+                <label className="text-[10px] font-heading font-black text-zinc-300 uppercase tracking-wider block">
+                  1. Select Target Candidates Batch
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setBulkGradingScope('all')}
+                    className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                      bulkGradingScope === 'all'
+                        ? 'bg-amber-500/15 border-amber-500 text-amber-300'
+                        : 'bg-slate-950 border-zinc-800 text-zinc-400 hover:border-zinc-700'
+                    }`}
+                  >
+                    <span className="text-xs font-bold block">All List ({exams.length})</span>
+                    <span className="text-[9px] text-zinc-500">Every student in active list</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setBulkGradingScope('present')}
+                    className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                      bulkGradingScope === 'present'
+                        ? 'bg-emerald-500/15 border-emerald-500 text-emerald-300'
+                        : 'bg-slate-950 border-zinc-800 text-zinc-400 hover:border-zinc-700'
+                    }`}
+                  >
+                    <span className="text-xs font-bold block">Present Only ({exams.filter(e => e.checkedIn).length})</span>
+                    <span className="text-[9px] text-zinc-500">Checked-in candidates</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setBulkGradingScope('ungraded')}
+                    className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                      bulkGradingScope === 'ungraded'
+                        ? 'bg-purple-500/15 border-purple-500 text-purple-300'
+                        : 'bg-slate-950 border-zinc-800 text-zinc-400 hover:border-zinc-700'
+                    }`}
+                  >
+                    <span className="text-xs font-bold block">Un-graded Only ({exams.filter(e => e.status === 'approved' || e.status === 'pending' || !e.grade).length})</span>
+                    <span className="text-[9px] text-zinc-500">Pending evaluation</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Status Outcome & Overall Grade */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-950 p-4 rounded-xl border border-zinc-850">
+                <div>
+                  <label className="text-[10px] font-heading font-black text-zinc-300 uppercase tracking-wider block mb-1.5">
+                    2. Exam Outcome Status
+                  </label>
+                  <select
+                    value={bulkStatus}
+                    onChange={(e: any) => setBulkStatus(e.target.value)}
+                    className="w-full bg-slate-900 border border-zinc-800 text-xs text-white p-2.5 rounded-lg font-bold focus:outline-none focus:border-amber-500"
+                  >
+                    <option value="passed">✅ PASSED (Promote / Belt Award)</option>
+                    <option value="failed">❌ REQUIRES RE-TRY (Needs Re-evaluation)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-heading font-black text-zinc-300 uppercase tracking-wider block mb-1.5">
+                    3. Overall Letter Grade
+                  </label>
+                  <select
+                    value={bulkGrade}
+                    onChange={(e: any) => setBulkGrade(e.target.value)}
+                    className="w-full bg-slate-900 border border-zinc-800 text-xs text-amber-400 p-2.5 rounded-lg font-black focus:outline-none focus:border-amber-500"
+                  >
+                    <option value="A+">A+ (Mastery Execution)</option>
+                    <option value="A">A (Excellent Performance)</option>
+                    <option value="B+">B+ (Good Competency)</option>
+                    <option value="B">B (Satisfactory Standard)</option>
+                    <option value="C">C (Needs Improvement)</option>
+                    <option value="F">F (Fail / Requires Re-test)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* 7-Discipline Score Batch Presets */}
+              <div className="space-y-3 bg-slate-950 p-4 rounded-xl border border-zinc-850">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <label className="text-[10px] font-heading font-black text-zinc-300 uppercase tracking-wider block">
+                    4. 7-Discipline Physical Scores
+                  </label>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[9px] text-zinc-500 font-mono">1-Click Presets:</span>
+                    {(['A+', 'A', 'B+', 'B'] as GradeValue[]).map((preset) => (
+                      <button
+                        key={preset}
+                        type="button"
+                        onClick={() => setAllBulkDisciplines(preset)}
+                        className="bg-amber-500/10 hover:bg-amber-500 text-amber-400 hover:text-slate-950 border border-amber-500/20 px-2 py-0.5 rounded text-[9px] font-black uppercase transition-all cursor-pointer"
+                      >
+                        Set All {preset}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
+                  {[
+                    { id: 'run', label: '1. Running / Speed' },
+                    { id: 'jump', label: '2. High Jumping' },
+                    { id: 'sidesitups', label: '3. Side Sit-ups' },
+                    { id: 'kicks', label: '4. Kicking Drill' },
+                    { id: 'conditionChecking', label: '5. Conditioning' },
+                    { id: 'kata', label: '6. Shotokan Kata' },
+                    { id: 'kumite', label: '7. Sparring (Kumite)' },
+                  ].map((disc) => (
+                    <div key={disc.id} className="bg-slate-900 p-2 rounded-lg border border-zinc-850">
+                      <span className="text-[9px] font-bold text-zinc-400 block mb-1 truncate">{disc.label}</span>
+                      <select
+                        value={(bulkDisciplines as any)[disc.id] || 'A'}
+                        onChange={(e) => setBulkDisciplines(prev => ({ ...prev, [disc.id]: e.target.value as GradeValue }))}
+                        className="w-full bg-slate-950 border border-zinc-800 text-[11px] font-bold text-white p-1 rounded focus:outline-none focus:border-amber-500"
+                      >
+                        <option value="A+">A+</option>
+                        <option value="A">A</option>
+                        <option value="B+">B+</option>
+                        <option value="B">B</option>
+                        <option value="C">C</option>
+                        <option value="F">F</option>
+                      </select>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Remarks */}
+              <div>
+                <label className="text-[10px] font-heading font-black text-zinc-300 uppercase tracking-wider block mb-1.5">
+                  5. Sensei Remarks / Feedback
+                </label>
+                <input
+                  type="text"
+                  value={bulkRemarks}
+                  onChange={(e) => setBulkRemarks(e.target.value)}
+                  placeholder="e.g. Excellent effort, discipline, and execution shown during the Karate examination."
+                  className="w-full bg-slate-950 border border-zinc-850 text-xs text-white p-3 rounded-xl focus:outline-none focus:border-amber-500"
+                />
+              </div>
+
+              {/* Publish Toggle */}
+              <div className="bg-slate-950 p-3 rounded-xl border border-zinc-850 flex items-center justify-between">
+                <label className="flex items-center space-x-2.5 cursor-pointer text-xs font-heading font-black uppercase text-zinc-300">
+                  <input
+                    type="checkbox"
+                    checked={bulkPublish}
+                    onChange={(e) => setBulkPublish(e.target.checked)}
+                    className="w-4 h-4 rounded accent-amber-500 cursor-pointer"
+                  />
+                  <span>Publish results immediately to Parent/Student Portal</span>
+                </label>
+                <span className={`text-[9px] font-heading font-black uppercase px-2 py-0.5 rounded border ${
+                  bulkPublish ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' : 'bg-zinc-900 text-zinc-500 border-zinc-800'
+                }`}>
+                  {bulkPublish ? '📢 Will Publish' : '🔒 Save as Draft'}
+                </span>
+              </div>
+
+              {/* Progress Indicator when saving */}
+              {bulkGradingSaving && (
+                <div className="bg-amber-500/10 border border-amber-500/20 p-3 rounded-xl text-center space-y-1.5">
+                  <div className="flex items-center justify-center space-x-2 text-amber-400 font-heading font-black text-xs uppercase tracking-wider">
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <span>Grading Candidates... ({bulkGradingProgress.current} / {bulkGradingProgress.total})</span>
+                  </div>
+                  <div className="w-full bg-slate-950 h-2 rounded-full overflow-hidden border border-zinc-850">
+                    <div
+                      className="bg-amber-500 h-full transition-all duration-300"
+                      style={{ width: `${(bulkGradingProgress.current / (bulkGradingProgress.total || 1)) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Modal Actions */}
+              <div className="pt-3 border-t border-zinc-850 flex items-center justify-end space-x-3">
+                <button
+                  type="button"
+                  disabled={bulkGradingSaving}
+                  onClick={() => setBulkGradingModalOpen(false)}
+                  className="px-4 py-2 text-[10px] font-heading font-black uppercase tracking-wider text-zinc-400 hover:text-white"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={bulkGradingSaving}
+                  className="bg-amber-500 hover:bg-amber-400 text-slate-950 px-6 py-2.5 text-[10px] font-heading font-black uppercase tracking-wider rounded-lg transition-all flex items-center space-x-1.5 shadow-md disabled:opacity-50 cursor-pointer"
+                >
+                  {bulkGradingSaving ? (
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <>
+                      <Check className="w-3.5 h-3.5 stroke-[3px]" />
+                      <span>Confirm & Apply Bulk Grades</span>
                     </>
                   )}
                 </button>
