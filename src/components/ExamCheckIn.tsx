@@ -310,15 +310,21 @@ export default function ExamCheckIn({ onBackToHome, initialTab = 'checkin' }: Ex
     e.preventDefault();
     setExaminerAuthError('');
     const trimmedName = examinerName.trim();
-    const trimmedPin = examinerPin.trim().toUpperCase();
+    const rawPin = examinerPin.trim();
 
     if (!trimmedName) {
       setExaminerAuthError("Please enter the Examiner / Sensei Name.");
       return;
     }
 
-    if (!trimmedPin) {
-      setExaminerAuthError("Please enter the Examiner Password.");
+    if (!rawPin) {
+      setExaminerAuthError("Please enter the Examiner Access Password.");
+      return;
+    }
+
+    // Verify Examiner Access Password
+    if (rawPin !== 'Lions@9049' && rawPin.toUpperCase() !== 'LIONS@9049') {
+      setExaminerAuthError("Incorrect Examiner Access Password. Access denied.");
       return;
     }
 
@@ -780,10 +786,10 @@ export default function ExamCheckIn({ onBackToHome, initialTab = 'checkin' }: Ex
                   <input
                     type="password"
                     required
-                    placeholder="Enter Access Password (e.g. EXAM2025 or 1234)"
+                    placeholder="ENTER ACCESS PASSWORD"
                     value={examinerPin}
                     onChange={(e) => setExaminerPin(e.target.value)}
-                    className="w-full bg-slate-950 border border-zinc-800 text-sm font-mono text-white p-3 rounded-xl focus:outline-none focus:border-yellow-500 tracking-widest text-center uppercase placeholder:text-zinc-600"
+                    className="w-full bg-slate-950 border border-zinc-800 text-sm font-mono text-white p-3 rounded-xl focus:outline-none focus:border-yellow-500 tracking-widest text-center placeholder:text-zinc-600 placeholder:normal-case placeholder:tracking-normal"
                   />
                 </div>
 

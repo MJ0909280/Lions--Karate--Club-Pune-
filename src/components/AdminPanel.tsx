@@ -1636,8 +1636,8 @@ export default function AdminPanel() {
         updatedAt: Date.now()
       });
 
-      // 2. If Passed, automatically graduate the student's belt level in the admissions profile collection
-      if (gradingExam.statusAction === 'passed') {
+      // 2. If Passed AND Published, graduate the student's belt level in the admissions profile collection
+      if (gradingExam.statusAction === 'passed' && adminPublishResult) {
         const admissionsRef = collection(db, 'admissions');
         
         // Find correct student in memory first for 100% accuracy on duplicate IDs
@@ -5082,7 +5082,22 @@ export default function AdminPanel() {
                         if (!window.confirm(`Are you sure you want to ${actionName} all graded exam results for parent portal view?`)) return;
                         try {
                           await Promise.all(
-                            exams.map((e: any) => updateDoc(doc(db, 'exams', e.id), { isPublished: targetState, updatedAt: Date.now() }))
+                            exams.map(async (e: any) => {
+                              if (e.status === 'passed' || e.status === 'failed') {
+                                await updateDoc(doc(db, 'exams', e.id), { isPublished: targetState, updatedAt: Date.now() });
+                                if (targetState && e.status === 'passed') {
+                                  const targetStudent = admissions.find(s => 
+                                    (s.studentId || '').trim().toUpperCase() === (e.studentId || '').trim().toUpperCase()
+                                  );
+                                  if (targetStudent) {
+                                    await updateDoc(doc(db, 'admissions', targetStudent.id), {
+                                      beltLevel: e.targetBelt,
+                                      updatedAt: Date.now()
+                                    });
+                                  }
+                                }
+                              }
+                            })
                           );
                           alert(`Successfully ${actionName.toLowerCase()}ed all exam results!`);
                         } catch (err) {
@@ -5427,6 +5442,20 @@ export default function AdminPanel() {
                                                   isPublished: newPublished,
                                                   updatedAt: Date.now()
                                                 });
+                                                if (newPublished && item.status === 'passed') {
+                                                  const targetStudent = admissions.find(s => 
+                                                    (s.studentId || '').trim().toUpperCase() === (item.studentId || '').trim().toUpperCase() &&
+                                                    (s.fullName || '').trim().toLowerCase() === (item.studentName || '').trim().toLowerCase()
+                                                  ) || admissions.find(s => 
+                                                    (s.studentId || '').trim().toUpperCase() === (item.studentId || '').trim().toUpperCase()
+                                                  );
+                                                  if (targetStudent) {
+                                                    await updateDoc(doc(db, 'admissions', targetStudent.id), {
+                                                      beltLevel: item.targetBelt,
+                                                      updatedAt: Date.now()
+                                                    });
+                                                  }
+                                                }
                                               } catch (err) {
                                                 console.error("Failed to toggle publish status:", err);
                                               }
