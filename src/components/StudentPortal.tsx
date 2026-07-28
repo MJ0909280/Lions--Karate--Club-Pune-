@@ -3055,8 +3055,111 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
                           </div>
                         )}
 
-                        {/* Coach Remarks (Only if Published) */}
+                        {/* 5 CELEBRATION ENHANCEMENTS FOR PARENT RESULT VIEW */}
                         {exam.isPublished && exam.status === 'passed' && (
+                          <div className="bg-gradient-to-br from-slate-950 via-amber-950/20 to-slate-950 p-4 border-2 border-amber-500/40 rounded-2xl mt-4 relative overflow-hidden shadow-xl shadow-amber-500/5 group">
+                            {/* Confetti & Sparkles Background Decor */}
+                            <div className="absolute top-2 right-3 flex space-x-1 opacity-80 pointer-events-none text-base animate-bounce">
+                              <span>🎉</span><span>✨</span><span>🏆</span><span>🥋</span><span>🌟</span>
+                            </div>
+
+                            {/* 1. Golden Victory Trophy Banner */}
+                            <div className="flex items-center space-x-3 mb-3">
+                              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-yellow-300 flex items-center justify-center text-slate-950 font-black shadow-lg shadow-amber-500/20 shrink-0 ring-2 ring-amber-400/50">
+                                <Award className="w-6 h-6 text-slate-950 stroke-[2.5]" />
+                              </div>
+                              <div>
+                                <span className="text-[10px] font-heading font-black text-amber-400 uppercase tracking-widest block">
+                                  🎊 CONGRATULATIONS! BELT PROMOTED!
+                                </span>
+                                <h4 className="text-xs sm:text-sm font-extrabold text-white tracking-wide">
+                                  {activeStudent?.fullName || exam.studentName} Passed & Earned {exam.targetBelt} Belt!
+                                </h4>
+                              </div>
+                            </div>
+
+                            {/* 2. Visual Belt Progression Step Visualizer */}
+                            <div className="bg-slate-950/80 p-2.5 rounded-xl border border-zinc-850 flex items-center justify-between gap-2 mb-3">
+                              <div className="flex items-center space-x-2">
+                                <span className="text-[9px] font-mono text-zinc-400 uppercase">CURRENT:</span>
+                                <span className="text-[10px] font-bold text-zinc-300 bg-zinc-900 px-2 py-0.5 rounded border border-zinc-800">
+                                  {exam.currentBelt} Belt
+                                </span>
+                              </div>
+                              <span className="text-amber-400 text-xs font-black animate-pulse">➔ PROMOTED ➔</span>
+                              <div className="flex items-center space-x-2">
+                                <span className="text-[9px] font-mono text-amber-400 uppercase font-black">NEW RANK:</span>
+                                <span className="text-[10px] font-black text-slate-950 bg-gradient-to-r from-amber-400 to-yellow-500 px-2.5 py-0.5 rounded shadow-md uppercase">
+                                  {exam.targetBelt} Belt
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* 3. Coach Remarks Feedback */}
+                            <div className="bg-slate-900/90 p-3 border border-zinc-800 rounded-xl text-xs w-full mb-3">
+                              <span className="text-[8px] font-heading font-black text-amber-400 uppercase tracking-widest block mb-1">
+                                💬 SENSEI EVALUATION & FEEDBACK
+                              </span>
+                              <p className="text-zinc-300 italic font-medium leading-relaxed text-[11px]">
+                                "{exam.remarks || "Outstanding spirit, discipline, and execution shown during the Karate Belt Examination!"}"
+                              </p>
+                            </div>
+
+                            {/* 4 & 5. Action Controls: Audio Victory Fanfare Chime & WhatsApp Parent Proud Share */}
+                            <div className="flex flex-wrap items-center gap-2 pt-1">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  try {
+                                    const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+                                    const now = audioCtx.currentTime;
+                                    [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
+                                      const osc = audioCtx.createOscillator();
+                                      const gain = audioCtx.createGain();
+                                      osc.type = 'triangle';
+                                      osc.frequency.setValueAtTime(freq, now + idx * 0.12);
+                                      gain.gain.setValueAtTime(0.3, now + idx * 0.12);
+                                      gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.12 + 0.6);
+                                      osc.connect(gain);
+                                      gain.connect(audioCtx.destination);
+                                      osc.start(now + idx * 0.12);
+                                      osc.stop(now + idx * 0.12 + 0.6);
+                                    });
+                                  } catch (e) {
+                                    console.log("Audio fanfare play:", e);
+                                  }
+                                }}
+                                className="bg-amber-500/10 hover:bg-amber-500 text-amber-400 hover:text-slate-950 border border-amber-500/30 px-3 py-1.5 rounded-lg text-[10px] font-heading font-black uppercase tracking-wider transition-all flex items-center space-x-1.5 cursor-pointer"
+                              >
+                                <span>🔊 Play Victory Fanfare</span>
+                              </button>
+
+                              <a
+                                href={`https://wa.me/?text=${encodeURIComponent(
+                                  `🎉 Super Proud Parent Moment! My child ${activeStudent?.fullName || exam.studentName} successfully passed the Karate Belt Examination at Lions Karate Club Pune and earned the ${exam.targetBelt} Belt! 🥋🏆`
+                                )}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 px-3 py-1.5 rounded-lg text-[10px] font-heading font-black uppercase tracking-wider transition-all flex items-center space-x-1.5 cursor-pointer"
+                              >
+                                <MessageCircle className="w-3.5 h-3.5 text-emerald-400" />
+                                <span>Share on WhatsApp</span>
+                              </a>
+
+                              <button
+                                type="button"
+                                onClick={() => setSelectedCert(exam)}
+                                className="bg-yellow-500 text-slate-950 hover:bg-yellow-400 px-3 py-1.5 rounded-lg text-[10px] font-heading font-black uppercase tracking-wider transition-all flex items-center space-x-1.5 cursor-pointer shadow-md ml-auto"
+                              >
+                                <Award className="w-3.5 h-3.5 text-slate-950 stroke-[2.5]" />
+                                <span>Official Certificate</span>
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Standard Coach Remarks for non-passed or standard published */}
+                        {exam.isPublished && exam.status !== 'passed' && (
                           <div className="bg-slate-950/60 p-3 border border-zinc-900 rounded-xl mt-3 text-xs w-full">
                             <span className="text-[8px] font-heading font-black text-yellow-500 uppercase tracking-widest block mb-1">COACH'S FEEDBACK</span>
                             <p className="text-zinc-350 italic font-medium leading-relaxed">
