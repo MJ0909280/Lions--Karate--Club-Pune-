@@ -696,6 +696,7 @@ export default function AdminPanel() {
   const [adminDisciplinesGrades, setAdminDisciplinesGrades] = useState<DisciplineGrades>({});
   const [enteredGrade, setEnteredGrade] = useState('');
   const [enteredRemarks, setEnteredRemarks] = useState('');
+  const [adminPublishResult, setAdminPublishResult] = useState(false);
   const [gradingSaving, setGradingSaving] = useState(false);
   const [gradingError, setGradingError] = useState('');
 
@@ -706,6 +707,7 @@ export default function AdminPanel() {
     const calculated = calculateOverallGrade(initialDisciplines);
     setEnteredGrade(item.grade || calculated || (statusAction === 'passed' ? 'A' : 'Fail (Requires Re-try)'));
     setEnteredRemarks(item.remarks || '');
+    setAdminPublishResult(item.isPublished ?? false);
   };
 
   // Live Exam Schedules State
@@ -1629,6 +1631,7 @@ export default function AdminPanel() {
         grade: enteredGrade.trim(),
         disciplinesGrades: adminDisciplinesGrades,
         remarks: enteredRemarks.trim(),
+        isPublished: adminPublishResult,
         updatedAt: Date.now()
       });
 
@@ -5366,27 +5369,36 @@ export default function AdminPanel() {
 
                                       {/* Publish Result toggle for parents view */}
                                       {(item.status === 'passed' || item.status === 'failed') && (
-                                        <button
-                                          onClick={async () => {
-                                            try {
-                                              const newPublished = !item.isPublished;
-                                              await updateDoc(doc(db, 'exams', item.id), {
-                                                isPublished: newPublished,
-                                                updatedAt: Date.now()
-                                              });
-                                            } catch (err) {
-                                              console.error("Failed to toggle publish status:", err);
-                                            }
-                                          }}
-                                          className={`text-[9px] font-heading font-black uppercase tracking-wider px-2 py-1 rounded transition-all cursor-pointer ${
-                                            item.isPublished
-                                              ? 'bg-purple-600/30 text-purple-300 border border-purple-500/30 hover:bg-purple-600/40'
-                                              : 'bg-purple-600 text-white hover:bg-purple-500'
-                                          }`}
-                                          title={item.isPublished ? "Click to unpublish result from parent portal" : "Click to publish result to parent portal"}
-                                        >
-                                          {item.isPublished ? '📢 Published' : '🔒 Publish Result'}
-                                        </button>
+                                        <div className="flex items-center gap-1">
+                                          <button
+                                            onClick={() => openGradingModal(item, item.status)}
+                                            className="bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/30 text-[9px] font-heading font-black uppercase tracking-wider px-2 py-1 rounded transition-all cursor-pointer"
+                                            title="Edit/Upgrade student grade or feedback"
+                                          >
+                                            Edit Grade
+                                          </button>
+                                          <button
+                                            onClick={async () => {
+                                              try {
+                                                const newPublished = !item.isPublished;
+                                                await updateDoc(doc(db, 'exams', item.id), {
+                                                  isPublished: newPublished,
+                                                  updatedAt: Date.now()
+                                                });
+                                              } catch (err) {
+                                                console.error("Failed to toggle publish status:", err);
+                                              }
+                                            }}
+                                            className={`text-[9px] font-heading font-black uppercase tracking-wider px-2 py-1 rounded transition-all cursor-pointer ${
+                                              item.isPublished
+                                                ? 'bg-purple-600/30 text-purple-300 border border-purple-500/30 hover:bg-purple-600/40'
+                                                : 'bg-purple-600 text-white hover:bg-purple-500'
+                                            }`}
+                                            title={item.isPublished ? "Click to unpublish result from parent portal" : "Click to publish result to parent portal"}
+                                          >
+                                            {item.isPublished ? '📢 Published' : '🔒 Publish Result'}
+                                          </button>
+                                        </div>
                                       )}
                                       
                                       {item.status === 'approved' && (
@@ -7503,6 +7515,24 @@ export default function AdminPanel() {
                     placeholder="e.g. Magnificent execution of Heian Shodan kata, crisp blocks but core needs minor focus..."
                     className="w-full bg-slate-950 border border-zinc-800 text-zinc-305 text-xs px-3 py-2.5 rounded-lg focus:outline-none focus:border-yellow-500 h-20 placeholder:text-zinc-700"
                   />
+                </div>
+
+                {/* Publish Result toggle checkbox */}
+                <div className="bg-slate-950 p-3 rounded-xl border border-zinc-800 flex items-center justify-between">
+                  <label className="flex items-center space-x-2.5 cursor-pointer text-xs font-heading font-black uppercase text-zinc-300">
+                    <input
+                      type="checkbox"
+                      checked={adminPublishResult}
+                      onChange={(e) => setAdminPublishResult(e.target.checked)}
+                      className="w-4 h-4 rounded accent-purple-600 cursor-pointer"
+                    />
+                    <span>Publish result immediately to Parent/Student Portal</span>
+                  </label>
+                  <span className={`text-[9px] font-heading font-black uppercase px-2 py-0.5 rounded border ${
+                    adminPublishResult ? 'bg-purple-600/20 text-purple-300 border-purple-500/30' : 'bg-zinc-900 text-zinc-500 border-zinc-800'
+                  }`}>
+                    {adminPublishResult ? '📢 Will Publish' : '🔒 Draft / Private'}
+                  </span>
                 </div>
               </div>
 
