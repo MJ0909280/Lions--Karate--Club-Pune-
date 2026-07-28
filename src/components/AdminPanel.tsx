@@ -1400,6 +1400,7 @@ export default function AdminPanel() {
     const headers = [
       "Roll ID",
       "Full Name",
+      "School Name",
       "DOB",
       "Age",
       "Gender",
@@ -1434,6 +1435,7 @@ export default function AdminPanel() {
       return [
         student.studentId || "N/A",
         student.fullName || "",
+        student.schoolName || "",
         student.dob || "",
         student.age !== undefined ? student.age : "",
         student.gender || "",
@@ -1844,26 +1846,40 @@ export default function AdminPanel() {
       "Sensei Remarks & Message"
     ];
 
-    // Map each item to CSV row format
-    const rows = filteredExams.map(item => [
-      item.studentId || '',
-      item.studentName || '',
-      item.schoolName || '',
-      item.branch || '',
-      item.parentName || '',
-      item.parentPhone || '',
-      item.currentBelt ? item.currentBelt.split(' (')[0] : '',
-      item.targetBelt ? item.targetBelt.split(' (')[0] : '',
-      item.coachName || '',
-      item.examDate || '',
-      item.venueDetails || '',
-      item.feesStatus || 'Pending',
-      item.status || 'pending',
-      item.checkedIn ? 'Yes' : 'No',
-      item.checkInTime || '',
-      item.grade || '',
-      item.remarks ? item.remarks.replace(/"/g, '""') : ''
-    ]);
+    // Map each item to CSV row format with live student details from admissions
+    const rows = filteredExams.map(item => {
+      const matchedStudent = admissions.find(adm => 
+        (adm.studentId && item.studentId && adm.studentId.trim().toUpperCase() === item.studentId.trim().toUpperCase()) ||
+        (adm.fullName && item.studentName && adm.fullName.trim().toLowerCase() === item.studentName.trim().toLowerCase())
+      );
+
+      const studentName = matchedStudent?.fullName || item.studentName || '';
+      const schoolName = matchedStudent?.schoolName || item.schoolName || '';
+      const parentName = matchedStudent?.parentName || item.parentName || '';
+      const parentPhone = matchedStudent?.phone || item.parentPhone || '';
+      const branch = matchedStudent?.branch || item.branch || '';
+      const coachName = matchedStudent?.coachName || item.coachName || '';
+
+      return [
+        item.studentId || matchedStudent?.studentId || '',
+        studentName,
+        schoolName,
+        branch,
+        parentName,
+        parentPhone,
+        item.currentBelt ? item.currentBelt.split(' (')[0] : (matchedStudent?.beltLevel || ''),
+        item.targetBelt ? item.targetBelt.split(' (')[0] : '',
+        coachName,
+        item.examDate || '',
+        item.venueDetails || '',
+        item.feesStatus || 'Pending',
+        item.status || 'pending',
+        item.checkedIn ? 'Yes' : 'No',
+        item.checkInTime || '',
+        item.grade || '',
+        item.remarks ? item.remarks.replace(/"/g, '""') : ''
+      ];
+    });
 
     // Build CSV string with UTF-8 BOM to preserve any Hindi or special characters correctly in Excel
     const csvContent = "\uFEFF" + [
@@ -5318,11 +5334,27 @@ export default function AdminPanel() {
                                         </button>
                                       </div>
                                     )}
-                                    <span className="text-white font-extrabold uppercase mt-1 block">{item.studentName}</span>
-                                    {item.parentName && <span className="text-zinc-400 text-[10px] font-medium mt-0.5 block">Parent: <strong className="text-zinc-300 font-semibold">{item.parentName}</strong></span>}
-                                    {item.schoolName && <span className="text-yellow-500/80 text-[10px] font-semibold mt-0.5 block">School: {item.schoolName}</span>}
-                                    {item.parentPhone && <span className="text-zinc-500 text-[10px] mt-0.5 block">Phone: {item.parentPhone}</span>}
-                                    {item.coachName && <span className="text-zinc-500 text-[10px] mt-0.5 block">Coach: {item.coachName}</span>}
+                                    {(() => {
+                                      const matchedStudent = admissions.find(adm => 
+                                        (adm.studentId && item.studentId && adm.studentId.trim().toUpperCase() === item.studentId.trim().toUpperCase()) ||
+                                        (adm.fullName && item.studentName && adm.fullName.trim().toLowerCase() === item.studentName.trim().toLowerCase())
+                                      );
+                                      const liveStudentName = matchedStudent?.fullName || item.studentName;
+                                      const liveParentName = matchedStudent?.parentName || item.parentName;
+                                      const liveSchoolName = matchedStudent?.schoolName || item.schoolName;
+                                      const liveParentPhone = matchedStudent?.phone || item.parentPhone;
+                                      const liveCoachName = matchedStudent?.coachName || item.coachName;
+
+                                      return (
+                                        <>
+                                          <span className="text-white font-extrabold uppercase mt-1 block">{liveStudentName}</span>
+                                          {liveParentName && <span className="text-zinc-400 text-[10px] font-medium mt-0.5 block">Parent: <strong className="text-zinc-300 font-semibold">{liveParentName}</strong></span>}
+                                          {liveSchoolName && <span className="text-yellow-500/80 text-[10px] font-semibold mt-0.5 block">School: {liveSchoolName}</span>}
+                                          {liveParentPhone && <span className="text-zinc-500 text-[10px] mt-0.5 block">Phone: {liveParentPhone}</span>}
+                                          {liveCoachName && <span className="text-zinc-500 text-[10px] mt-0.5 block">Coach: {liveCoachName}</span>}
+                                        </>
+                                      );
+                                    })()}
                                   </td>
                                   <td className="py-4.5 px-6 text-zinc-400 font-medium text-left min-w-[120px] whitespace-normal">
                                     {item.branch}

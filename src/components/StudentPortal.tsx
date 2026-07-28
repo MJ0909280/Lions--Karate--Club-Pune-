@@ -2992,10 +2992,10 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
                   {registeredExams.map((exam) => (
                     <div 
                       key={exam.id}
-                      className="bg-slate-900/30 border border-zinc-900 p-5 rounded-2xl relative overflow-hidden flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:border-zinc-850 transition-colors text-left"
+                      className="bg-slate-900/30 border border-zinc-900 p-3.5 sm:p-5 rounded-2xl relative overflow-hidden flex flex-col justify-between items-start gap-4 hover:border-zinc-850 transition-colors text-left w-full max-w-full min-w-0"
                     >
-                      <div className="space-y-1.5 flex-grow">
-                        <div className="flex items-center space-x-2.5">
+                      <div className="space-y-1.5 flex-grow w-full max-w-full min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
                           <span className="text-[10px] font-semibold text-white uppercase bg-zinc-900 border border-zinc-800 px-2 py-0.5 rounded">
                             Exam Belt: {exam.targetBelt.split(' (')[0]}
                           </span>
@@ -3004,7 +3004,7 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
                           </span>
                         </div>
 
-                        <div className="mt-2.5 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 text-[11px] text-zinc-400 font-sans bg-slate-950/40 p-3 rounded-xl border border-zinc-900/30">
+                        <div className="mt-2.5 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 text-[11px] text-zinc-400 font-sans bg-slate-950/40 p-2.5 sm:p-3 rounded-xl border border-zinc-900/30 w-full max-w-full min-w-0">
                           <div>
                             <span className="text-zinc-500 mr-1">Coach Name:</span>
                             <span className="text-zinc-200 font-bold">{exam.coachName || "Sensei Maruti Jadhav"}</span>
@@ -3020,34 +3020,34 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
                             </span>
                           </div>
                           {exam.examDate && (
-                            <div className="col-span-1 sm:col-span-2 mt-1 pt-1.5 border-t border-zinc-900/60 leading-relaxed">
-                              <span className="text-yellow-500 font-bold">Exam Date & Venue:</span> <span className="text-zinc-200">{exam.examDate}</span> @ <span className="text-zinc-350 italic">{exam.venueDetails}</span>
+                            <div className="col-span-1 sm:col-span-2 mt-1 pt-1.5 border-t border-zinc-900/60 leading-relaxed break-words max-w-full">
+                              <span className="text-yellow-500 font-bold">Exam Date & Venue:</span> <span className="text-zinc-200">{exam.examDate}</span> @ <span className="text-zinc-350 italic break-words">{exam.venueDetails}</span>
                             </div>
                           )}
                         </div>
 
                         {/* 7-Discipline Marksheet Breakdown (Only if Published) */}
                         {exam.isPublished && exam.disciplinesGrades && (
-                          <div className="bg-slate-950/80 p-3 border border-zinc-900 rounded-xl mt-3 text-xs w-full">
-                            <span className="text-[8px] font-heading font-black text-yellow-500 uppercase tracking-widest block mb-1.5">
+                          <div className="bg-slate-950/80 p-2.5 sm:p-3 border border-zinc-900 rounded-xl mt-3 text-xs w-full max-w-full min-w-0 overflow-hidden">
+                            <span className="text-[8px] sm:text-[9px] font-heading font-black text-yellow-500 uppercase tracking-widest block mb-1.5">
                               OFFICIAL 7-DISCIPLINE EVALUATION
                             </span>
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 w-full max-w-full min-w-0">
                               {[
                                 { label: 'RUN', key: 'run' },
                                 { label: 'JUMP', key: 'jump' },
-                                { label: 'SIDE SIT-UPS', key: 'sidesitups' },
+                                { label: 'SIT-UPS', key: 'sidesitups' },
                                 { label: 'KICKS', key: 'kicks' },
-                                { label: 'CONDITIONING', key: 'conditionChecking' },
+                                { label: 'STAMINA', key: 'conditionChecking' },
                                 { label: 'KATA', key: 'kata' },
                                 { label: 'KUMITE', key: 'kumite' }
                               ].map(disc => {
                                 const val = (exam.disciplinesGrades as any)?.[disc.key];
                                 if (!val) return null;
                                 return (
-                                  <div key={disc.key} className="bg-slate-900 px-2 py-1 rounded border border-zinc-800 flex items-center justify-between">
-                                    <span className="text-[8px] font-mono text-zinc-400">{disc.label}:</span>
-                                    <span className="text-[9px] font-heading font-black text-yellow-400">{val}</span>
+                                  <div key={disc.key} className="bg-slate-900 px-2 py-1 rounded border border-zinc-800 flex items-center justify-between min-w-0 overflow-hidden">
+                                    <span className="text-[7.5px] sm:text-[8.5px] font-mono text-zinc-400 truncate mr-1">{disc.label}:</span>
+                                    <span className="text-[9px] sm:text-[10px] font-heading font-black text-yellow-400 shrink-0">{val}</span>
                                   </div>
                                 );
                               })}
@@ -3057,56 +3057,56 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
 
                         {/* 5 CELEBRATION ENHANCEMENTS FOR PARENT RESULT VIEW */}
                         {exam.isPublished && exam.status === 'passed' && (
-                          <div className="bg-gradient-to-br from-slate-950 via-amber-950/20 to-slate-950 p-4 border-2 border-amber-500/40 rounded-2xl mt-4 relative overflow-hidden shadow-xl shadow-amber-500/5 group">
+                          <div className="bg-gradient-to-br from-slate-950 via-amber-950/20 to-slate-950 p-3 sm:p-4 border-2 border-amber-500/40 rounded-2xl mt-4 relative overflow-hidden shadow-xl shadow-amber-500/5 group w-full max-w-full min-w-0">
                             {/* Confetti & Sparkles Background Decor */}
                             <div className="absolute top-2 right-3 flex space-x-1 opacity-80 pointer-events-none text-base animate-bounce">
                               <span>🎉</span><span>✨</span><span>🏆</span><span>🥋</span><span>🌟</span>
                             </div>
 
                             {/* 1. Golden Victory Trophy Banner */}
-                            <div className="flex items-center space-x-3 mb-3">
-                              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-yellow-300 flex items-center justify-center text-slate-950 font-black shadow-lg shadow-amber-500/20 shrink-0 ring-2 ring-amber-400/50">
-                                <Award className="w-6 h-6 text-slate-950 stroke-[2.5]" />
+                            <div className="flex items-center space-x-2.5 sm:space-x-3 mb-3 pr-12 sm:pr-0">
+                              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-yellow-300 flex items-center justify-center text-slate-950 font-black shadow-lg shadow-amber-500/20 shrink-0 ring-2 ring-amber-400/50">
+                                <Award className="w-5 h-5 sm:w-6 sm:h-6 text-slate-950 stroke-[2.5]" />
                               </div>
-                              <div>
-                                <span className="text-[10px] font-heading font-black text-amber-400 uppercase tracking-widest block">
+                              <div className="min-w-0">
+                                <span className="text-[9px] sm:text-[10px] font-heading font-black text-amber-400 uppercase tracking-widest block truncate">
                                   🎊 CONGRATULATIONS! BELT PROMOTED!
                                 </span>
-                                <h4 className="text-xs sm:text-sm font-extrabold text-white tracking-wide">
+                                <h4 className="text-xs sm:text-sm font-extrabold text-white tracking-wide break-words">
                                   {activeStudent?.fullName || exam.studentName} Passed & Earned {exam.targetBelt} Belt!
                                 </h4>
                               </div>
                             </div>
 
                             {/* 2. Visual Belt Progression Step Visualizer */}
-                            <div className="bg-slate-950/80 p-2.5 rounded-xl border border-zinc-850 flex items-center justify-between gap-2 mb-3">
-                              <div className="flex items-center space-x-2">
-                                <span className="text-[9px] font-mono text-zinc-400 uppercase">CURRENT:</span>
-                                <span className="text-[10px] font-bold text-zinc-300 bg-zinc-900 px-2 py-0.5 rounded border border-zinc-800">
+                            <div className="bg-slate-950/80 p-2 sm:p-2.5 rounded-xl border border-zinc-850 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 mb-3 w-full max-w-full min-w-0 overflow-hidden">
+                              <div className="flex items-center space-x-1.5 shrink-0">
+                                <span className="text-[8.5px] sm:text-[9px] font-mono text-zinc-400 uppercase">CURRENT:</span>
+                                <span className="text-[9.5px] sm:text-[10px] font-bold text-zinc-300 bg-zinc-900 px-2 py-0.5 rounded border border-zinc-800">
                                   {exam.currentBelt} Belt
                                 </span>
                               </div>
-                              <span className="text-amber-400 text-xs font-black animate-pulse">➔ PROMOTED ➔</span>
-                              <div className="flex items-center space-x-2">
-                                <span className="text-[9px] font-mono text-amber-400 uppercase font-black">NEW RANK:</span>
-                                <span className="text-[10px] font-black text-slate-950 bg-gradient-to-r from-amber-400 to-yellow-500 px-2.5 py-0.5 rounded shadow-md uppercase">
+                              <span className="text-amber-400 text-[10px] sm:text-xs font-black animate-pulse shrink-0">➔ PROMOTED ➔</span>
+                              <div className="flex items-center space-x-1.5 shrink-0">
+                                <span className="text-[8.5px] sm:text-[9px] font-mono text-amber-400 uppercase font-black">NEW RANK:</span>
+                                <span className="text-[9.5px] sm:text-[10px] font-black text-slate-950 bg-gradient-to-r from-amber-400 to-yellow-500 px-2.5 py-0.5 rounded shadow-md uppercase">
                                   {exam.targetBelt} Belt
                                 </span>
                               </div>
                             </div>
 
                             {/* 3. Coach Remarks Feedback */}
-                            <div className="bg-slate-900/90 p-3 border border-zinc-800 rounded-xl text-xs w-full mb-3">
+                            <div className="bg-slate-900/90 p-3 border border-zinc-800 rounded-xl text-xs w-full max-w-full min-w-0 mb-3">
                               <span className="text-[8px] font-heading font-black text-amber-400 uppercase tracking-widest block mb-1">
                                 💬 SENSEI EVALUATION & FEEDBACK
                               </span>
-                              <p className="text-zinc-300 italic font-medium leading-relaxed text-[11px]">
+                              <p className="text-zinc-300 italic font-medium leading-relaxed text-[11px] break-words">
                                 "{exam.remarks || "Outstanding spirit, discipline, and execution shown during the Karate Belt Examination!"}"
                               </p>
                             </div>
 
                             {/* 4 & 5. Action Controls: Audio Victory Fanfare Chime & WhatsApp Parent Proud Share */}
-                            <div className="flex flex-wrap items-center gap-2 pt-1">
+                            <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2 pt-1 w-full max-w-full min-w-0">
                               <button
                                 type="button"
                                 onClick={() => {
@@ -3129,7 +3129,7 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
                                     console.log("Audio fanfare play:", e);
                                   }
                                 }}
-                                className="bg-amber-500/10 hover:bg-amber-500 text-amber-400 hover:text-slate-950 border border-amber-500/30 px-3 py-1.5 rounded-lg text-[10px] font-heading font-black uppercase tracking-wider transition-all flex items-center space-x-1.5 cursor-pointer"
+                                className="bg-amber-500/10 hover:bg-amber-500 text-amber-400 hover:text-slate-950 border border-amber-500/30 px-3 py-2 sm:py-1.5 rounded-lg text-[10px] font-heading font-black uppercase tracking-wider transition-all flex items-center justify-center space-x-1.5 cursor-pointer"
                               >
                                 <span>🔊 Play Victory Fanfare</span>
                               </button>
@@ -3140,7 +3140,7 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
                                 )}`}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 px-3 py-1.5 rounded-lg text-[10px] font-heading font-black uppercase tracking-wider transition-all flex items-center space-x-1.5 cursor-pointer"
+                                className="bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 px-3 py-2 sm:py-1.5 rounded-lg text-[10px] font-heading font-black uppercase tracking-wider transition-all flex items-center justify-center space-x-1.5 cursor-pointer"
                               >
                                 <MessageCircle className="w-3.5 h-3.5 text-emerald-400" />
                                 <span>Share on WhatsApp</span>
@@ -3149,7 +3149,7 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
                               <button
                                 type="button"
                                 onClick={() => setSelectedCert(exam)}
-                                className="bg-yellow-500 text-slate-950 hover:bg-yellow-400 px-3 py-1.5 rounded-lg text-[10px] font-heading font-black uppercase tracking-wider transition-all flex items-center space-x-1.5 cursor-pointer shadow-md ml-auto"
+                                className="bg-yellow-500 text-slate-950 hover:bg-yellow-400 px-3 py-2 sm:py-1.5 rounded-lg text-[10px] font-heading font-black uppercase tracking-wider transition-all flex items-center justify-center space-x-1.5 cursor-pointer shadow-md sm:ml-auto"
                               >
                                 <Award className="w-3.5 h-3.5 text-slate-950 stroke-[2.5]" />
                                 <span>Official Certificate</span>
@@ -3415,9 +3415,9 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
                   <p className="text-[7px] sm:text-[9px] text-zinc-500 mt-1 font-sans">
                     Student ID: <strong className="text-zinc-800">{selectedCert.studentId}</strong>
                   </p>
-                  {selectedCert.schoolName && (
+                  {(activeStudent?.schoolName || selectedCert.schoolName) && (
                     <p className="text-[8px] sm:text-[10px] text-amber-800 mt-1 font-sans">
-                      Academic Institution: <strong className="text-zinc-900 font-bold">{selectedCert.schoolName}</strong>
+                      Academic Institution: <strong className="text-zinc-900 font-bold">{activeStudent?.schoolName || selectedCert.schoolName}</strong>
                     </p>
                   )}
                 </div>
