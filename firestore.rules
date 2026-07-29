@@ -73,8 +73,10 @@ service cloud.firestore {
 
     // Receipts collection rules
     match /receipts/{receiptId} {
-      // Only authorized admin is allowed to read, write, update or delete receipts
-      allow get, list, create, update, delete: if isAdmin();
+      // Allow parents to search receipts for student results
+      allow get, list: if true;
+      // Only authorized admin is allowed to create, update or delete receipts
+      allow create, update, delete: if isAdmin();
     }
 
     // Parent Queries collection rules

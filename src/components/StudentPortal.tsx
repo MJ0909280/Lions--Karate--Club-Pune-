@@ -1571,6 +1571,9 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
     const searchLower = rawSearch.toLowerCase();
     const searchDigits = rawSearch.replace(/\D/g, '');
 
+    const isRollIdSearch = searchUpper.includes('LKCP') || /^[A-Z0-9]{3,}-\d+/.test(searchUpper) || /^\d{1,4}$/.test(rawSearch);
+    const isPhoneSearch = !isRollIdSearch && /^\d{7,10}$/.test(searchDigits);
+
     const processAdmissionsDocs = (docs: any[]) => {
       let bestDoc: any = null;
       let highestScore = -1;
@@ -1602,16 +1605,16 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
         else if (checkStudentIdMatch(stId, rawSearch) || checkStudentIdMatch(docId, rawSearch)) {
           score = 800;
         } 
-        // 4. Exact Full Name match
-        else if (fn && searchLower && fn === searchLower) {
+        // 4. Exact Full Name match (ONLY if NOT searching purely an ID)
+        else if (!isRollIdSearch && fn && searchLower && fn === searchLower) {
           score = 700;
         } 
-        // 5. Partial Name match
-        else if (fn && searchLower && searchLower.length >= 3 && (fn.includes(searchLower) || searchLower.includes(fn))) {
+        // 5. Partial Name match (ONLY if user typed a name)
+        else if (!isRollIdSearch && fn && searchLower && searchLower.length >= 3 && fn.includes(searchLower)) {
           score = 500;
         } 
-        // 6. Phone match
-        else if (searchDigits.length >= 7 && (ph.includes(searchDigits) || pph.includes(searchDigits))) {
+        // 6. Phone match (ONLY if user explicitly typed a phone number)
+        else if (isPhoneSearch && (ph === searchDigits || pph === searchDigits || ph.includes(searchDigits) || pph.includes(searchDigits))) {
           score = 400;
         }
 
@@ -1649,9 +1652,9 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
             score = 900;
           } else if (checkStudentIdMatch(exStId, rawSearch) || checkStudentIdMatch(exDocId, rawSearch)) {
             score = 800;
-          } else if (exName && searchLower && exName === searchLower) {
+          } else if (!isRollIdSearch && exName && searchLower && exName === searchLower) {
             score = 700;
-          } else if (exName && searchLower && searchLower.length >= 3 && (exName.includes(searchLower) || searchLower.includes(exName))) {
+          } else if (!isRollIdSearch && exName && searchLower && searchLower.length >= 3 && exName.includes(searchLower)) {
             score = 500;
           }
 
@@ -1698,9 +1701,9 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
                 score = 900;
               } else if (checkStudentIdMatch(rcStId, rawSearch) || checkStudentIdMatch(rcDocId, rawSearch)) {
                 score = 800;
-              } else if (rcName && searchLower && rcName === searchLower) {
+              } else if (!isRollIdSearch && rcName && searchLower && rcName === searchLower) {
                 score = 700;
-              } else if (rcName && searchLower && searchLower.length >= 3 && (rcName.includes(searchLower) || searchLower.includes(rcName))) {
+              } else if (!isRollIdSearch && rcName && searchLower && searchLower.length >= 3 && rcName.includes(searchLower)) {
                 score = 500;
               }
 
