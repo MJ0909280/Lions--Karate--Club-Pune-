@@ -59,7 +59,7 @@ export default function App() {
         setView('admin');
       } else if (hash.startsWith('#student-portal') || hash.startsWith('#check-results') || hash.startsWith('#results')) {
         setView('student-portal');
-        setStudentPortalTab('exam');
+        setStudentPortalTab('progress');
       } else if (hash.startsWith('#belt-exam')) {
         setView('student-portal');
         setStudentPortalTab('exam');

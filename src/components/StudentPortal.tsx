@@ -1516,51 +1516,108 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
 
     setSearching(true);
     setSearchError('');
+    const rawSearch = activeStudentId.trim();
+    const searchUpper = rawSearch.toUpperCase();
+    const searchLower = rawSearch.toLowerCase();
+    const searchDigits = rawSearch.replace(/\D/g, '');
+
     const admissionsRef = collection(db, 'admissions');
-    const q = query(
-      admissionsRef, 
-      where('studentId', '==', activeStudentId)
-    );
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      setSearching(false);
-      const approvedDocs = snapshot.docs.filter(doc => doc.data().status === 'approved');
+    const unsubscribeAdmissions = onSnapshot(admissionsRef, (snapshot) => {
+      let matchedDoc: any = null;
 
-      if (approvedDocs.length === 0) {
-        setSearchError('No approved student found matching this Roll ID. (Note: Admission must be Approved by the coach first).');
-        setActiveStudent(null);
-      } else {
-        const studentDoc = approvedDocs[0];
-        const studentData = {
-          id: studentDoc.id,
-          ...studentDoc.data()
-        } as Admission;
-        
-        setActiveStudent(studentData);
+      // 1. Try finding student in admissions collection case-insensitively
+      snapshot.forEach((docSnap) => {
+        if (matchedDoc) return;
+        const data = docSnap.data();
+        if (data.status === 'rejected') return; // skip rejected admissions
+
+        const stId = (data.studentId || '').trim().toUpperCase();
+        const docId = docSnap.id.toUpperCase();
+        const fn = (data.fullName || '').trim().toLowerCase();
+        const ph = (data.phone || '').replace(/\D/g, '');
+        const pph = (data.parentPhone || '').replace(/\D/g, '');
+
+        if (
+          (stId && stId === searchUpper) ||
+          (docId && docId === searchUpper) ||
+          (fn && (fn === searchLower || searchLower.includes(fn) || fn.includes(searchLower))) ||
+          (searchDigits && searchDigits.length >= 8 && (ph.includes(searchDigits) || pph.includes(searchDigits)))
+        ) {
+          matchedDoc = {
+            id: docSnap.id,
+            ...data
+          };
+        }
+      });
+
+      if (matchedDoc) {
+        setSearching(false);
+        setActiveStudent(matchedDoc as Admission);
         setSearchError('');
         
-        // Pre-fill exam form details
-        setParentName(studentData.parentName || '');
-        setParentPhone(studentData.phone || '');
-        setBranch(studentData.branch || DOJO_BRANCHES[0].name);
-        setSchoolName(studentData.schoolName || '');
+        setParentName(matchedDoc.parentName || '');
+        setParentPhone(matchedDoc.phone || '');
+        setBranch(matchedDoc.branch || DOJO_BRANCHES[0].name);
+        setSchoolName(matchedDoc.schoolName || '');
 
-        // Intelligently guess the next belt rank for the student
-        const studentBeltLevel = studentData.beltLevel || '';
+        const studentBeltLevel = matchedDoc.beltLevel || '';
         const currentIdx = BELT_LEVELS.findIndex(b => b.name && studentBeltLevel && (studentBeltLevel.trim().toLowerCase() === b.name.toLowerCase() || studentBeltLevel.toLowerCase().includes(b.name.toLowerCase())));
         if (currentIdx !== -1 && currentIdx < BELT_LEVELS.length - 1) {
           setTargetBelt(BELT_LEVELS[currentIdx + 1].name);
         } else {
-          setTargetBelt(BELT_LEVELS[1].name); // Fallback to Yellow Belt
+          setTargetBelt(BELT_LEVELS[1].name);
         }
+      } else {
+        // Fallback: Check if exam record exists in 'exams' collection
+        const examsRef = collection(db, 'exams');
+        getDocs(examsRef).then((examSnap) => {
+          setSearching(false);
+          let foundExam: any = null;
+          examSnap.forEach((exDoc) => {
+            if (foundExam) return;
+            const exData = exDoc.data();
+            const exStId = (exData.studentId || '').trim().toUpperCase();
+            const exName = (exData.studentName || '').trim().toLowerCase();
+            
+            if (
+              (exStId && exStId === searchUpper) ||
+              (exName && (exName === searchLower || searchLower.includes(exName) || exName.includes(searchLower)))
+            ) {
+              foundExam = exData;
+            }
+          });
+
+          if (foundExam) {
+            const virtualStudent = {
+              id: 'exam_st_' + (foundExam.studentId || searchUpper),
+              studentId: foundExam.studentId || searchUpper,
+              fullName: foundExam.studentName || 'Karate Student',
+              parentName: foundExam.parentName || '',
+              phone: foundExam.parentPhone || '',
+              beltLevel: foundExam.targetBelt || 'Shotokan Belt',
+              status: 'approved',
+              createdAt: foundExam.createdAt || Date.now()
+            } as Admission;
+            setActiveStudent(virtualStudent);
+            setSearchError('');
+          } else {
+            setSearchError(`No active student or exam record found matching "${rawSearch}". Please verify the Karate Roll ID or Student Name with your coach.`);
+            setActiveStudent(null);
+          }
+        }).catch(() => {
+          setSearching(false);
+          setSearchError(`No active student found matching "${rawSearch}". Please check Roll ID with your coach.`);
+          setActiveStudent(null);
+        });
       }
     }, (error) => {
-      console.error("Real-time student lookup connection error: ", error);
+      console.error("Real-time student lookup error: ", error);
       setSearching(false);
       setSearchError("A server connection error occurred. Reconnecting...");
     });
 
-    return () => unsubscribe();
+    return () => unsubscribeAdmissions();
   }, [activeStudentId]);
 
   // Fetch student exams list dynamically when activeStudent changes
