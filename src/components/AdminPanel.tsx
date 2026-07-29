@@ -1659,11 +1659,16 @@ export default function AdminPanel() {
     setGradingError('');
 
     try {
+      const computedOverall = (adminDisciplinesGrades && Object.keys(adminDisciplinesGrades).length > 0)
+        ? calculateOverallGrade(adminDisciplinesGrades)
+        : undefined;
+      const finalGradeValue = computedOverall || enteredGrade.trim() || 'A';
+
       // 1. Grade the exam document
       const examRef = doc(db, 'exams', gradingExam.id);
       await updateDoc(examRef, {
         status: gradingExam.statusAction,
-        grade: enteredGrade.trim(),
+        grade: finalGradeValue,
         disciplinesGrades: adminDisciplinesGrades,
         remarks: enteredRemarks.trim(),
         isPublished: adminPublishResult,

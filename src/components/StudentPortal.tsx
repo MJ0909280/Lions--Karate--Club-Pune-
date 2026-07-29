@@ -14,7 +14,7 @@ import {
 } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType, generateSequentialStudentId } from '../firebase';
 import { safeLocalStorage } from '../utils/storage';
-import { Admission, BELT_LEVELS, DOJO_BRANCHES } from '../types';
+import { Admission, BELT_LEVELS, DOJO_BRANCHES, calculateOverallGrade } from '../types';
 import AttendanceTracker from './AttendanceTracker';
 import { 
   Search, 
@@ -3221,10 +3221,12 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
 
                       {/* Side Status Badge indicator block */}
                       <div className="shrink-0 flex items-center space-x-3">
-                        {exam.isPublished && exam.grade && (
+                        {exam.isPublished && (exam.grade || exam.disciplinesGrades) && (
                           <div className="text-right">
                             <span className="text-[8px] font-mono text-zinc-550 block leading-none uppercase">GRADE</span>
-                            <span className="font-heading font-black text-base text-yellow-500 mt-1 block leading-none font-sans">{exam.grade}</span>
+                            <span className="font-heading font-black text-base text-yellow-500 mt-1 block leading-none font-sans">
+                              {(exam.disciplinesGrades ? calculateOverallGrade(exam.disciplinesGrades) : undefined) || exam.grade || 'A'}
+                            </span>
                           </div>
                         )}
 
@@ -3438,9 +3440,11 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
                     <p className="text-xs sm:text-sm md:text-lg font-extrabold text-amber-700 uppercase tracking-widest font-sans">
                       {selectedCert.targetBelt || "Yellow Belt"}
                     </p>
-                    {selectedCert.grade && (
+                    {((selectedCert.disciplinesGrades ? calculateOverallGrade(selectedCert.disciplinesGrades) : undefined) || selectedCert.grade) && (
                       <span className="text-[9px] sm:text-[10px] font-sans font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                        Exam Grade: <strong className="font-black text-emerald-800">{selectedCert.grade}</strong>
+                        Exam Grade: <strong className="font-black text-emerald-800">
+                          {(selectedCert.disciplinesGrades ? calculateOverallGrade(selectedCert.disciplinesGrades) : undefined) || selectedCert.grade}
+                        </strong>
                       </span>
                     )}
                   </div>
