@@ -2735,12 +2735,12 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
                       </div>
                       <div className="pt-1">
                         <a
-                          href={`https://wa.me/919637777170?text=${encodeURIComponent(`Hello Shihan Maruti Jadhav, I am searching for my child's karate result on the website. My child's Roll ID / Name is: ${studentIdInput || 'LKCP-2026'}`)}`}
+                          href={`https://wa.me/919049688172?text=${encodeURIComponent(`Hello Shihan Maruti Jadhav, I am searching for my child's karate result on the website. My child's Roll ID / Name is: ${studentIdInput || 'LKCP-2026'}`)}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center space-x-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2 rounded-lg text-xs transition-colors shadow-sm cursor-pointer"
                         >
-                          <span>Need Help? Chat with Coach on WhatsApp (+91 9637777170)</span>
+                          <span>Need Help? Chat with Coach on WhatsApp (+91 9049688172)</span>
                         </a>
                       </div>
                     </div>
