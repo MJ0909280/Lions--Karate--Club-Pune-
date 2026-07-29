@@ -439,19 +439,15 @@ export function checkStudentIdMatch(targetStr: string, queryStr: string): boolea
   const tUpper = targetStr.trim().toUpperCase();
   const qUpper = queryStr.trim().toUpperCase();
 
-  // 1. Exact string match
+  // 1. Exact string match (e.g. "LKCP-2026-175" === "LKCP-2026-175")
   if (tUpper === qUpper) return true;
 
-  // 2. Clean alphanumeric match (ignoring dashes, spaces, symbols)
+  // 2. Clean alphanumeric match (ignoring dashes, spaces, symbols: "LKCP2026175" === "LKCP2026175")
   const tClean = tUpper.replace(/[^A-Z0-9]/g, '');
   const qClean = qUpper.replace(/[^A-Z0-9]/g, '');
   if (tClean === qClean) return true;
 
-  // 3. Substring match
-  if (tUpper.includes(qUpper) || qUpper.includes(tUpper)) return true;
-  if (tClean.includes(qClean) || qClean.includes(tClean)) return true;
-
-  // 4. Extract Year & Serial Numbers (e.g. LKCP-2026-173 vs LKCP-2026-0173)
+  // 3. Extract Year & Serial Numbers (e.g. LKCP-2026-175 vs 175, LKCP-2026-0175, etc.)
   const tNumMatches = tUpper.match(/\d+/g) || [];
   const qNumMatches = qUpper.match(/\d+/g) || [];
 
@@ -462,20 +458,20 @@ export function checkStudentIdMatch(targetStr: string, queryStr: string): boolea
     const tLastNum = parseInt(tNumMatches[tNumMatches.length - 1], 10);
     const qLastNum = parseInt(qNumMatches[qNumMatches.length - 1], 10);
 
-    // If years match (or one is unassigned) AND numerical serials match (173 === 0173)
+    // If years match (or one is unassigned) AND numerical serials match EXACTLY (175 === 175)
+    // Note: 175 DOES NOT match 17 or 1755!
     if ((!tYear || !qYear || tYear === qYear) && !isNaN(tLastNum) && !isNaN(qLastNum) && tLastNum === qLastNum) {
       return true;
     }
   }
 
-  // 5. Raw digits match
+  // 4. Raw digits match (e.g., target "2026175" vs query "2026175")
   const tDigits = tUpper.replace(/\D/g, '');
   const qDigits = qUpper.replace(/\D/g, '');
   if (tDigits && qDigits) {
     const tNum = parseInt(tDigits, 10);
     const qNum = parseInt(qDigits, 10);
     if (!isNaN(tNum) && !isNaN(qNum) && tNum === qNum) return true;
-    if (tDigits.endsWith(qDigits) || qDigits.endsWith(tDigits)) return true;
   }
 
   return false;
@@ -1576,10 +1572,10 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
     const searchDigits = rawSearch.replace(/\D/g, '');
 
     const processAdmissionsDocs = (docs: any[]) => {
-      let matchedDoc: any = null;
+      let bestDoc: any = null;
+      let highestScore = -1;
 
       docs.forEach((docSnap) => {
-        if (matchedDoc) return;
         const data = docSnap.data ? docSnap.data() : docSnap;
         if (data.status === 'rejected') return; // skip rejected admissions
 
@@ -1589,52 +1585,93 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
         const ph = (data.phone || data.parentPhone || '').replace(/\D/g, '');
         const pph = (data.parentPhone || '').replace(/\D/g, '');
 
-        // Match conditions:
-        const isIdMatch = checkStudentIdMatch(stId, rawSearch) || checkStudentIdMatch(docId, rawSearch);
-        const isNameMatch = fn && searchLower && (fn.includes(searchLower) || searchLower.includes(fn));
-        const isPhoneMatch = searchDigits.length >= 7 && (ph.includes(searchDigits) || pph.includes(searchDigits));
+        const stIdUpper = stId.toUpperCase();
+        const docIdUpper = docId.toUpperCase();
 
-        if (isIdMatch || isNameMatch || isPhoneMatch) {
-          matchedDoc = {
+        let score = 0;
+
+        // 1. Absolute exact match on ID string or Doc ID
+        if (stIdUpper === searchUpper || docIdUpper === searchUpper) {
+          score = 1000;
+        } 
+        // 2. Clean alphanumeric match (e.g. LKCP2026175 === LKCP2026175)
+        else if (stIdUpper.replace(/[^A-Z0-9]/g, '') === searchUpper.replace(/[^A-Z0-9]/g, '')) {
+          score = 900;
+        } 
+        // 3. Exact serial number match (e.g. 175 === 175)
+        else if (checkStudentIdMatch(stId, rawSearch) || checkStudentIdMatch(docId, rawSearch)) {
+          score = 800;
+        } 
+        // 4. Exact Full Name match
+        else if (fn && searchLower && fn === searchLower) {
+          score = 700;
+        } 
+        // 5. Partial Name match
+        else if (fn && searchLower && searchLower.length >= 3 && (fn.includes(searchLower) || searchLower.includes(fn))) {
+          score = 500;
+        } 
+        // 6. Phone match
+        else if (searchDigits.length >= 7 && (ph.includes(searchDigits) || pph.includes(searchDigits))) {
+          score = 400;
+        }
+
+        if (score > highestScore) {
+          highestScore = score;
+          bestDoc = {
             id: docSnap.id,
             ...data
           };
         }
       });
 
-      return matchedDoc;
+      return highestScore > 0 ? bestDoc : null;
     };
 
     const tryExamsFallback = () => {
       const examsRef = collection(db, 'exams');
       getDocs(examsRef).then((examSnap) => {
-        let foundExam: any = null;
+        let bestExam: any = null;
+        let highestExamScore = -1;
+
         examSnap.forEach((exDoc) => {
-          if (foundExam) return;
           const exData = exDoc.data();
           const exStId = (exData.studentId || exData.rollId || '').trim();
+          const exDocId = (exDoc.id || '').trim();
           const exName = (exData.studentName || '').trim().toLowerCase();
           
-          if (
-            checkStudentIdMatch(exStId, rawSearch) ||
-            checkStudentIdMatch(exDoc.id, rawSearch) ||
-            (exName && searchLower && (exName.includes(searchLower) || searchLower.includes(exName)))
-          ) {
-            foundExam = exData;
+          let score = 0;
+          const exStIdUpper = exStId.toUpperCase();
+          const exDocIdUpper = exDocId.toUpperCase();
+
+          if (exStIdUpper === searchUpper || exDocIdUpper === searchUpper) {
+            score = 1000;
+          } else if (exStIdUpper.replace(/[^A-Z0-9]/g, '') === searchUpper.replace(/[^A-Z0-9]/g, '')) {
+            score = 900;
+          } else if (checkStudentIdMatch(exStId, rawSearch) || checkStudentIdMatch(exDocId, rawSearch)) {
+            score = 800;
+          } else if (exName && searchLower && exName === searchLower) {
+            score = 700;
+          } else if (exName && searchLower && searchLower.length >= 3 && (exName.includes(searchLower) || searchLower.includes(exName))) {
+            score = 500;
+          }
+
+          if (score > highestExamScore) {
+            highestExamScore = score;
+            bestExam = exData;
           }
         });
 
-        if (foundExam) {
+        if (highestExamScore > 0 && bestExam) {
           setSearching(false);
           const virtualStudent = {
-            id: 'exam_st_' + (foundExam.studentId || searchUpper),
-            studentId: foundExam.studentId || searchUpper,
-            fullName: foundExam.studentName || 'Karate Student',
-            parentName: foundExam.parentName || '',
-            phone: foundExam.parentPhone || '',
-            beltLevel: foundExam.targetBelt || 'Shotokan Belt',
+            id: 'exam_st_' + (bestExam.studentId || searchUpper),
+            studentId: bestExam.studentId || searchUpper,
+            fullName: bestExam.studentName || 'Karate Student',
+            parentName: bestExam.parentName || '',
+            phone: bestExam.parentPhone || '',
+            beltLevel: bestExam.targetBelt || 'Shotokan Belt',
             status: 'approved',
-            createdAt: foundExam.createdAt || Date.now()
+            createdAt: bestExam.createdAt || Date.now()
           } as Admission;
           setActiveStudent(virtualStudent);
           setSearchError('');
@@ -1642,28 +1679,48 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
           // Check receipts collection as 3rd fallback
           const receiptsRef = collection(db, 'receipts');
           getDocs(receiptsRef).then((rcSnap) => {
-            let foundReceipt: any = null;
+            let bestReceipt: any = null;
+            let highestRcScore = -1;
+
             rcSnap.forEach((rcDoc) => {
-              if (foundReceipt) return;
               const rcData = rcDoc.data();
               const rcStId = (rcData.studentId || '').trim();
+              const rcDocId = (rcDoc.id || '').trim();
               const rcName = (rcData.studentName || '').trim().toLowerCase();
-              if (checkStudentIdMatch(rcStId, rawSearch) || checkStudentIdMatch(rcDoc.id, rawSearch) || (rcName && searchLower && rcName.includes(searchLower))) {
-                foundReceipt = rcData;
+
+              let score = 0;
+              const rcStIdUpper = rcStId.toUpperCase();
+              const rcDocIdUpper = rcDocId.toUpperCase();
+
+              if (rcStIdUpper === searchUpper || rcDocIdUpper === searchUpper) {
+                score = 1000;
+              } else if (rcStIdUpper.replace(/[^A-Z0-9]/g, '') === searchUpper.replace(/[^A-Z0-9]/g, '')) {
+                score = 900;
+              } else if (checkStudentIdMatch(rcStId, rawSearch) || checkStudentIdMatch(rcDocId, rawSearch)) {
+                score = 800;
+              } else if (rcName && searchLower && rcName === searchLower) {
+                score = 700;
+              } else if (rcName && searchLower && searchLower.length >= 3 && (rcName.includes(searchLower) || searchLower.includes(rcName))) {
+                score = 500;
+              }
+
+              if (score > highestRcScore) {
+                highestRcScore = score;
+                bestReceipt = rcData;
               }
             });
 
-            if (foundReceipt) {
+            if (highestRcScore > 0 && bestReceipt) {
               setSearching(false);
               const virtualStudent = {
-                id: 'rc_st_' + (foundReceipt.studentId || searchUpper),
-                studentId: foundReceipt.studentId || searchUpper,
-                fullName: foundReceipt.studentName || 'Karate Student',
-                parentName: foundReceipt.parentName || '',
-                phone: foundReceipt.phone || '',
-                beltLevel: foundReceipt.beltLevel || 'Shotokan Belt',
+                id: 'rc_st_' + (bestReceipt.studentId || searchUpper),
+                studentId: bestReceipt.studentId || searchUpper,
+                fullName: bestReceipt.studentName || 'Karate Student',
+                parentName: bestReceipt.parentName || '',
+                phone: bestReceipt.phone || '',
+                beltLevel: bestReceipt.beltLevel || 'Shotokan Belt',
                 status: 'approved',
-                createdAt: foundReceipt.createdAt || Date.now()
+                createdAt: bestReceipt.createdAt || Date.now()
               } as Admission;
               setActiveStudent(virtualStudent);
               setSearchError('');
