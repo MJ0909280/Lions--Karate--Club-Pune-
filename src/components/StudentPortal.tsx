@@ -2926,39 +2926,71 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
 
               {/* Responsive interactive timeline grid of Shotokan Belts */}
               <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4">
-                {BELT_LEVELS.map((belt, idx) => {
-                  const studentBeltClean = activeStudent.beltLevel.split(' (')[0].toLowerCase();
-                  const currentBeltClean = belt.name.split(' (')[0].toLowerCase();
-                  
-                  // Match logic
-                  const isCurrent = studentBeltClean.includes(currentBeltClean) || currentBeltClean.includes(studentBeltClean);
-                  
-                  return (
-                    <div 
-                      key={idx}
-                      className={`relative p-4 rounded-xl border text-center transition-all duration-300 flex flex-col justify-between items-center ${
-                        isCurrent 
-                          ? 'border-yellow-500 bg-yellow-500/10 ring-2 ring-yellow-500/20 shadow-lg scale-105 z-10'
-                          : 'border-zinc-900 bg-zinc-950/40 opacity-55 hover:opacity-100 hover:border-zinc-800 transition-opacity'
-                      }`}
-                    >
-                      {/* REAL PHYSICAL SHOTOKAN BELT GRAPHIC WITH FABRIC STITCHING & EMBROIDERY */}
-                      <div className="w-full flex-grow flex items-center justify-center min-h-[64px]">
-                        <KarateBeltGraphic beltName={belt.name} />
-                      </div>
+                {(() => {
+                  const getBeltIdx = (bName: string) => {
+                    if (!bName) return 0;
+                    const clean = bName.split('(')[0].toLowerCase().trim();
+                    const idx = BELT_LEVELS.findIndex(b => {
+                      const bClean = b.name.split('(')[0].toLowerCase().trim();
+                      return clean === bClean || clean.includes(bClean) || bClean.includes(clean);
+                    });
+                    return idx !== -1 ? idx : 0;
+                  };
 
-                      <span className="text-[10px] font-heading font-black block text-white select-none whitespace-normal leading-tight uppercase tracking-wider mt-2.5">
-                        {belt.name.split(' (')[0]}
-                      </span>
-                      
-                      {isCurrent && (
-                        <span className="absolute -top-2 left-1/2 -translate-x-1/2 text-[8px] font-heading text-yellow-500 uppercase tracking-widest font-black bg-slate-950 px-2 py-0.5 rounded-full border border-yellow-550/30 shadow-md">
-                          ACTIVE
+                  let currentBeltIdx = getBeltIdx(activeStudent.beltLevel);
+
+                  if (registeredExams && registeredExams.length > 0) {
+                    registeredExams.forEach(ex => {
+                      if (ex.isPublished && ex.status === 'passed' && ex.targetBelt) {
+                        const exIdx = getBeltIdx(ex.targetBelt);
+                        if (exIdx > currentBeltIdx) {
+                          currentBeltIdx = exIdx;
+                        }
+                      }
+                    });
+                  }
+
+                  return BELT_LEVELS.map((belt, idx) => {
+                    const isCurrent = idx === currentBeltIdx;
+                    const isCompleted = idx < currentBeltIdx;
+
+                    return (
+                      <div 
+                        key={idx}
+                        className={`relative p-3.5 sm:p-4 rounded-xl border text-center transition-all duration-300 flex flex-col justify-between items-center ${
+                          isCurrent 
+                            ? 'border-yellow-500 bg-yellow-500/15 ring-2 ring-yellow-500/30 shadow-lg shadow-yellow-500/10 scale-105 z-10'
+                            : isCompleted
+                              ? 'border-emerald-500/50 bg-emerald-950/25 shadow-md shadow-emerald-500/5 hover:border-emerald-500/80'
+                              : 'border-zinc-900 bg-zinc-950/40 opacity-45 hover:opacity-80 transition-opacity'
+                        }`}
+                      >
+                        {/* REAL PHYSICAL SHOTOKAN BELT GRAPHIC WITH FABRIC STITCHING & EMBROIDERY */}
+                        <div className="w-full flex-grow flex items-center justify-center min-h-[64px]">
+                          <KarateBeltGraphic beltName={belt.name} />
+                        </div>
+
+                        <span className={`text-[10px] font-heading font-black block select-none whitespace-normal leading-tight uppercase tracking-wider mt-2.5 ${
+                          isCurrent ? 'text-yellow-400' : isCompleted ? 'text-emerald-300' : 'text-zinc-500'
+                        }`}>
+                          {belt.name.split(' (')[0]}
                         </span>
-                      )}
-                    </div>
-                  );
-                })}
+                        
+                        {isCurrent && (
+                          <span className="absolute -top-2 left-1/2 -translate-x-1/2 text-[8px] font-heading text-yellow-400 uppercase tracking-widest font-black bg-slate-950 px-2 py-0.5 rounded-full border border-yellow-500/50 shadow-md whitespace-nowrap">
+                            ACTIVE
+                          </span>
+                        )}
+
+                        {isCompleted && (
+                          <span className="absolute -top-2 left-1/2 -translate-x-1/2 text-[8px] font-heading text-emerald-400 uppercase tracking-widest font-black bg-slate-950 px-2.5 py-0.5 rounded-full border border-emerald-500/50 shadow-md whitespace-nowrap">
+                            PASSED ✓
+                          </span>
+                        )}
+                      </div>
+                    );
+                  });
+                })()}
               </div>
             </div>
             )}
