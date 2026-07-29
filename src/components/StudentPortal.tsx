@@ -458,6 +458,48 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
   const [selectedCert, setSelectedCert] = useState<ExamRecord | null>(null);
   const [downloadingCert, setDownloadingCert] = useState(false);
 
+  // Belt Progress Celebration states
+  const [showCelebrationModal, setShowCelebrationModal] = useState(false);
+  const [celebratedBeltName, setCelebratedBeltName] = useState<string>('Shotokan Belt');
+  const lastCelebratedBeltRef = React.useRef<string | null>(null);
+
+  const triggerBeltCelebration = (beltName?: string) => {
+    const targetBelt = beltName || activeStudent?.beltLevel || 'Shotokan Belt';
+    setCelebratedBeltName(targetBelt);
+    setShowCelebrationModal(true);
+
+    // Audio chime
+    try {
+      playKarateBell();
+    } catch (e) {
+      console.error("Audio error:", e);
+    }
+
+    // High impact celebratory confetti fireworks
+    try {
+      confetti({
+        particleCount: 160,
+        spread: 100,
+        origin: { y: 0.55 },
+        zIndex: 100000
+      });
+
+      const duration = 2.8 * 1000;
+      const animationEnd = Date.now() + duration;
+      const defaults = { startVelocity: 35, spread: 360, ticks: 60, zIndex: 100000 };
+
+      const interval: any = setInterval(() => {
+        const timeLeft = animationEnd - Date.now();
+        if (timeLeft <= 0) return clearInterval(interval);
+        const particleCount = 45 * (timeLeft / duration);
+        confetti({ ...defaults, particleCount, origin: { x: Math.random() * 0.35 + 0.05, y: Math.random() - 0.2 } });
+        confetti({ ...defaults, particleCount, origin: { x: Math.random() * 0.35 + 0.6, y: Math.random() - 0.2 } });
+      }, 250);
+    } catch (err) {
+      console.error("Confetti error:", err);
+    }
+  };
+
   // Dynamic automated badge calculations with zero overhead
   const getStudentBadges = (): BadgeDef[] => {
     if (!activeStudent) return [];
@@ -1553,6 +1595,44 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
 
     return () => unsubscribe();
   }, [activeStudent]);
+
+  // Auto-detect when student's belt progress updates and trigger celebration
+  useEffect(() => {
+    if (!activeStudent) return;
+
+    const getBeltIdx = (bName: string) => {
+      if (!bName) return 0;
+      const clean = bName.split('(')[0].toLowerCase().trim();
+      const idx = BELT_LEVELS.findIndex(b => {
+        const bClean = b.name.split('(')[0].toLowerCase().trim();
+        return clean === bClean || clean.includes(bClean) || bClean.includes(clean);
+      });
+      return idx !== -1 ? idx : 0;
+    };
+
+    let highestBeltIdx = getBeltIdx(activeStudent.beltLevel);
+    let highestBeltName = activeStudent.beltLevel;
+
+    if (registeredExams && registeredExams.length > 0) {
+      registeredExams.forEach(ex => {
+        if (ex.isPublished && ex.status === 'passed' && ex.targetBelt) {
+          const exIdx = getBeltIdx(ex.targetBelt);
+          if (exIdx > highestBeltIdx) {
+            highestBeltIdx = exIdx;
+            highestBeltName = ex.targetBelt;
+          }
+        }
+      });
+    }
+
+    const currentBeltKey = `${activeStudent.studentId}_${highestBeltName}`;
+
+    if (lastCelebratedBeltRef.current && lastCelebratedBeltRef.current !== currentBeltKey) {
+      // Belt progress updated! Fire celebratory animation
+      triggerBeltCelebration(highestBeltName);
+    }
+    lastCelebratedBeltRef.current = currentBeltKey;
+  }, [activeStudent, registeredExams]);
 
   const performLookup = (idToSearch: string) => {
     const searchId = idToSearch.trim().toUpperCase();
@@ -2914,14 +2994,24 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
             {/* VISUAL BELT PROGRESS TIMELINE */}
             {activeTab === 'progress' && (
               <div className="bg-slate-900/40 border border-zinc-900/80 p-6 sm:p-8 rounded-2xl space-y-6 animate-fade-in">
-              <div className="flex items-center justify-between border-b border-zinc-900/60 pb-3">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-900/60 pb-3">
                 <h4 className="font-heading text-sm sm:text-base font-black text-white uppercase tracking-wider flex items-center gap-2">
                   <TrendingUp className="w-5 h-5 text-yellow-500 shrink-0" />
                   Karate Belt Progress Path
                 </h4>
-                <span className="text-[10px] font-mono font-bold text-yellow-500 uppercase tracking-widest bg-yellow-500/5 px-2.5 py-1 rounded border border-yellow-500/20 shadow-sm">
-                  CHILD'S CURRENT BELT: {activeStudent.beltLevel.split(' (')[0]}
-                </span>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => triggerBeltCelebration()}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-slate-950 font-heading font-black text-[11px] uppercase tracking-wider shadow-lg hover:shadow-yellow-500/20 active:scale-95 transition-all cursor-pointer"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 animate-pulse text-slate-950" />
+                    <span>Celebrate Progress 🎉</span>
+                  </button>
+                  <span className="text-[10px] font-mono font-bold text-yellow-500 uppercase tracking-widest bg-yellow-500/5 px-2.5 py-1 rounded border border-yellow-500/20 shadow-sm">
+                    CHILD'S CURRENT BELT: {activeStudent.beltLevel.split(' (')[0]}
+                  </span>
+                </div>
               </div>
 
               {/* Responsive interactive timeline grid of Shotokan Belts */}
@@ -2955,11 +3045,15 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
                     const isCompleted = idx < currentBeltIdx;
 
                     return (
-                      <div 
+                      <motion.div 
                         key={idx}
-                        className={`relative p-3.5 sm:p-4 rounded-xl border text-center transition-all duration-300 flex flex-col justify-between items-center ${
+                        whileHover={{ scale: isCurrent ? 1.08 : 1.04 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => triggerBeltCelebration(belt.name)}
+                        title={`Tap to celebrate ${belt.name.split(' (')[0]} Belt!`}
+                        className={`relative p-3.5 sm:p-4 rounded-xl border text-center transition-all duration-300 flex flex-col justify-between items-center cursor-pointer ${
                           isCurrent 
-                            ? 'border-yellow-500 bg-yellow-500/15 ring-2 ring-yellow-500/30 shadow-lg shadow-yellow-500/10 scale-105 z-10'
+                            ? 'border-yellow-500 bg-yellow-500/15 ring-2 ring-yellow-500/40 shadow-xl shadow-yellow-500/15 scale-105 z-10'
                             : isCompleted
                               ? 'border-emerald-500/50 bg-emerald-950/25 shadow-md shadow-emerald-500/5 hover:border-emerald-500/80'
                               : 'border-zinc-900 bg-zinc-950/40 opacity-45 hover:opacity-80 transition-opacity'
@@ -2977,17 +3071,22 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
                         </span>
                         
                         {isCurrent && (
-                          <span className="absolute -top-2 left-1/2 -translate-x-1/2 text-[8px] font-heading text-yellow-400 uppercase tracking-widest font-black bg-slate-950 px-2 py-0.5 rounded-full border border-yellow-500/50 shadow-md whitespace-nowrap">
+                          <motion.span 
+                            animate={{ scale: [1, 1.08, 1] }}
+                            transition={{ repeat: Infinity, duration: 2 }}
+                            className="absolute -top-2.5 left-1/2 -translate-x-1/2 text-[8px] font-heading text-yellow-400 uppercase tracking-widest font-black bg-slate-950 px-2.5 py-0.5 rounded-full border border-yellow-500/60 shadow-lg shadow-yellow-500/20 whitespace-nowrap flex items-center gap-1"
+                          >
+                            <Sparkles className="w-2.5 h-2.5 text-yellow-400" />
                             ACTIVE
-                          </span>
+                          </motion.span>
                         )}
 
                         {isCompleted && (
-                          <span className="absolute -top-2 left-1/2 -translate-x-1/2 text-[8px] font-heading text-emerald-400 uppercase tracking-widest font-black bg-slate-950 px-2.5 py-0.5 rounded-full border border-emerald-500/50 shadow-md whitespace-nowrap">
+                          <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 text-[8px] font-heading text-emerald-400 uppercase tracking-widest font-black bg-slate-950 px-2.5 py-0.5 rounded-full border border-emerald-500/50 shadow-md whitespace-nowrap">
                             PASSED ✓
                           </span>
                         )}
-                      </div>
+                      </motion.div>
                     );
                   });
                 })()}
@@ -3557,6 +3656,117 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
             </div>
           </div>
         )}
+
+        {/* BELT PROGRESS CELEBRATION MODAL */}
+        <AnimatePresence>
+          {showCelebrationModal && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md overflow-y-auto"
+              onClick={() => setShowCelebrationModal(false)}
+            >
+              <motion.div
+                initial={{ scale: 0.7, y: 30, opacity: 0 }}
+                animate={{ scale: 1, y: 0, opacity: 1 }}
+                exit={{ scale: 0.8, y: 20, opacity: 0 }}
+                transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                className="relative max-w-lg w-full bg-gradient-to-b from-zinc-900 via-slate-950 to-zinc-950 border-2 border-yellow-500/50 rounded-3xl p-6 sm:p-8 text-center shadow-2xl shadow-yellow-500/20 overflow-hidden"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Background glow effects */}
+                <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-96 h-96 bg-yellow-500/10 rounded-full blur-3xl pointer-events-none" />
+                <div className="absolute -bottom-24 left-1/2 -translate-x-1/2 w-96 h-96 bg-amber-600/10 rounded-full blur-3xl pointer-events-none" />
+
+                {/* Close Button */}
+                <button
+                  onClick={() => setShowCelebrationModal(false)}
+                  className="absolute top-4 right-4 text-zinc-400 hover:text-white bg-zinc-800/60 hover:bg-zinc-700 p-2 rounded-full transition-colors cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+
+                {/* Trophy Header Badge */}
+                <div className="flex justify-center mb-4">
+                  <motion.div
+                    animate={{ rotate: [0, 8, -8, 0], scale: [1, 1.1, 1] }}
+                    transition={{ repeat: Infinity, duration: 2.5 }}
+                    className="w-20 h-20 rounded-2xl bg-gradient-to-tr from-yellow-500 via-amber-400 to-yellow-300 p-0.5 shadow-xl shadow-yellow-500/30 flex items-center justify-center"
+                  >
+                    <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center">
+                      <Trophy className="w-10 h-10 text-yellow-400" />
+                    </div>
+                  </motion.div>
+                </div>
+
+                <motion.div
+                  initial={{ y: 10, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.15 }}
+                >
+                  <span className="text-[10px] font-heading font-black text-yellow-400 uppercase tracking-widest bg-yellow-500/10 px-3.5 py-1 rounded-full border border-yellow-500/30 inline-flex items-center gap-1 mb-2 shadow-sm">
+                    <Sparkles className="w-3 h-3 text-yellow-400" />
+                    BELT ACHIEVEMENT UNLOCKED!
+                  </span>
+
+                  <h3 className="text-xl sm:text-2xl font-heading font-black text-white uppercase tracking-tight mt-1">
+                    {activeStudent?.fullName || 'Student'}
+                  </h3>
+
+                  {activeStudent?.studentId && (
+                    <p className="text-xs text-zinc-400 font-mono mt-1">
+                      KARATE ROLL ID: <strong className="text-yellow-400">{activeStudent.studentId}</strong>
+                    </p>
+                  )}
+                </motion.div>
+
+                {/* Physical Belt Graphic Display */}
+                <motion.div
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ delay: 0.25 }}
+                  className="my-5 p-5 bg-slate-900/80 rounded-2xl border border-yellow-500/30 shadow-inner flex flex-col items-center justify-center space-y-3"
+                >
+                  <div className="w-full max-w-[220px]">
+                    <KarateBeltGraphic beltName={celebratedBeltName} />
+                  </div>
+                  <div className="text-center">
+                    <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-widest block">CURRENT RANK STAGE</span>
+                    <span className="text-lg sm:text-xl font-heading font-black text-yellow-400 uppercase tracking-wider block mt-0.5">
+                      {celebratedBeltName.split('(')[0]}
+                    </span>
+                  </div>
+                </motion.div>
+
+                <p className="text-xs text-zinc-300 italic leading-relaxed px-2">
+                  "Dedication, focus, and hard work paid off! Congratulations from Shihan Maruti Jadhav & Lions Karate Club Pune."
+                </p>
+
+                {/* Actions */}
+                <div className="mt-6 flex flex-wrap gap-2.5 justify-center">
+                  <button
+                    onClick={() => triggerBeltCelebration(celebratedBeltName)}
+                    className="flex-1 min-w-[140px] bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-heading font-black text-xs uppercase tracking-wider py-3 px-4 rounded-xl flex items-center justify-center gap-1.5 shadow-lg shadow-yellow-500/20 active:scale-95 transition-all cursor-pointer"
+                  >
+                    <Sparkles className="w-4 h-4 text-slate-950" />
+                    <span>Celebrate Again</span>
+                  </button>
+
+                  <a
+                    href={`https://wa.me/?text=${encodeURIComponent(`🎉 Super proud moment! My child *${activeStudent?.fullName || 'Student'}* (Roll ID: ${activeStudent?.studentId || ''}) has achieved the *${celebratedBeltName.split('(')[0]} Belt* in Karate at Lions Karate Club Pune! 🥋🏆`)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 min-w-[140px] bg-emerald-600 hover:bg-emerald-500 text-white font-heading font-black text-xs uppercase tracking-wider py-3 px-4 rounded-xl flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-600/20 active:scale-95 transition-all cursor-pointer"
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                    <span>Share on WhatsApp</span>
+                  </a>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
       </div>
     </div>
