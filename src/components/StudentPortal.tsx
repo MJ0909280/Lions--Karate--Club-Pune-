@@ -14,7 +14,7 @@ import {
 } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType, generateSequentialStudentId } from '../firebase';
 import { safeLocalStorage } from '../utils/storage';
-import { Admission, BELT_LEVELS, DOJO_BRANCHES, calculateOverallGrade } from '../types';
+import { Admission, BELT_LEVELS, DOJO_BRANCHES, calculateOverallGrade, DisciplineGrades } from '../types';
 import AttendanceTracker from './AttendanceTracker';
 import { 
   Search, 
@@ -159,6 +159,33 @@ export const checkExamPassed = (exam: any): boolean => {
   if (s === 'passed' || s === 'promoted' || s === 'approved' || s === 'pass' || s === 'completed' || s === 'graduated') return true;
   if (exam.isPublished !== false && s !== 'pending') return true;
   return false;
+};
+
+export const getEffectiveDisciplinesGrades = (exam: any): DisciplineGrades => {
+  if (!exam) return { run: 'A', jump: 'A', sidesitups: 'A', kicks: 'A', conditionChecking: 'A', kata: 'A', kumite: 'A' };
+  
+  const existing = exam.disciplinesGrades || {};
+  const baseGrade = exam.grade || (calculateOverallGrade(existing)) || 'A';
+
+  return {
+    run: existing.run || baseGrade || 'A',
+    jump: existing.jump || baseGrade || 'A',
+    sidesitups: existing.sidesitups || existing.situps || baseGrade || 'A',
+    kicks: existing.kicks || baseGrade || 'A',
+    conditionChecking: existing.conditionChecking || existing.stamina || baseGrade || 'A',
+    kata: existing.kata || baseGrade || 'A',
+    kumite: existing.kumite || baseGrade || 'A',
+  };
+};
+
+export const getEffectiveGrade = (exam: any): string => {
+  if (!exam) return 'A';
+  if (exam.grade && String(exam.grade).trim()) return String(exam.grade).trim();
+  if (exam.disciplinesGrades) {
+    const calculated = calculateOverallGrade(exam.disciplinesGrades);
+    if (calculated) return calculated;
+  }
+  return 'A';
 };
 
 interface ExamRecord {
@@ -2890,34 +2917,41 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
                     </div>
                   </div>
 
-                  {/* 7-DISCIPLINE EVALUATION MARKSHEET IF GRADED */}
-                  {latestExam.disciplinesGrades && (
-                    <div className="bg-slate-950 p-3.5 border border-zinc-800 rounded-xl mt-4">
-                      <span className="text-[9px] font-heading font-black text-yellow-500 uppercase tracking-widest block mb-2">
-                        OFFICIAL 7-DISCIPLINE PHYSICAL EVALUATION
-                      </span>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
-                        {[
-                          { label: 'RUN', key: 'run' },
-                          { label: 'JUMP', key: 'jump' },
-                          { label: 'SIT-UPS', key: 'sidesitups' },
-                          { label: 'KICKS', key: 'kicks' },
-                          { label: 'STAMINA', key: 'conditionChecking' },
-                          { label: 'KATA', key: 'kata' },
-                          { label: 'KUMITE', key: 'kumite' }
-                        ].map(disc => {
-                          const val = (latestExam.disciplinesGrades as any)?.[disc.key];
-                          if (!val) return null;
-                          return (
-                            <div key={disc.key} className="bg-slate-900 px-2.5 py-1.5 rounded border border-zinc-800 text-center">
-                              <span className="text-[8px] font-mono text-zinc-400 block">{disc.label}</span>
-                              <span className="text-xs font-heading font-black text-yellow-400 block mt-0.5">{val}</span>
-                            </div>
-                          );
-                        })}
+                  {/* 7-DISCIPLINE EVALUATION MARKSHEET */}
+                  {(() => {
+                    const dGrades = getEffectiveDisciplinesGrades(latestExam);
+                    return (
+                      <div className="bg-slate-950 p-3.5 border border-zinc-800 rounded-xl mt-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-[9px] font-heading font-black text-yellow-500 uppercase tracking-widest block">
+                            OFFICIAL 7-DISCIPLINE PHYSICAL EVALUATION
+                          </span>
+                          <span className="text-[10px] font-heading font-black text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                            GRADE: {getEffectiveGrade(latestExam)}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+                          {[
+                            { label: 'RUN', key: 'run' },
+                            { label: 'JUMP', key: 'jump' },
+                            { label: 'SIT-UPS', key: 'sidesitups' },
+                            { label: 'KICKS', key: 'kicks' },
+                            { label: 'STAMINA', key: 'conditionChecking' },
+                            { label: 'KATA', key: 'kata' },
+                            { label: 'KUMITE', key: 'kumite' }
+                          ].map(disc => {
+                            const val = (dGrades as any)[disc.key] || 'A';
+                            return (
+                              <div key={disc.key} className="bg-slate-900 px-2.5 py-1.5 rounded border border-zinc-800 text-center">
+                                <span className="text-[8px] font-mono text-zinc-400 block">{disc.label}</span>
+                                <span className="text-xs font-heading font-black text-yellow-400 block mt-0.5">{val}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    );
+                  })()}
                 </motion.div>
               );
             })()}
@@ -3602,12 +3636,12 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
                         </div>
 
                         {/* 7-Discipline Marksheet Breakdown (Only if Published) */}
-                        {isResultPublished && exam.disciplinesGrades && (
+                        {isResultPublished && (
                           <div className="bg-slate-950/80 p-2.5 sm:p-3 border border-zinc-900 rounded-xl mt-3 text-xs w-full max-w-full min-w-0 overflow-hidden">
                             <span className="text-[8px] sm:text-[9px] font-heading font-black text-yellow-500 uppercase tracking-widest block mb-1.5">
                               OFFICIAL 7-DISCIPLINE EVALUATION
                             </span>
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 w-full max-w-full min-w-0">
+                            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-1.5 w-full max-w-full min-w-0">
                               {[
                                 { label: 'RUN', key: 'run' },
                                 { label: 'JUMP', key: 'jump' },
@@ -3617,8 +3651,8 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
                                 { label: 'KATA', key: 'kata' },
                                 { label: 'KUMITE', key: 'kumite' }
                               ].map(disc => {
-                                const val = (exam.disciplinesGrades as any)?.[disc.key];
-                                if (!val) return null;
+                                const dGrades = getEffectiveDisciplinesGrades(exam);
+                                const val = (dGrades as any)[disc.key] || 'A';
                                 return (
                                   <div key={disc.key} className="bg-slate-900 px-2 py-1 rounded border border-zinc-800 flex items-center justify-between min-w-0 overflow-hidden">
                                     <span className="text-[7.5px] sm:text-[8.5px] font-mono text-zinc-400 truncate mr-1">{disc.label}:</span>
@@ -3764,11 +3798,11 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
 
                       {/* Side Status Badge indicator block */}
                       <div className="shrink-0 flex items-center space-x-3">
-                        {isResultPublished && (exam.grade || exam.disciplinesGrades) && (
+                        {isResultPublished && (
                           <div className="text-right">
                             <span className="text-[8px] font-mono text-zinc-550 block leading-none uppercase">GRADE</span>
                             <span className="font-heading font-black text-base text-yellow-500 mt-1 block leading-none font-sans">
-                              {(exam.disciplinesGrades ? calculateOverallGrade(exam.disciplinesGrades) : undefined) || exam.grade || 'A'}
+                              {getEffectiveGrade(exam)}
                             </span>
                           </div>
                         )}
@@ -3967,13 +4001,11 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
                     <p className="text-xs sm:text-sm md:text-lg font-extrabold text-amber-700 uppercase tracking-widest font-sans">
                       {selectedCert.targetBelt || "Yellow Belt"}
                     </p>
-                    {((selectedCert.disciplinesGrades ? calculateOverallGrade(selectedCert.disciplinesGrades) : undefined) || selectedCert.grade) && (
-                      <span className="text-[9px] sm:text-[10px] font-sans font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                        Exam Grade: <strong className="font-black text-emerald-800">
-                          {(selectedCert.disciplinesGrades ? calculateOverallGrade(selectedCert.disciplinesGrades) : undefined) || selectedCert.grade}
-                        </strong>
-                      </span>
-                    )}
+                    <span className="text-[9px] sm:text-[10px] font-sans font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                      Exam Grade: <strong className="font-black text-emerald-800">
+                        {getEffectiveGrade(selectedCert)}
+                      </strong>
+                    </span>
                   </div>
                   <p className="text-[7px] sm:text-[9px] text-zinc-500 mt-1 font-sans">
                     Student ID: <strong className="text-zinc-800">{selectedCert.studentId}</strong>
@@ -3986,43 +4018,40 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
                 </div>
 
                 {/* Official 7-Discipline Evaluation Marksheet Table */}
-                {selectedCert.disciplinesGrades && (
-                  <div className="my-2 sm:my-3 max-w-xl mx-auto bg-amber-100/70 p-2 sm:p-2.5 rounded-lg border border-amber-300 relative z-10 font-sans text-left shadow-2xs">
-                    <div className="flex items-center justify-between border-b border-amber-300/80 pb-1 mb-1.5">
-                      <span className="text-[9px] sm:text-[10px] font-black text-amber-950 uppercase tracking-wider">
-                        Official 7-Discipline Grade Marksheet
-                      </span>
-                      {selectedCert.examinerName && (
-                        <span className="text-[8.5px] sm:text-[9.5px] font-extrabold text-amber-900">
-                          Evaluated by: {selectedCert.examinerName}
-                        </span>
-                      )}
-                    </div>
-                    <div className="grid grid-cols-7 gap-1 text-center">
-                      {[
-                        { label: 'RUN', key: 'run' },
-                        { label: 'JUMP', key: 'jump' },
-                        { label: 'SIT-UPS', key: 'sidesitups' },
-                        { label: 'KICKS', key: 'kicks' },
-                        { label: 'STAMINA', key: 'conditionChecking' },
-                        { label: 'KATA', key: 'kata' },
-                        { label: 'KUMITE', key: 'kumite' },
-                      ].map((disc) => {
-                        const gradeVal = (selectedCert.disciplinesGrades as any)?.[disc.key] || 'A';
-                        return (
-                          <div key={disc.key} className="bg-amber-50 p-1 rounded border border-amber-300 flex flex-col justify-between items-center text-center">
-                            <span className="text-[7.5px] sm:text-[9px] font-black text-amber-950 block uppercase tracking-tight leading-snug whitespace-nowrap">
-                              {disc.label}
-                            </span>
-                            <span className="text-[10px] sm:text-[11px] font-black text-emerald-800 block mt-0.5 leading-none">
-                              {gradeVal}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
+                <div className="my-2 sm:my-3 max-w-xl mx-auto bg-amber-100/70 p-2 sm:p-2.5 rounded-lg border border-amber-300 relative z-10 font-sans text-left shadow-2xs">
+                  <div className="flex items-center justify-between border-b border-amber-300/80 pb-1 mb-1.5">
+                    <span className="text-[9px] sm:text-[10px] font-black text-amber-950 uppercase tracking-wider">
+                      Official 7-Discipline Grade Marksheet
+                    </span>
+                    <span className="text-[8.5px] sm:text-[9.5px] font-extrabold text-amber-900">
+                      Evaluated by: {selectedCert.examinerName || selectedCert.coachName || "Sensei Shivraj Jejure"}
+                    </span>
                   </div>
-                )}
+                  <div className="grid grid-cols-7 gap-1 text-center">
+                    {[
+                      { label: 'RUN', key: 'run' },
+                      { label: 'JUMP', key: 'jump' },
+                      { label: 'SIT-UPS', key: 'sidesitups' },
+                      { label: 'KICKS', key: 'kicks' },
+                      { label: 'STAMINA', key: 'conditionChecking' },
+                      { label: 'KATA', key: 'kata' },
+                      { label: 'KUMITE', key: 'kumite' },
+                    ].map((disc) => {
+                      const dGrades = getEffectiveDisciplinesGrades(selectedCert);
+                      const gradeVal = (dGrades as any)[disc.key] || 'A';
+                      return (
+                        <div key={disc.key} className="bg-amber-50 p-1 rounded border border-amber-300 flex flex-col justify-between items-center text-center">
+                          <span className="text-[7.5px] sm:text-[9px] font-black text-amber-950 block uppercase tracking-tight leading-snug whitespace-nowrap">
+                            {disc.label}
+                          </span>
+                          <span className="text-[10px] sm:text-[11px] font-black text-emerald-800 block mt-0.5 leading-none">
+                            {gradeVal}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
 
                 {/* Beautiful Engaging Karate Journey Note */}
                 <div className="my-2 sm:my-3 max-w-lg mx-auto bg-amber-100/40 p-2 rounded-lg border border-amber-200/50 relative z-10 text-center font-serif">
