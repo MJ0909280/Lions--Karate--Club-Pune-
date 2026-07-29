@@ -152,6 +152,15 @@ const getRequiredClassesForCurrentBelt = (beltLevel: string): { required: number
   return { required: 60, nextBelt: 'Black 1st Dan' };
 };
 
+export const checkExamPassed = (exam: any): boolean => {
+  if (!exam) return false;
+  const s = (exam.status || '').toString().toLowerCase().trim();
+  if (s === 'failed' || s === 'rejected') return false;
+  if (s === 'passed' || s === 'promoted' || s === 'approved' || s === 'pass' || s === 'completed' || s === 'graduated') return true;
+  if (exam.isPublished !== false && s !== 'pending') return true;
+  return false;
+};
+
 interface ExamRecord {
   id: string;
   studentId: string;
@@ -549,11 +558,11 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
   const getStudentBadges = (): BadgeDef[] => {
     if (!activeStudent) return [];
     
-    const hasPassedExam = registeredExams.some(e => e.status === 'passed');
+    const hasPassedExam = registeredExams.some(e => checkExamPassed(e));
     const hasHighScore = registeredExams.some(e => 
-      e.status === 'passed' && 
+      checkExamPassed(e) && 
       e.grade && 
-      ['A', 'A+', 'Outstanding', 'Distinction', 'Excellent', 'A GRADE', 'OUTSTANDING'].includes(e.grade.trim().toUpperCase())
+      ['A', 'A+', 'OUTSTANDING', 'DISTINCTION', 'EXCELLENT', 'A GRADE'].includes(e.grade.trim().toUpperCase())
     );
     const isPastWhite = activeStudent.beltLevel.toLowerCase() !== 'white belt' && 
                         !activeStudent.beltLevel.toLowerCase().includes('white');
@@ -2785,8 +2794,8 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
               const latestExam = registeredExams[0];
               const currentBeltDisplay = latestExam.currentBelt || activeStudent.beltLevel || 'Shotokan White Belt';
               const targetBeltDisplay = latestExam.targetBelt || 'Next Rank Belt';
-              const isPassed = latestExam.status === 'passed' || latestExam.status === 'promoted';
-              const isApproved = latestExam.status === 'approved';
+              const isPassed = checkExamPassed(latestExam);
+              const isApproved = (latestExam.status || '').toString().toLowerCase().trim() === 'approved';
 
               return (
                 <motion.div
@@ -3554,6 +3563,7 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
                   {registeredExams.map((exam) => {
                     // Make all exam records published so parents can view results and certificates immediately
                     const isResultPublished = true;
+                    const isPassed = checkExamPassed(exam);
                     return (
                     <div 
                       key={exam.id}
@@ -3621,7 +3631,7 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
                         )}
 
                         {/* 5 CELEBRATION ENHANCEMENTS FOR PARENT RESULT VIEW */}
-                        {isResultPublished && exam.status === 'passed' && (
+                        {isResultPublished && isPassed && (
                           <div className="bg-gradient-to-br from-slate-950 via-amber-950/20 to-slate-950 p-3 sm:p-4 border-2 border-amber-500/40 rounded-2xl mt-4 relative overflow-hidden shadow-xl shadow-amber-500/5 group w-full max-w-full min-w-0">
                             {/* Confetti & Sparkles Background Decor */}
                             <div className="absolute top-2 right-3 flex space-x-1 opacity-80 pointer-events-none text-base animate-bounce">
@@ -3724,7 +3734,7 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
                         )}
 
                         {/* Standard Coach Remarks for non-passed or standard published */}
-                        {isResultPublished && exam.status !== 'passed' && (
+                        {isResultPublished && !isPassed && (
                           <div className="bg-slate-950/60 p-3 border border-zinc-900 rounded-xl mt-3 text-xs w-full">
                             <span className="text-[8px] font-heading font-black text-yellow-500 uppercase tracking-widest block mb-1">COACH'S FEEDBACK</span>
                             <p className="text-zinc-350 italic font-medium leading-relaxed">
@@ -3766,7 +3776,7 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
                         <div className="flex flex-col items-end">
                           <span className="text-[8px] font-mono text-zinc-550 uppercase tracking-widest block mb-1">STATUS</span>
                           
-                          {isResultPublished && exam.status === 'passed' && (
+                          {isPassed ? (
                             <div className="flex flex-col items-end gap-1.5">
                               <span className="text-[9px] font-heading font-black uppercase text-emerald-500 bg-emerald-500/10 px-2.5 py-1 rounded border border-emerald-500/20">
                                 Passed - Belt Awarded!
@@ -3780,15 +3790,11 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
                                 <span>Get Certificate</span>
                               </button>
                             </div>
-                          )}
-                          
-                          {isResultPublished && exam.status === 'failed' && (
+                          ) : (exam.status || '').toString().toLowerCase().trim() === 'failed' ? (
                             <span className="text-[9px] font-heading font-black uppercase text-red-500 bg-red-500/10 px-2.5 py-1 rounded border border-red-500/20">
                               Practice Required
                             </span>
-                          )}
-
-                          {!isResultPublished && (
+                          ) : (
                             <span className="text-[9px] font-heading font-black uppercase text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded border border-amber-500/20">
                               Result Pending
                             </span>
