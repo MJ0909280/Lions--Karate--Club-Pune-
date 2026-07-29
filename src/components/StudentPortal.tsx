@@ -432,6 +432,55 @@ function ExamsHistoricalSkeleton() {
   );
 }
 
+// Helper function for flexible, bulletproof student ID matching (handles padding like LKCP-2026-173 vs LKCP-2026-0173, spaces, dashes, etc.)
+export function checkStudentIdMatch(targetStr: string, queryStr: string): boolean {
+  if (!targetStr || !queryStr) return false;
+
+  const tUpper = targetStr.trim().toUpperCase();
+  const qUpper = queryStr.trim().toUpperCase();
+
+  // 1. Exact string match
+  if (tUpper === qUpper) return true;
+
+  // 2. Clean alphanumeric match (ignoring dashes, spaces, symbols)
+  const tClean = tUpper.replace(/[^A-Z0-9]/g, '');
+  const qClean = qUpper.replace(/[^A-Z0-9]/g, '');
+  if (tClean === qClean) return true;
+
+  // 3. Substring match
+  if (tUpper.includes(qUpper) || qUpper.includes(tUpper)) return true;
+  if (tClean.includes(qClean) || qClean.includes(tClean)) return true;
+
+  // 4. Extract Year & Serial Numbers (e.g. LKCP-2026-173 vs LKCP-2026-0173)
+  const tNumMatches = tUpper.match(/\d+/g) || [];
+  const qNumMatches = qUpper.match(/\d+/g) || [];
+
+  if (tNumMatches.length > 0 && qNumMatches.length > 0) {
+    const tYear = tNumMatches.find(n => n.length === 4);
+    const qYear = qNumMatches.find(n => n.length === 4);
+
+    const tLastNum = parseInt(tNumMatches[tNumMatches.length - 1], 10);
+    const qLastNum = parseInt(qNumMatches[qNumMatches.length - 1], 10);
+
+    // If years match (or one is unassigned) AND numerical serials match (173 === 0173)
+    if ((!tYear || !qYear || tYear === qYear) && !isNaN(tLastNum) && !isNaN(qLastNum) && tLastNum === qLastNum) {
+      return true;
+    }
+  }
+
+  // 5. Raw digits match
+  const tDigits = tUpper.replace(/\D/g, '');
+  const qDigits = qUpper.replace(/\D/g, '');
+  if (tDigits && qDigits) {
+    const tNum = parseInt(tDigits, 10);
+    const qNum = parseInt(qDigits, 10);
+    if (!isNaN(tNum) && !isNaN(qNum) && tNum === qNum) return true;
+    if (tDigits.endsWith(qDigits) || qDigits.endsWith(tDigits)) return true;
+  }
+
+  return false;
+}
+
 interface StudentPortalProps {
   initialTab?: 'progress' | 'exam' | 'attendance';
   initialStudentId?: string;
@@ -1534,30 +1583,18 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
         const data = docSnap.data ? docSnap.data() : docSnap;
         if (data.status === 'rejected') return; // skip rejected admissions
 
-        const stId = (data.studentId || '').trim().toUpperCase();
-        const docId = (docSnap.id || '').toUpperCase();
+        const stId = (data.studentId || '').trim();
+        const docId = (docSnap.id || '').trim();
         const fn = (data.fullName || '').trim().toLowerCase();
         const ph = (data.phone || '').replace(/\D/g, '');
         const pph = (data.parentPhone || '').replace(/\D/g, '');
-        const stDigits = stId.replace(/\D/g, '');
 
         // Match conditions:
-        // A. Exact match on Student ID or Doc ID
-        const isExactId = (stId && stId === searchUpper) || (docId && docId === searchUpper);
-        
-        // B. Partial prefix/contains match on Student ID (e.g. "LKCP-2026" matches "LKCP-2026-004")
-        const isPartialId = (stId && (stId.includes(searchUpper) || searchUpper.includes(stId)));
-
-        // C. Numeric serial match (e.g. searching "004" or "4" or "2026004" matches "LKCP-2026-004")
-        const isDigitsMatch = searchDigits.length >= 1 && stDigits.length >= 1 && (stDigits.endsWith(searchDigits) || searchDigits.endsWith(stDigits));
-
-        // D. Name match (case-insensitive partial or full name match)
+        const isIdMatch = checkStudentIdMatch(stId, rawSearch) || checkStudentIdMatch(docId, rawSearch);
         const isNameMatch = fn && searchLower && (fn.includes(searchLower) || searchLower.includes(fn));
-
-        // E. Phone number match
         const isPhoneMatch = searchDigits.length >= 7 && (ph.includes(searchDigits) || pph.includes(searchDigits));
 
-        if (isExactId || isPartialId || isDigitsMatch || isNameMatch || isPhoneMatch) {
+        if (isIdMatch || isNameMatch || isPhoneMatch) {
           matchedDoc = {
             id: docSnap.id,
             ...data
@@ -1576,12 +1613,13 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
         examSnap.forEach((exDoc) => {
           if (foundExam) return;
           const exData = exDoc.data();
-          const exStId = (exData.studentId || '').trim().toUpperCase();
+          const exStId = (exData.studentId || '').trim();
           const exName = (exData.studentName || '').trim().toLowerCase();
           
           if (
-            (exStId && (exStId === searchUpper || exStId.includes(searchUpper) || searchUpper.includes(exStId))) ||
-            (exName && (exName === searchLower || searchLower.includes(exName) || exName.includes(searchLower)))
+            checkStudentIdMatch(exStId, rawSearch) ||
+            checkStudentIdMatch(exDoc.id, rawSearch) ||
+            (exName && searchLower && (exName.includes(searchLower) || searchLower.includes(exName)))
           ) {
             foundExam = exData;
           }
