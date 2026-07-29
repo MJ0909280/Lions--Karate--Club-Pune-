@@ -186,8 +186,8 @@ export async function generateSequentialStudentId(): Promise<string> {
   const currentYear = new Date().getFullYear();
   const counterDocRef = doc(db, 'settings', `counters_${currentYear}`);
   
-  // 1. Dynamic scan across both admissions AND exams collections to find the absolute highest serial number in use
-  let maxDbSerial = 99;
+  // 1. Dynamic scan across both admissions AND exams collections to find the absolute highest sequential serial number in use
+  let maxDbSerial = 0;
   try {
     const admissionsRef = collection(db, 'admissions');
     const admSnap = await getDocs(admissionsRef);
@@ -196,9 +196,9 @@ export async function generateSequentialStudentId(): Promise<string> {
       if (data.studentId && typeof data.studentId === 'string') {
         const cleanId = data.studentId.toUpperCase().trim();
         const parts = cleanId.split('-');
-        if (parts.length === 3 && parts[0] === 'LKCP' && parts[1] === String(currentYear)) {
+        if (parts.length >= 3 && parts[0] === 'LKCP' && parts[1] === String(currentYear)) {
           const serial = parseInt(parts[2], 10);
-          if (!isNaN(serial) && serial > maxDbSerial) {
+          if (!isNaN(serial) && serial < 5000 && serial > maxDbSerial) {
             maxDbSerial = serial;
           }
         }
@@ -206,32 +206,37 @@ export async function generateSequentialStudentId(): Promise<string> {
     });
 
     const examsRef = collection(db, 'exams');
-    const examSnap = await getDocs(examsRef);
-    examSnap.forEach((doc) => {
+    const examDocs = await getDocs(examsRef);
+    examDocs.forEach((doc) => {
       const data = doc.data();
       if (data.studentId && typeof data.studentId === 'string') {
         const cleanId = data.studentId.toUpperCase().trim();
         const parts = cleanId.split('-');
-        if (parts.length === 3 && parts[0] === 'LKCP' && parts[1] === String(currentYear)) {
+        if (parts.length >= 3 && parts[0] === 'LKCP' && parts[1] === String(currentYear)) {
           const serial = parseInt(parts[2], 10);
-          if (!isNaN(serial) && serial > maxDbSerial) {
+          if (!isNaN(serial) && serial < 5000 && serial > maxDbSerial) {
             maxDbSerial = serial;
           }
         }
       }
     });
   } catch (err) {
-    console.warn("Dynamic database serial scan failed, using safe baseline 99:", err);
+    console.warn("Dynamic database serial scan notice:", err);
+  }
+
+  // Ensure baseline starting point is at least 100 if database is empty or new year
+  if (maxDbSerial < 1) {
+    maxDbSerial = 0;
   }
 
   // 2. Run transaction to atomically fetch, compare and increment the counter
   try {
     const studentId = await runTransaction(db, async (transaction) => {
       const counterSnap = await transaction.get(counterDocRef);
-      let counterSerial = 99;
+      let counterSerial = 0;
       
       if (counterSnap.exists()) {
-        counterSerial = counterSnap.data().lastSerial || 99;
+        counterSerial = counterSnap.data().lastSerial || 0;
       }
       
       // The new serial must be strictly greater than both the db maximum and the recorded counter
@@ -243,10 +248,9 @@ export async function generateSequentialStudentId(): Promise<string> {
     
     return studentId;
   } catch (error) {
-    console.error("Transaction failed to generate unique ID, using safe fallback:", error);
-    const randomId = Math.floor(100 + Math.random() * 900);
-    const ts = Date.now().toString().slice(-4);
-    return `LKCP-${currentYear}-${randomId}-${ts}`;
+    console.warn("Transaction failed, using direct sequential counter fallback:", error);
+    const nextFallbackSerial = maxDbSerial + 1;
+    return `LKCP-${currentYear}-${String(nextFallbackSerial).padStart(3, '0')}`;
   }
 }
 
