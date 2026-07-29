@@ -1824,11 +1824,20 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
         const exStudentId = (data.studentId || '').trim().toUpperCase();
         const exStudentName = (data.studentName || data.fullName || '').trim().toLowerCase();
 
-        if (
-          checkStudentIdMatch(exStudentId, targetStudentId) ||
-          checkStudentIdMatch(docSnap.id, targetStudentId) ||
-          (targetName && targetName !== 'karate student' && exStudentName && (exStudentName.includes(targetName) || targetName.includes(exStudentName)))
-        ) {
+        let isMatch = false;
+        if (targetStudentId && exStudentId && (checkStudentIdMatch(exStudentId, targetStudentId) || checkStudentIdMatch(docSnap.id, targetStudentId) || exStudentId.replace(/[^A-Z0-9]/g, '') === targetStudentId.replace(/[^A-Z0-9]/g, ''))) {
+          isMatch = true;
+        } else if (targetStudentId && checkStudentIdMatch(docSnap.id, targetStudentId)) {
+          isMatch = true;
+        }
+
+        if (!isMatch && targetName && targetName !== 'karate student' && exStudentName) {
+          if (exStudentName === targetName || exStudentName.includes(targetName) || targetName.includes(exStudentName)) {
+            isMatch = true;
+          }
+        }
+
+        if (isMatch) {
           records.push({
             id: docSnap.id,
             ...data
@@ -1895,7 +1904,7 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
 
     if (registeredExams && registeredExams.length > 0) {
       registeredExams.forEach(ex => {
-        if (ex.isPublished && ex.status === 'passed' && ex.targetBelt) {
+        if ((ex.isPublished !== false) && (ex.status === 'passed' || ex.status === 'promoted') && ex.targetBelt) {
           const exIdx = getBeltIdx(ex.targetBelt);
           if (exIdx > highestBeltIdx) {
             highestBeltIdx = exIdx;
@@ -3444,7 +3453,7 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
 
                   if (registeredExams && registeredExams.length > 0) {
                     registeredExams.forEach(ex => {
-                      if (ex.isPublished && ex.status === 'passed' && ex.targetBelt) {
+                      if ((ex.isPublished !== false) && (ex.status === 'passed' || ex.status === 'promoted') && ex.targetBelt) {
                         const exIdx = getBeltIdx(ex.targetBelt);
                         if (exIdx > currentBeltIdx) {
                           currentBeltIdx = exIdx;
