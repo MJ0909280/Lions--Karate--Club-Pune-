@@ -1597,77 +1597,125 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
 
     setSearching(true);
     setSearchError('');
-    const rawSearch = activeStudentId.trim();
-    if (!rawSearch) {
+    const cleanRaw = activeStudentId.replace(/[\u00A0\u1680\u180E\u2000-\u200B\u202F\u205F\u3000\uFEFF]/g, ' ').trim();
+    if (!cleanRaw) {
       setSearching(false);
       return;
     }
 
-    const searchUpper = rawSearch.toUpperCase();
-    const searchLower = rawSearch.toLowerCase();
-    const searchDigits = rawSearch.replace(/\D/g, '');
+    const searchUpper = cleanRaw.toUpperCase();
+    const searchLower = cleanRaw.toLowerCase();
+    const searchAlphaNum = searchUpper.replace(/[^A-Z0-9]/g, '');
+    const searchDigits = cleanRaw.replace(/\D/g, '');
+    const queryWords = searchLower.split(/\s+/).filter(w => w.length >= 2);
 
-    const isRollIdSearch = searchUpper.includes('LKCP') || /^[A-Z0-9]{3,}-\d+/.test(searchUpper) || /^\d{1,4}$/.test(rawSearch);
-    const isPhoneSearch = !isRollIdSearch && /^\d{7,10}$/.test(searchDigits);
+    const evaluateDocMatch = (docSnap: any) => {
+      const data = docSnap.data ? docSnap.data() : docSnap;
+      if (data.status === 'rejected') return { score: 0, student: null };
 
-    const processAdmissionsDocs = (docs: any[]) => {
-      let bestDoc: any = null;
-      let highestScore = -1;
+      const docId = (docSnap.id || '').trim();
+      const stIds = [
+        data.studentId, data.rollId, data.rollNo, data.roll_no, data.rollNumber,
+        data.student_id, data.studentID, data.registrationNo, data.regNo,
+        data.admissionNo, data.admissionId, data.id, docId
+      ].filter(Boolean).map(s => String(s).trim());
 
-      docs.forEach((docSnap) => {
-        const data = docSnap.data ? docSnap.data() : docSnap;
-        if (data.status === 'rejected') return; // skip rejected admissions
+      const stNames = [
+        data.fullName, data.studentName, data.childName, data.name,
+        data.student_name, data.applicantName
+      ].filter(Boolean).map(s => String(s).trim().toLowerCase());
 
-        const stId = (data.studentId || data.rollId || data.rollNo || data.student_id || data.studentID || '').trim();
-        const docId = (docSnap.id || '').trim();
-        const fn = (data.fullName || data.studentName || '').trim().toLowerCase();
-        const ph = (data.phone || data.parentPhone || '').replace(/\D/g, '');
-        const pph = (data.parentPhone || '').replace(/\D/g, '');
+      const parentNames = [
+        data.parentName, data.fatherName, data.motherName, data.guardianName
+      ].filter(Boolean).map(s => String(s).trim().toLowerCase());
 
-        const stIdUpper = stId.toUpperCase();
-        const docIdUpper = docId.toUpperCase();
+      const phones = [
+        data.phone, data.parentPhone, data.whatsapp, data.contactPhone,
+        data.mobile, data.parentMobile
+      ].filter(Boolean).map(s => String(s).replace(/\D/g, ''));
 
-        let score = 0;
+      let bestScore = 0;
 
-        // 1. Absolute exact match on ID string or Doc ID
-        if (stIdUpper === searchUpper || docIdUpper === searchUpper) {
-          score = 1000;
-        } 
-        // 2. Clean alphanumeric match (e.g. LKCP2026175 === LKCP2026175)
-        else if (stIdUpper.replace(/[^A-Z0-9]/g, '') === searchUpper.replace(/[^A-Z0-9]/g, '')) {
-          score = 900;
-        } 
-        // 3. Exact serial number match (e.g. 175 === 175)
-        else if (checkStudentIdMatch(stId, rawSearch) || checkStudentIdMatch(docId, rawSearch)) {
-          score = 800;
-        } 
-        // 4. Exact Full Name match (ONLY if NOT searching purely an ID)
-        else if (!isRollIdSearch && fn && searchLower && fn === searchLower) {
-          score = 700;
-        } 
-        // 5. Partial Name match (ONLY if user typed a name)
-        else if (!isRollIdSearch && fn && searchLower && searchLower.length >= 3 && fn.includes(searchLower)) {
-          score = 500;
-        } 
-        // 6. Phone match (ONLY if user explicitly typed a phone number)
-        else if (isPhoneSearch && (ph === searchDigits || pph === searchDigits || ph.includes(searchDigits) || pph.includes(searchDigits))) {
-          score = 400;
+      // 1. Check Student IDs
+      for (const idStr of stIds) {
+        const idUpper = idStr.toUpperCase();
+        const idAlphaNum = idUpper.replace(/[^A-Z0-9]/g, '');
+
+        if (idUpper === searchUpper || (docId && docId.toUpperCase() === searchUpper)) {
+          bestScore = Math.max(bestScore, 1000);
+        } else if (searchAlphaNum && idAlphaNum === searchAlphaNum && searchAlphaNum.length >= 2) {
+          bestScore = Math.max(bestScore, 950);
+        } else if (checkStudentIdMatch(idStr, cleanRaw) || checkStudentIdMatch(docId, cleanRaw)) {
+          bestScore = Math.max(bestScore, 850);
         }
+      }
 
-        if (score > highestScore) {
-          highestScore = score;
-          const matchedName = (data.fullName || data.studentName || data.childName || data.name || '').trim();
-          bestDoc = {
-            ...data,
-            id: docSnap.id,
-            fullName: matchedName || 'Karate Student',
-            studentName: matchedName || 'Karate Student',
-            studentId: stId || data.studentId || searchUpper,
-          };
+      // 2. Check Student Names
+      for (const nameStr of stNames) {
+        const nameAlpha = nameStr.replace(/[^a-z0-9]/g, '');
+        const searchAlpha = searchLower.replace(/[^a-z0-9]/g, '');
+
+        if (nameStr === searchLower) {
+          bestScore = Math.max(bestScore, 800);
+        } else if (nameAlpha && searchAlpha && nameAlpha === searchAlpha) {
+          bestScore = Math.max(bestScore, 780);
+        } else if (queryWords.length > 0 && queryWords.every(w => nameStr.includes(w))) {
+          bestScore = Math.max(bestScore, 700);
+        } else if (searchLower.length >= 2 && (nameStr.includes(searchLower) || searchLower.includes(nameStr))) {
+          bestScore = Math.max(bestScore, 600);
         }
-      });
+      }
 
-      return highestScore > 0 ? bestDoc : null;
+      // 3. Check Parent Names
+      for (const pName of parentNames) {
+        if (pName === searchLower) {
+          bestScore = Math.max(bestScore, 650);
+        } else if (queryWords.length > 0 && queryWords.every(w => pName.includes(w))) {
+          bestScore = Math.max(bestScore, 600);
+        } else if (searchLower.length >= 3 && pName.includes(searchLower)) {
+          bestScore = Math.max(bestScore, 500);
+        }
+      }
+
+      // 4. Check Phone Numbers
+      if (searchDigits.length >= 7) {
+        for (const ph of phones) {
+          if (ph === searchDigits || (ph.length >= 10 && searchDigits.length >= 10 && (ph.endsWith(searchDigits.slice(-10)) || searchDigits.endsWith(ph.slice(-10))))) {
+            bestScore = Math.max(bestScore, 750);
+          } else if (ph.includes(searchDigits) || searchDigits.includes(ph)) {
+            bestScore = Math.max(bestScore, 650);
+          }
+        }
+      }
+
+      if (bestScore <= 0) return { score: 0, student: null };
+
+      const matchedNameRaw = (data.fullName || data.studentName || data.childName || data.name || 'Karate Student').trim();
+      const matchedId = stIds.find(id => id.toUpperCase().includes('LKCP')) || stIds[0] || searchUpper;
+
+      const studentObj = {
+        id: docSnap.id || ('st_' + matchedId),
+        studentId: data.studentId || matchedId,
+        fullName: matchedNameRaw,
+        parentName: data.parentName || data.fatherName || '',
+        phone: data.phone || data.parentPhone || '',
+        whatsApp: data.whatsApp || data.phone || data.parentPhone || '',
+        dob: data.dob || '',
+        age: Number(data.age) || 0,
+        gender: data.gender || 'male',
+        email: data.email || '',
+        address: data.address || '',
+        batch: data.batch || '',
+        photoUrl: data.photoUrl || '',
+        updatedAt: data.updatedAt || Date.now(),
+        branch: data.branch || data.dojoBranch || DOJO_BRANCHES[0].name,
+        schoolName: data.schoolName || '',
+        beltLevel: data.beltLevel || data.currentBelt || data.targetBelt || 'Shotokan Belt',
+        status: 'approved',
+        createdAt: data.createdAt || Date.now()
+      } as Admission;
+
+      return { score: bestScore, student: studentObj };
     };
 
     let isMounted = true;
@@ -1694,150 +1742,93 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
       }
     };
 
-    const tryExamsFallback = () => {
-      if (!isMounted || matchFound) return;
-      const examsRef = collection(db, 'exams');
-      getDocs(examsRef).then((examSnap) => {
-        if (!isMounted || matchFound) return;
-        let bestExam: any = null;
-        let highestExamScore = -1;
+    const searchAllCollections = async () => {
+      try {
+        let globalBestScore = 0;
+        let globalBestStudent: Admission | null = null;
 
-        examSnap.forEach((exDoc) => {
-          const exData = exDoc.data();
-          const exStId = (exData.studentId || exData.rollId || '').trim();
-          const exDocId = (exDoc.id || '').trim();
-          const exName = (exData.studentName || exData.fullName || '').trim().toLowerCase();
-          
-          let score = 0;
-          const exStIdUpper = exStId.toUpperCase();
-          const exDocIdUpper = exDocId.toUpperCase();
+        // 1. Search Admissions
+        try {
+          const admSnap = await getDocs(collection(db, 'admissions'));
+          admSnap.forEach((d) => {
+            const { score, student } = evaluateDocMatch(d);
+            if (score > globalBestScore && student) {
+              globalBestScore = score;
+              globalBestStudent = student;
+            }
+          });
+        } catch (e) {
+          console.warn("Admissions fetch warning:", e);
+        }
 
-          if (exStIdUpper === searchUpper || exDocIdUpper === searchUpper) {
-            score = 1000;
-          } else if (exStIdUpper.replace(/[^A-Z0-9]/g, '') === searchUpper.replace(/[^A-Z0-9]/g, '')) {
-            score = 900;
-          } else if (checkStudentIdMatch(exStId, rawSearch) || checkStudentIdMatch(exDocId, rawSearch)) {
-            score = 800;
-          } else if (!isRollIdSearch && exName && searchLower && exName === searchLower) {
-            score = 700;
-          } else if (!isRollIdSearch && exName && searchLower && searchLower.length >= 3 && exName.includes(searchLower)) {
-            score = 500;
-          }
-
-          if (score > highestExamScore) {
-            highestExamScore = score;
-            bestExam = exData;
-          }
-        });
-
-        if (highestExamScore > 0 && bestExam) {
-          const realName = (bestExam.studentName || bestExam.fullName || '').trim();
-          const virtualStudent = {
-            id: 'exam_st_' + (bestExam.studentId || searchUpper),
-            studentId: bestExam.studentId || searchUpper,
-            fullName: realName || 'Karate Student',
-            parentName: bestExam.parentName || '',
-            phone: bestExam.parentPhone || '',
-            beltLevel: bestExam.targetBelt || 'Shotokan Belt',
-            status: 'approved',
-            createdAt: bestExam.createdAt || Date.now()
-          } as Admission;
-          setFoundStudent(virtualStudent);
-        } else {
-          // Check receipts collection as 3rd fallback
-          if (!isMounted || matchFound) return;
-          const receiptsRef = collection(db, 'receipts');
-          getDocs(receiptsRef).then((rcSnap) => {
-            if (!isMounted || matchFound) return;
-            let bestReceipt: any = null;
-            let highestRcScore = -1;
-
-            rcSnap.forEach((rcDoc) => {
-              const rcData = rcDoc.data();
-              const rcStId = (rcData.studentId || '').trim();
-              const rcDocId = (rcDoc.id || '').trim();
-              const rcName = (rcData.studentName || rcData.fullName || '').trim().toLowerCase();
-
-              let score = 0;
-              const rcStIdUpper = rcStId.toUpperCase();
-              const rcDocIdUpper = rcDocId.toUpperCase();
-
-              if (rcStIdUpper === searchUpper || rcDocIdUpper === searchUpper) {
-                score = 1000;
-              } else if (rcStIdUpper.replace(/[^A-Z0-9]/g, '') === searchUpper.replace(/[^A-Z0-9]/g, '')) {
-                score = 900;
-              } else if (checkStudentIdMatch(rcStId, rawSearch) || checkStudentIdMatch(rcDocId, rawSearch)) {
-                score = 800;
-              } else if (!isRollIdSearch && rcName && searchLower && rcName === searchLower) {
-                score = 700;
-              } else if (!isRollIdSearch && rcName && searchLower && searchLower.length >= 3 && rcName.includes(searchLower)) {
-                score = 500;
-              }
-
-              if (score > highestRcScore) {
-                highestRcScore = score;
-                bestReceipt = rcData;
+        // 2. Search Exams
+        if (globalBestScore < 950) {
+          try {
+            const examSnap = await getDocs(collection(db, 'exams'));
+            examSnap.forEach((d) => {
+              const { score, student } = evaluateDocMatch(d);
+              if (score > globalBestScore && student) {
+                globalBestScore = score;
+                globalBestStudent = student;
               }
             });
-
-            if (highestRcScore > 0 && bestReceipt) {
-              const realName = (bestReceipt.studentName || bestReceipt.fullName || '').trim();
-              const virtualStudent = {
-                id: 'rc_st_' + (bestReceipt.studentId || searchUpper),
-                studentId: bestReceipt.studentId || searchUpper,
-                fullName: realName || 'Karate Student',
-                parentName: bestReceipt.parentName || '',
-                phone: bestReceipt.phone || '',
-                beltLevel: bestReceipt.beltLevel || 'Shotokan Belt',
-                status: 'approved',
-                createdAt: bestReceipt.createdAt || Date.now()
-              } as Admission;
-              setFoundStudent(virtualStudent);
-            } else {
-              // No student record found in any collection
-              if (!isMounted || matchFound) return;
-              setSearching(false);
-              setActiveStudent(null);
-              setSearchError(`No active student record found matching "${rawSearch}". Please verify the Roll ID or student name with your coach.`);
-            }
-          }).catch(() => {
-            if (!isMounted || matchFound) return;
-            setSearching(false);
-            setActiveStudent(null);
-            setSearchError(`No active student record found matching "${rawSearch}". Please verify the Roll ID or student name with your coach.`);
-          });
+          } catch (e) {
+            console.warn("Exams fetch warning:", e);
+          }
         }
-      }).catch((err) => {
+
+        // 3. Search Receipts
+        if (globalBestScore < 950) {
+          try {
+            const rcSnap = await getDocs(collection(db, 'receipts'));
+            rcSnap.forEach((d) => {
+              const { score, student } = evaluateDocMatch(d);
+              if (score > globalBestScore && student) {
+                globalBestScore = score;
+                globalBestStudent = student;
+              }
+            });
+          } catch (e) {
+            console.warn("Receipts fetch warning:", e);
+          }
+        }
+
         if (!isMounted || matchFound) return;
-        console.warn("Exams collection search fallback notice:", err);
+
+        if (globalBestScore > 0 && globalBestStudent) {
+          setFoundStudent(globalBestStudent);
+        } else {
+          setSearching(false);
+          setActiveStudent(null);
+          setSearchError(`No active student record found matching "${cleanRaw}". Please verify the Roll ID or student name with your coach.`);
+        }
+      } catch (err) {
+        if (!isMounted || matchFound) return;
         setSearching(false);
         setActiveStudent(null);
-        setSearchError(`No active student record found matching "${rawSearch}". Please verify the Roll ID or student name with your coach.`);
-      });
+        setSearchError(`No active student record found matching "${cleanRaw}". Please verify the Roll ID or student name with your coach.`);
+      }
     };
 
+    searchAllCollections();
+
+    // Optional background real-time listener for admissions
     const admissionsRef = collection(db, 'admissions');
-
-    // Perform direct getDocs first for fast, reliable HTTP fetch on mobile connections
-    getDocs(admissionsRef).then((admSnap) => {
-      if (!isMounted || matchFound) return;
-      const matched = processAdmissionsDocs(admSnap.docs);
-      if (matched) {
-        setFoundStudent(matched as Admission);
-      } else {
-        tryExamsFallback();
-      }
-    }).catch(() => {
-      if (!isMounted || matchFound) return;
-      tryExamsFallback();
-    });
-
-    // Optional background real-time listener without blocking on connection drops
     const unsubscribeAdmissions = onSnapshot(admissionsRef, (snapshot) => {
-      if (!isMounted) return;
-      const matched = processAdmissionsDocs(snapshot.docs);
-      if (matched) {
-        setFoundStudent(matched as Admission);
+      if (!isMounted || matchFound) return;
+      let snapBestScore = 0;
+      let snapBestStudent: Admission | null = null;
+
+      snapshot.docs.forEach((d) => {
+        const { score, student } = evaluateDocMatch(d);
+        if (score > snapBestScore && student) {
+          snapBestScore = score;
+          snapBestStudent = student;
+        }
+      });
+
+      if (snapBestScore > 0 && snapBestStudent) {
+        setFoundStudent(snapBestStudent);
       }
     }, (error) => {
       console.warn("Background real-time listener notice:", error);
