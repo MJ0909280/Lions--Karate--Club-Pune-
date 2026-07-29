@@ -708,7 +708,7 @@ export default function AdminPanel() {
     const calculated = calculateOverallGrade(initialDisciplines);
     setEnteredGrade(item.grade || calculated || (statusAction === 'passed' ? 'A' : 'Fail (Requires Re-try)'));
     setEnteredRemarks(item.remarks || '');
-    setAdminPublishResult(item.isPublished ?? false);
+    setAdminPublishResult(item.isPublished ?? true);
   };
 
   // Live Exam Schedules State

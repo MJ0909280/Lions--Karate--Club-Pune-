@@ -1572,19 +1572,31 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
 
     setExamsLoading(true);
     const examsRef = collection(db, 'exams');
-    const q = query(examsRef, where('studentId', '==', activeStudent.studentId));
 
     // Listen to real-time updates as coach updates grades in backend
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    const unsubscribe = onSnapshot(examsRef, (snapshot) => {
       const records: ExamRecord[] = [];
+      const targetStudentId = (activeStudent.studentId || '').trim().toUpperCase();
+      const targetName = (activeStudent.fullName || '').trim().toLowerCase();
+
       snapshot.forEach((docSnap) => {
-        records.push({
-          id: docSnap.id,
-          ...docSnap.data()
-        } as ExamRecord);
+        const data = docSnap.data();
+        const exStudentId = (data.studentId || '').trim().toUpperCase();
+        const exStudentName = (data.studentName || '').trim().toLowerCase();
+
+        if (
+          (targetStudentId && exStudentId && exStudentId === targetStudentId) ||
+          (targetName && exStudentName && exStudentName === targetName)
+        ) {
+          records.push({
+            id: docSnap.id,
+            ...data
+          } as ExamRecord);
+        }
       });
+
       // Sort newest first
-      records.sort((a, b) => b.createdAt - a.createdAt);
+      records.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
       setRegisteredExams(records);
       setExamsLoading(false);
     }, (error) => {
@@ -3120,7 +3132,9 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
 
               {!examsLoading && registeredExams.length > 0 && (
                 <div className="grid grid-cols-1 gap-4">
-                  {registeredExams.map((exam) => (
+                  {registeredExams.map((exam) => {
+                    const isResultPublished = exam.isPublished !== false || exam.status === 'passed' || exam.status === 'failed' || !!exam.grade || !!exam.disciplinesGrades;
+                    return (
                     <div 
                       key={exam.id}
                       className="bg-slate-900/30 border border-zinc-900 p-3.5 sm:p-5 rounded-2xl relative overflow-hidden flex flex-col justify-between items-start gap-4 hover:border-zinc-850 transition-colors text-left w-full max-w-full min-w-0"
@@ -3158,7 +3172,7 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
                         </div>
 
                         {/* 7-Discipline Marksheet Breakdown (Only if Published) */}
-                        {exam.isPublished && exam.disciplinesGrades && (
+                        {isResultPublished && exam.disciplinesGrades && (
                           <div className="bg-slate-950/80 p-2.5 sm:p-3 border border-zinc-900 rounded-xl mt-3 text-xs w-full max-w-full min-w-0 overflow-hidden">
                             <span className="text-[8px] sm:text-[9px] font-heading font-black text-yellow-500 uppercase tracking-widest block mb-1.5">
                               OFFICIAL 7-DISCIPLINE EVALUATION
@@ -3187,7 +3201,7 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
                         )}
 
                         {/* 5 CELEBRATION ENHANCEMENTS FOR PARENT RESULT VIEW */}
-                        {exam.isPublished && exam.status === 'passed' && (
+                        {isResultPublished && exam.status === 'passed' && (
                           <div className="bg-gradient-to-br from-slate-950 via-amber-950/20 to-slate-950 p-3 sm:p-4 border-2 border-amber-500/40 rounded-2xl mt-4 relative overflow-hidden shadow-xl shadow-amber-500/5 group w-full max-w-full min-w-0">
                             {/* Confetti & Sparkles Background Decor */}
                             <div className="absolute top-2 right-3 flex space-x-1 opacity-80 pointer-events-none text-base animate-bounce">
@@ -3290,7 +3304,7 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
                         )}
 
                         {/* Standard Coach Remarks for non-passed or standard published */}
-                        {exam.isPublished && exam.status !== 'passed' && (
+                        {isResultPublished && exam.status !== 'passed' && (
                           <div className="bg-slate-950/60 p-3 border border-zinc-900 rounded-xl mt-3 text-xs w-full">
                             <span className="text-[8px] font-heading font-black text-yellow-500 uppercase tracking-widest block mb-1">COACH'S FEEDBACK</span>
                             <p className="text-zinc-350 italic font-medium leading-relaxed">
@@ -3299,14 +3313,14 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
                           </div>
                         )}
 
-                        {/* Notice if Graded but Not Published Yet */}
-                        {!exam.isPublished && (exam.status === 'passed' || exam.status === 'failed') && (
+                        {/* Notice if Not Graded yet */}
+                        {!isResultPublished && (exam.status === 'pending' || exam.status === 'approved') && (
                           <div className="bg-amber-500/10 border border-amber-500/20 p-3 rounded-xl mt-3 text-left">
                             <span className="text-[9px] font-heading font-black text-amber-400 uppercase tracking-wider block">
-                              ⏳ Results Under Evaluation — Release Pending
+                              ⏳ Exam Scheduled / Under Evaluation — Release Pending
                             </span>
                             <p className="text-[10px] text-zinc-400 mt-0.5 leading-relaxed">
-                              Evaluation complete. Official results & belt certificates will be visible here once Sensei publishes them.
+                              Official results & belt certificates will be visible here once Sensei completes grading.
                             </p>
                           </div>
                         )}
@@ -3320,7 +3334,7 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
 
                       {/* Side Status Badge indicator block */}
                       <div className="shrink-0 flex items-center space-x-3">
-                        {exam.isPublished && (exam.grade || exam.disciplinesGrades) && (
+                        {isResultPublished && (exam.grade || exam.disciplinesGrades) && (
                           <div className="text-right">
                             <span className="text-[8px] font-mono text-zinc-550 block leading-none uppercase">GRADE</span>
                             <span className="font-heading font-black text-base text-yellow-500 mt-1 block leading-none font-sans">
@@ -3332,7 +3346,7 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
                         <div className="flex flex-col items-end">
                           <span className="text-[8px] font-mono text-zinc-550 uppercase tracking-widest block mb-1">STATUS</span>
                           
-                          {exam.isPublished && exam.status === 'passed' && (
+                          {isResultPublished && exam.status === 'passed' && (
                             <div className="flex flex-col items-end gap-1.5">
                               <span className="text-[9px] font-heading font-black uppercase text-emerald-500 bg-emerald-500/10 px-2.5 py-1 rounded border border-emerald-500/20">
                                 Passed - Belt Awarded!
@@ -3348,34 +3362,22 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
                             </div>
                           )}
                           
-                          {exam.isPublished && exam.status === 'failed' && (
+                          {isResultPublished && exam.status === 'failed' && (
                             <span className="text-[9px] font-heading font-black uppercase text-red-500 bg-red-500/10 px-2.5 py-1 rounded border border-red-500/20">
                               Practice Required
                             </span>
                           )}
 
-                          {!exam.isPublished && (exam.status === 'passed' || exam.status === 'failed') && (
+                          {!isResultPublished && (
                             <span className="text-[9px] font-heading font-black uppercase text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded border border-amber-500/20">
                               Result Pending
                             </span>
                           )}
-
-                          {exam.status === 'approved' && (
-                            <span className="text-[9px] font-heading font-black uppercase text-blue-500 bg-blue-500/10 px-2.5 py-1 rounded border border-blue-500/20">
-                              Exam Date Set
-                            </span>
-                          )}
-
-                          {exam.status === 'pending' && (
-                            <span className="text-[9px] font-heading font-black uppercase text-yellow-500 bg-yellow-500/10 px-2.5 py-1 rounded border border-yellow-500/20">
-                              Coach Review Pending
-                            </span>
-                          )}
                         </div>
                       </div>
-
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>

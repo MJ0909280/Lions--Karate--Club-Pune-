@@ -343,7 +343,7 @@ export default function ExamCheckIn({ onBackToHome, initialTab = 'checkin' }: Ex
   const handleSelectGradingStudent = (student: any) => {
     setSelectedGradingStudent(student);
     setGradesInput(student.disciplinesGrades || {});
-    setPublishOnSave(student.isPublished || false);
+    setPublishOnSave(student.isPublished ?? true);
     setGradeSaveSuccess(false);
     setGradeSaveError('');
   };
