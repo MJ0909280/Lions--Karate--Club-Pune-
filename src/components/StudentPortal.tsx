@@ -1634,9 +1634,35 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
       return highestScore > 0 ? bestDoc : null;
     };
 
+    let isMounted = true;
+    let matchFound = false;
+
+    const setFoundStudent = (matched: Admission) => {
+      if (!isMounted) return;
+      matchFound = true;
+      setSearching(false);
+      setActiveStudent(matched);
+      setSearchError('');
+
+      setParentName(matched.parentName || '');
+      setParentPhone(matched.phone || '');
+      setBranch(matched.branch || DOJO_BRANCHES[0].name);
+      setSchoolName(matched.schoolName || '');
+
+      const studentBeltLevel = matched.beltLevel || '';
+      const currentIdx = BELT_LEVELS.findIndex(b => b.name && studentBeltLevel && (studentBeltLevel.trim().toLowerCase() === b.name.toLowerCase() || studentBeltLevel.toLowerCase().includes(b.name.toLowerCase())));
+      if (currentIdx !== -1 && currentIdx < BELT_LEVELS.length - 1) {
+        setTargetBelt(BELT_LEVELS[currentIdx + 1].name);
+      } else {
+        setTargetBelt(BELT_LEVELS[1].name);
+      }
+    };
+
     const tryExamsFallback = () => {
+      if (!isMounted || matchFound) return;
       const examsRef = collection(db, 'exams');
       getDocs(examsRef).then((examSnap) => {
+        if (!isMounted || matchFound) return;
         let bestExam: any = null;
         let highestExamScore = -1;
 
@@ -1669,7 +1695,6 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
         });
 
         if (highestExamScore > 0 && bestExam) {
-          setSearching(false);
           const realName = (bestExam.studentName || bestExam.fullName || '').trim();
           const virtualStudent = {
             id: 'exam_st_' + (bestExam.studentId || searchUpper),
@@ -1681,12 +1706,13 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
             status: 'approved',
             createdAt: bestExam.createdAt || Date.now()
           } as Admission;
-          setActiveStudent(virtualStudent);
-          setSearchError('');
+          setFoundStudent(virtualStudent);
         } else {
           // Check receipts collection as 3rd fallback
+          if (!isMounted || matchFound) return;
           const receiptsRef = collection(db, 'receipts');
           getDocs(receiptsRef).then((rcSnap) => {
+            if (!isMounted || matchFound) return;
             let bestReceipt: any = null;
             let highestRcScore = -1;
 
@@ -1719,7 +1745,6 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
             });
 
             if (highestRcScore > 0 && bestReceipt) {
-              setSearching(false);
               const realName = (bestReceipt.studentName || bestReceipt.fullName || '').trim();
               const virtualStudent = {
                 id: 'rc_st_' + (bestReceipt.studentId || searchUpper),
@@ -1731,21 +1756,23 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
                 status: 'approved',
                 createdAt: bestReceipt.createdAt || Date.now()
               } as Admission;
-              setActiveStudent(virtualStudent);
-              setSearchError('');
+              setFoundStudent(virtualStudent);
             } else {
               // No student record found in any collection
+              if (!isMounted || matchFound) return;
               setSearching(false);
               setActiveStudent(null);
               setSearchError(`No active student record found matching "${rawSearch}". Please verify the Roll ID or student name with your coach.`);
             }
           }).catch(() => {
+            if (!isMounted || matchFound) return;
             setSearching(false);
             setActiveStudent(null);
             setSearchError(`No active student record found matching "${rawSearch}". Please verify the Roll ID or student name with your coach.`);
           });
         }
       }).catch((err) => {
+        if (!isMounted || matchFound) return;
         console.warn("Exams collection search fallback notice:", err);
         setSearching(false);
         setActiveStudent(null);
@@ -1753,35 +1780,19 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
       });
     };
 
-    let isMounted = true;
     const admissionsRef = collection(db, 'admissions');
 
     // Perform direct getDocs first for fast, reliable HTTP fetch on mobile connections
     getDocs(admissionsRef).then((admSnap) => {
-      if (!isMounted) return;
+      if (!isMounted || matchFound) return;
       const matched = processAdmissionsDocs(admSnap.docs);
       if (matched) {
-        setSearching(false);
-        setActiveStudent(matched as Admission);
-        setSearchError('');
-
-        setParentName(matched.parentName || '');
-        setParentPhone(matched.phone || '');
-        setBranch(matched.branch || DOJO_BRANCHES[0].name);
-        setSchoolName(matched.schoolName || '');
-
-        const studentBeltLevel = matched.beltLevel || '';
-        const currentIdx = BELT_LEVELS.findIndex(b => b.name && studentBeltLevel && (studentBeltLevel.trim().toLowerCase() === b.name.toLowerCase() || studentBeltLevel.toLowerCase().includes(b.name.toLowerCase())));
-        if (currentIdx !== -1 && currentIdx < BELT_LEVELS.length - 1) {
-          setTargetBelt(BELT_LEVELS[currentIdx + 1].name);
-        } else {
-          setTargetBelt(BELT_LEVELS[1].name);
-        }
+        setFoundStudent(matched as Admission);
       } else {
         tryExamsFallback();
       }
     }).catch(() => {
-      if (!isMounted) return;
+      if (!isMounted || matchFound) return;
       tryExamsFallback();
     });
 
@@ -1790,9 +1801,7 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
       if (!isMounted) return;
       const matched = processAdmissionsDocs(snapshot.docs);
       if (matched) {
-        setSearching(false);
-        setActiveStudent(matched as Admission);
-        setSearchError('');
+        setFoundStudent(matched as Admission);
       }
     }, (error) => {
       console.warn("Background real-time listener notice:", error);
