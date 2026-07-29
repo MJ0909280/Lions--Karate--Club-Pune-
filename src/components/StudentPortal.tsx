@@ -468,12 +468,25 @@ function ExamsHistoricalSkeleton() {
   );
 }
 
-// Helper function for flexible, bulletproof student ID matching (handles padding like LKCP-2026-173 vs LKCP-2026-0173, spaces, dashes, etc.)
+// Helper function to normalize search strings (handles smart dashes, non-breaking spaces, mobile autocomplete Unicode characters)
+export function normalizeSearchString(rawStr: string): string {
+  if (!rawStr) return '';
+  return rawStr
+    .replace(/[\u00A0\u1680\u180E\u2000-\u200B\u202F\u205F\u3000\uFEFF]/g, ' ')
+    .replace(/[\u2010\u2011\u2012\u2013\u2014\u2015\u2212]/g, '-')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+// Helper function for flexible, bulletproof student ID matching (handles padding like LKCP-2026-173 vs LKCP-2026-0173, spaces, dashes, different years, etc.)
 export function checkStudentIdMatch(targetStr: string, queryStr: string): boolean {
   if (!targetStr || !queryStr) return false;
 
-  const tUpper = targetStr.trim().toUpperCase();
-  const qUpper = queryStr.trim().toUpperCase();
+  const tCleaned = normalizeSearchString(targetStr);
+  const qCleaned = normalizeSearchString(queryStr);
+
+  const tUpper = tCleaned.toUpperCase();
+  const qUpper = qCleaned.toUpperCase();
 
   // 1. Exact string match (e.g. "LKCP-2026-175" === "LKCP-2026-175")
   if (tUpper === qUpper) return true;
@@ -481,22 +494,18 @@ export function checkStudentIdMatch(targetStr: string, queryStr: string): boolea
   // 2. Clean alphanumeric match (ignoring dashes, spaces, symbols: "LKCP2026175" === "LKCP2026175")
   const tClean = tUpper.replace(/[^A-Z0-9]/g, '');
   const qClean = qUpper.replace(/[^A-Z0-9]/g, '');
-  if (tClean === qClean) return true;
+  if (tClean && qClean && tClean === qClean) return true;
 
-  // 3. Extract Year & Serial Numbers (e.g. LKCP-2026-175 vs 175, LKCP-2026-0175, etc.)
+  // 3. Extract Year & Serial Numbers (e.g. LKCP-2026-114 vs LKCP-2025-114, 114, LKCP-2026-0114, etc.)
   const tNumMatches = tUpper.match(/\d+/g) || [];
   const qNumMatches = qUpper.match(/\d+/g) || [];
 
   if (tNumMatches.length > 0 && qNumMatches.length > 0) {
-    const tYear = tNumMatches.find(n => n.length === 4);
-    const qYear = qNumMatches.find(n => n.length === 4);
-
     const tLastNum = parseInt(tNumMatches[tNumMatches.length - 1], 10);
     const qLastNum = parseInt(qNumMatches[qNumMatches.length - 1], 10);
 
-    // If years match (or one is unassigned) AND numerical serials match EXACTLY (175 === 175)
-    // Note: 175 DOES NOT match 17 or 1755!
-    if ((!tYear || !qYear || tYear === qYear) && !isNaN(tLastNum) && !isNaN(qLastNum) && tLastNum === qLastNum) {
+    // If numerical serials match EXACTLY (e.g. 114 === 114)
+    if (!isNaN(tLastNum) && !isNaN(qLastNum) && tLastNum === qLastNum) {
       return true;
     }
   }
@@ -531,6 +540,7 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
   const [activeStudentId, setActiveStudentId] = useState<string | null>(null);
   const [activeStudent, setActiveStudent] = useState<Admission | null>(null);
   const [searchError, setSearchError] = useState('');
+  const [searchNonce, setSearchNonce] = useState(0);
   
   // Exams related states
   const [registeredExams, setRegisteredExams] = useState<ExamRecord[]>([]);
@@ -1597,7 +1607,7 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
 
     setSearching(true);
     setSearchError('');
-    const cleanRaw = activeStudentId.replace(/[\u00A0\u1680\u180E\u2000-\u200B\u202F\u205F\u3000\uFEFF]/g, ' ').trim();
+    const cleanRaw = normalizeSearchString(activeStudentId);
     if (!cleanRaw) {
       setSearching(false);
       return;
@@ -1617,7 +1627,10 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
       const stIds = [
         data.studentId, data.rollId, data.rollNo, data.roll_no, data.rollNumber,
         data.student_id, data.studentID, data.registrationNo, data.regNo,
-        data.admissionNo, data.admissionId, data.id, docId
+        data.admissionNo, data.admissionId, data.id, docId,
+        data.roll_number, data.student_roll_id, data.student_roll_no,
+        data.karateRollId, data.karate_roll_id, data.roll, data.idNo, data.id_no,
+        data.serialNo, data.serial, data.code, data.studentCode
       ].filter(Boolean).map(s => String(s).trim());
 
       const stNames = [
@@ -1747,6 +1760,33 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
         let globalBestScore = 0;
         let globalBestStudent: Admission | null = null;
 
+        // 0. Fast direct indexed queries for instant response (sub-100ms)
+        try {
+          const directRef = collection(db, 'admissions');
+          const directQueries = [
+            query(directRef, where('studentId', '==', searchUpper)),
+            query(directRef, where('studentId', '==', cleanRaw))
+          ];
+          if (searchDigits.length >= 10) {
+            directQueries.push(query(directRef, where('phone', '==', searchDigits)));
+          }
+
+          for (const q of directQueries) {
+            const qSnap = await getDocs(q);
+            if (!qSnap.empty) {
+              qSnap.forEach((d) => {
+                const { score, student } = evaluateDocMatch(d);
+                if (score > globalBestScore && student) {
+                  globalBestScore = score;
+                  globalBestStudent = student;
+                }
+              });
+            }
+          }
+        } catch (e) {
+          console.warn("Direct query fast-path note:", e);
+        }
+
         // 1. Search Admissions
         try {
           const admSnap = await getDocs(collection(db, 'admissions'));
@@ -1790,6 +1830,38 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
             });
           } catch (e) {
             console.warn("Receipts fetch warning:", e);
+          }
+        }
+
+        // 4. Search Attendance
+        if (globalBestScore < 950) {
+          try {
+            const attSnap = await getDocs(collection(db, 'attendance'));
+            attSnap.forEach((d) => {
+              const { score, student } = evaluateDocMatch(d);
+              if (score > globalBestScore && student) {
+                globalBestScore = score;
+                globalBestStudent = student;
+              }
+            });
+          } catch (e) {
+            console.warn("Attendance fetch warning:", e);
+          }
+        }
+
+        // 5. Search Batches
+        if (globalBestScore < 950) {
+          try {
+            const batchSnap = await getDocs(collection(db, 'batches'));
+            batchSnap.forEach((d) => {
+              const { score, student } = evaluateDocMatch(d);
+              if (score > globalBestScore && student) {
+                globalBestScore = score;
+                globalBestStudent = student;
+              }
+            });
+          } catch (e) {
+            console.warn("Batches fetch warning:", e);
           }
         }
 
@@ -1838,7 +1910,7 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
       isMounted = false;
       unsubscribeAdmissions();
     };
-  }, [activeStudentId]);
+  }, [activeStudentId, searchNonce]);
 
   // Fetch student exams list dynamically when activeStudent changes
   useEffect(() => {
@@ -1960,11 +2032,13 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
   }, [activeStudent, registeredExams]);
 
   const performLookup = (idToSearch: string) => {
-    const searchId = idToSearch.trim().toUpperCase();
+    const searchId = normalizeSearchString(idToSearch).toUpperCase();
     if (!searchId) return;
 
+    setStudentIdInput(searchId);
     safeLocalStorage.setItem('lkcp_portal_student_id', searchId);
     setActiveStudentId(searchId);
+    setSearchNonce(prev => prev + 1);
   };
 
   const handleSearchSubmit = (e: React.FormEvent) => {
