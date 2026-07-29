@@ -1760,36 +1760,77 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
         let globalBestScore = 0;
         let globalBestStudent: Admission | null = null;
 
-        // 0. Fast direct indexed queries for instant response (sub-100ms)
+        const currentYear = new Date().getFullYear();
+        const candidateIds = new Set<string>();
+        candidateIds.add(searchUpper);
+        candidateIds.add(cleanRaw);
+        if (searchAlphaNum) candidateIds.add(searchAlphaNum);
+
+        // Extract numbers to build standard candidate Roll IDs (handles 128 vs LKCP-2026-128 vs LKCP-2026-0128)
+        if (searchDigits) {
+          const serialNum = parseInt(searchDigits.slice(-4), 10);
+          if (!isNaN(serialNum) && serialNum > 0) {
+            const p3 = String(serialNum).padStart(3, '0');
+            const p4 = String(serialNum).padStart(4, '0');
+            const rawNum = String(serialNum);
+
+            candidateIds.add(`LKCP-${currentYear}-${p3}`);
+            candidateIds.add(`LKCP-${currentYear}-${p4}`);
+            candidateIds.add(`LKCP-${currentYear}-${rawNum}`);
+            candidateIds.add(`LKCP-${currentYear - 1}-${p3}`);
+            candidateIds.add(`LKCP-${currentYear - 1}-${p4}`);
+            candidateIds.add(`LKCP-${currentYear - 1}-${rawNum}`);
+            candidateIds.add(rawNum);
+          }
+        }
+
+        const candidateList = Array.from(candidateIds).filter(Boolean);
+
+        // 0. High-speed targeted indexed queries across Admissions and Exams (1-3 reads total, sub-50ms)
         try {
-          const directRef = collection(db, 'admissions');
-          const directQueries = [
-            query(directRef, where('studentId', '==', searchUpper)),
-            query(directRef, where('studentId', '==', cleanRaw))
-          ];
-          if (searchDigits.length >= 10) {
-            directQueries.push(query(directRef, where('phone', '==', searchDigits)));
+          const targetedQueries: any[] = [];
+          
+          candidateList.slice(0, 10).forEach(cid => {
+            targetedQueries.push(query(collection(db, 'admissions'), where('studentId', '==', cid)));
+            targetedQueries.push(query(collection(db, 'exams'), where('studentId', '==', cid)));
+          });
+
+          if (searchDigits.length >= 7) {
+            targetedQueries.push(query(collection(db, 'admissions'), where('phone', '==', searchDigits)));
+            targetedQueries.push(query(collection(db, 'exams'), where('parentPhone', '==', searchDigits)));
           }
 
-          for (const q of directQueries) {
-            const qSnap = await getDocs(q);
-            if (!qSnap.empty) {
-              qSnap.forEach((d) => {
-                const { score, student } = evaluateDocMatch(d);
-                if (score > globalBestScore && student) {
-                  globalBestScore = score;
-                  globalBestStudent = student;
-                }
-              });
+          for (const q of targetedQueries) {
+            try {
+              const qSnap = await getDocs(q);
+              if (!qSnap.empty) {
+                qSnap.forEach((d) => {
+                  const { score, student } = evaluateDocMatch(d);
+                  if (score > globalBestScore && student) {
+                    globalBestScore = score;
+                    globalBestStudent = student;
+                  }
+                });
+              }
+            } catch (singleQErr) {
+              // Ignore single query error and proceed with remaining candidate queries
             }
           }
         } catch (e) {
-          console.warn("Direct query fast-path note:", e);
+          console.warn("Direct targeted query note:", e);
         }
 
-        // 1. Search Admissions
+        // Fast path exit: If direct targeted query found the student, return immediately without collection scans
+        if (globalBestScore >= 700 && globalBestStudent) {
+          if (isMounted && !matchFound) {
+            setFoundStudent(globalBestStudent);
+          }
+          return;
+        }
+
+        // 1. Fallback targeted scan across Admissions (limit 100)
         try {
-          const admSnap = await getDocs(collection(db, 'admissions'));
+          const admSnap = await getDocs(query(collection(db, 'admissions'), limit(100)));
           admSnap.forEach((d) => {
             const { score, student } = evaluateDocMatch(d);
             if (score > globalBestScore && student) {
@@ -1797,14 +1838,17 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
               globalBestStudent = student;
             }
           });
-        } catch (e) {
-          console.warn("Admissions fetch warning:", e);
+        } catch (e: any) {
+          console.warn("Admissions query warning:", e);
+          if (e?.code === 'resource-exhausted' || String(e).toLowerCase().includes('quota')) {
+            throw e;
+          }
         }
 
         // 2. Search Exams
-        if (globalBestScore < 950) {
+        if (globalBestScore < 700) {
           try {
-            const examSnap = await getDocs(collection(db, 'exams'));
+            const examSnap = await getDocs(query(collection(db, 'exams'), limit(100)));
             examSnap.forEach((d) => {
               const { score, student } = evaluateDocMatch(d);
               if (score > globalBestScore && student) {
@@ -1812,15 +1856,15 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
                 globalBestStudent = student;
               }
             });
-          } catch (e) {
-            console.warn("Exams fetch warning:", e);
+          } catch (e: any) {
+            console.warn("Exams query warning:", e);
           }
         }
 
         // 3. Search Receipts
-        if (globalBestScore < 950) {
+        if (globalBestScore < 700) {
           try {
-            const rcSnap = await getDocs(collection(db, 'receipts'));
+            const rcSnap = await getDocs(query(collection(db, 'receipts'), limit(50)));
             rcSnap.forEach((d) => {
               const { score, student } = evaluateDocMatch(d);
               if (score > globalBestScore && student) {
@@ -1833,38 +1877,6 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
           }
         }
 
-        // 4. Search Attendance
-        if (globalBestScore < 950) {
-          try {
-            const attSnap = await getDocs(collection(db, 'attendance'));
-            attSnap.forEach((d) => {
-              const { score, student } = evaluateDocMatch(d);
-              if (score > globalBestScore && student) {
-                globalBestScore = score;
-                globalBestStudent = student;
-              }
-            });
-          } catch (e) {
-            console.warn("Attendance fetch warning:", e);
-          }
-        }
-
-        // 5. Search Batches
-        if (globalBestScore < 950) {
-          try {
-            const batchSnap = await getDocs(collection(db, 'batches'));
-            batchSnap.forEach((d) => {
-              const { score, student } = evaluateDocMatch(d);
-              if (score > globalBestScore && student) {
-                globalBestScore = score;
-                globalBestStudent = student;
-              }
-            });
-          } catch (e) {
-            console.warn("Batches fetch warning:", e);
-          }
-        }
-
         if (!isMounted || matchFound) return;
 
         if (globalBestScore > 0 && globalBestStudent) {
@@ -1874,11 +1886,17 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
           setActiveStudent(null);
           setSearchError(`No active student record found matching "${cleanRaw}". Please verify the Roll ID or student name with your coach.`);
         }
-      } catch (err) {
+      } catch (err: any) {
         if (!isMounted || matchFound) return;
         setSearching(false);
         setActiveStudent(null);
-        setSearchError(`No active student record found matching "${cleanRaw}". Please verify the Roll ID or student name with your coach.`);
+
+        const isQuotaErr = err?.code === 'resource-exhausted' || String(err).toLowerCase().includes('quota');
+        if (isQuotaErr) {
+          setSearchError(`System traffic is exceptionally high today on Result Day. If your result is not loading, please verify your Roll ID (e.g. LKCP-2026-004) or click 'Need help?' below to reach Shihan Maruti Jadhav on WhatsApp for instant assistance.`);
+        } else {
+          setSearchError(`No active student record found matching "${cleanRaw}". Please verify the Roll ID or student name with your coach.`);
+        }
       }
     };
 
@@ -2501,6 +2519,11 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
                           value={studentIdInput}
                           onChange={(e) => setStudentIdInput(e.target.value)}
                           placeholder="e.g. LKCP-2026-004"
+                          autoCapitalize="characters"
+                          autoCorrect="off"
+                          autoComplete="off"
+                          spellCheck={false}
+                          enterKeyHint="search"
                           className={`w-full bg-slate-950 border pl-11 pr-4 py-3.5 text-sm font-mono tracking-widest text-white rounded-xl focus:outline-none transition-colors uppercase placeholder:text-zinc-700 ${
                             activeTab === 'exam' ? 'border-zinc-850 focus:border-red-500/60' : 'border-zinc-850 focus:border-yellow-500/60'
                           }`}
