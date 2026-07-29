@@ -1822,12 +1822,12 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
       docs.forEach((docSnap) => {
         const data = docSnap.data ? docSnap.data() : docSnap;
         const exStudentId = (data.studentId || '').trim().toUpperCase();
-        const exStudentName = (data.studentName || '').trim().toLowerCase();
+        const exStudentName = (data.studentName || data.fullName || '').trim().toLowerCase();
 
         if (
           checkStudentIdMatch(exStudentId, targetStudentId) ||
           checkStudentIdMatch(docSnap.id, targetStudentId) ||
-          (targetName && exStudentName && (exStudentName.includes(targetName) || targetName.includes(exStudentName)))
+          (targetName && targetName !== 'karate student' && exStudentName && (exStudentName.includes(targetName) || targetName.includes(exStudentName)))
         ) {
           records.push({
             id: docSnap.id,
@@ -1839,6 +1839,20 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
       // Sort newest first
       records.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
       setRegisteredExams(records);
+
+      // Auto-update student name if current activeStudent.fullName is 'Karate Student' or generic
+      if (records.length > 0) {
+        const realExamName = records.find(r => r.studentName && r.studentName.trim().toLowerCase() !== 'karate student')?.studentName 
+          || records.find(r => (r as any).fullName && (r as any).fullName.trim().toLowerCase() !== 'karate student')?.fullName;
+        if (realExamName) {
+          setActiveStudent(prev => {
+            if (!prev || prev.fullName === 'Karate Student' || !prev.fullName || prev.fullName.trim() === '') {
+              return { ...prev, fullName: realExamName, studentName: realExamName } as Admission;
+            }
+            return prev;
+          });
+        }
+      }
       setExamsLoading(false);
     };
 
@@ -2748,6 +2762,139 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
               </div>
             </div>
 
+            {/* SUBMITTED BELT EXAM RESULT BANNER & BELT PROMOTION FLOW */}
+            {registeredExams && registeredExams.length > 0 && (() => {
+              const latestExam = registeredExams[0];
+              const currentBeltDisplay = latestExam.currentBelt || activeStudent.beltLevel || 'Shotokan White Belt';
+              const targetBeltDisplay = latestExam.targetBelt || 'Next Rank Belt';
+              const isPassed = latestExam.status === 'passed' || latestExam.status === 'promoted';
+              const isApproved = latestExam.status === 'approved';
+
+              return (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className={`p-5 sm:p-6 rounded-2xl border-2 relative overflow-hidden shadow-2xl text-left ${
+                    isPassed
+                      ? 'bg-gradient-to-br from-amber-950/40 via-slate-900 to-slate-950 border-amber-500/60 shadow-amber-500/10'
+                      : isApproved
+                        ? 'bg-gradient-to-br from-blue-950/40 via-slate-900 to-slate-950 border-blue-500/60 shadow-blue-500/10'
+                        : 'bg-gradient-to-br from-yellow-950/30 via-slate-900 to-slate-950 border-yellow-500/50 shadow-yellow-500/10'
+                  }`}
+                >
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-zinc-800/80">
+                    <div className="space-y-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className={`text-[9.5px] font-heading font-black uppercase tracking-widest px-2.5 py-1 rounded-md border ${
+                          isPassed 
+                            ? 'bg-amber-500/10 border-amber-500/30 text-amber-400'
+                            : isApproved
+                              ? 'bg-blue-500/10 border-blue-500/30 text-blue-400'
+                              : 'bg-yellow-500/10 border-yellow-500/30 text-yellow-400'
+                        }`}>
+                          {isPassed ? '🎉 OFFICIAL BELT EXAM RESULT: PASSED / PROMOTED' : isApproved ? '🥋 EXAM SLOT APPROVED & CONFIRMED' : '⏳ EXAM APPLICATION SUBMITTED - UNDER REVIEW'}
+                        </span>
+                        <span className="text-[9px] font-mono text-zinc-500">
+                          Submitted On: {formatDate(latestExam.createdAt)}
+                        </span>
+                      </div>
+                      <h3 className="font-title text-lg sm:text-xl font-extrabold text-white uppercase tracking-tight mt-1">
+                        {activeStudent.fullName}'s Belt Promotion Result
+                      </h3>
+                    </div>
+
+                    {/* Action button */}
+                    {isPassed && (
+                      <button
+                        type="button"
+                        onClick={() => triggerBeltCelebration(latestExam.targetBelt)}
+                        className="bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-heading font-black text-xs uppercase tracking-wider px-4 py-2.5 rounded-xl hover:scale-105 active:scale-95 transition-all shadow-lg shadow-amber-500/20 cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
+                      >
+                        <Sparkles className="w-4 h-4 text-slate-950" />
+                        <span>Celebrate Belt Promotion! 🎉</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {/* BELT PROMOTION PROGRESSION FLOW DISPLAY */}
+                  <div className="bg-slate-950/90 p-4 rounded-xl border border-zinc-800/80 mt-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
+                    <div className="flex items-center space-x-2">
+                      <div className="text-left">
+                        <span className="text-[9px] font-mono text-zinc-500 uppercase block">CURRENT RANK</span>
+                        <span className="text-xs sm:text-sm font-bold text-zinc-300 bg-zinc-900 px-3 py-1 rounded border border-zinc-800 inline-block mt-0.5">
+                          {currentBeltDisplay.split(' (')[0]}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center space-x-1.5 text-amber-400 animate-pulse font-black text-xs uppercase tracking-wider">
+                      <span>➔ PROMOTED TO ➔</span>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <div className="text-left">
+                        <span className="text-[9px] font-mono text-amber-400 uppercase font-black block">APPLIED TARGET BELT</span>
+                        <span className="text-xs sm:text-sm font-black text-slate-950 bg-gradient-to-r from-amber-400 to-yellow-400 px-3.5 py-1 rounded shadow-md uppercase inline-block mt-0.5">
+                          {targetBeltDisplay.split(' (')[0]}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* EXAM DETAILS GRID */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mt-4 text-xs font-sans">
+                    <div className="bg-slate-950/60 p-3 rounded-xl border border-zinc-900">
+                      <span className="text-zinc-500 text-[10px] block uppercase font-mono">Assigned Coach</span>
+                      <span className="text-zinc-200 font-bold block mt-0.5">{latestExam.coachName || "Sensei Maruti Jadhav"}</span>
+                    </div>
+                    <div className="bg-slate-950/60 p-3 rounded-xl border border-zinc-900">
+                      <span className="text-zinc-500 text-[10px] block uppercase font-mono">Karate Dojo Branch</span>
+                      <span className="text-zinc-200 font-bold block mt-0.5">{latestExam.branch || activeStudent.branch || "Manajinager Branch"}</span>
+                    </div>
+                    <div className="bg-slate-950/60 p-3 rounded-xl border border-zinc-900">
+                      <span className="text-zinc-500 text-[10px] block uppercase font-mono">Exam Fees Status</span>
+                      <span className={`font-bold block mt-0.5 ${latestExam.feesStatus === 'Paid' ? 'text-emerald-400' : 'text-yellow-500'}`}>
+                        {latestExam.feesStatus === 'Paid' ? 'Paid ✅' : 'Unpaid (Pay at Center)'}
+                      </span>
+                    </div>
+                    <div className="bg-slate-950/60 p-3 rounded-xl border border-zinc-900">
+                      <span className="text-zinc-500 text-[10px] block uppercase font-mono">Scheduled Date / Venue</span>
+                      <span className="text-zinc-200 font-bold block mt-0.5">{latestExam.examDate || "Evaluating during class"}</span>
+                    </div>
+                  </div>
+
+                  {/* 7-DISCIPLINE EVALUATION MARKSHEET IF GRADED */}
+                  {latestExam.disciplinesGrades && (
+                    <div className="bg-slate-950 p-3.5 border border-zinc-800 rounded-xl mt-4">
+                      <span className="text-[9px] font-heading font-black text-yellow-500 uppercase tracking-widest block mb-2">
+                        OFFICIAL 7-DISCIPLINE PHYSICAL EVALUATION
+                      </span>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+                        {[
+                          { label: 'RUN', key: 'run' },
+                          { label: 'JUMP', key: 'jump' },
+                          { label: 'SIT-UPS', key: 'sidesitups' },
+                          { label: 'KICKS', key: 'kicks' },
+                          { label: 'STAMINA', key: 'conditionChecking' },
+                          { label: 'KATA', key: 'kata' },
+                          { label: 'KUMITE', key: 'kumite' }
+                        ].map(disc => {
+                          const val = (latestExam.disciplinesGrades as any)?.[disc.key];
+                          if (!val) return null;
+                          return (
+                            <div key={disc.key} className="bg-slate-900 px-2.5 py-1.5 rounded border border-zinc-800 text-center">
+                              <span className="text-[8px] font-mono text-zinc-400 block">{disc.label}</span>
+                              <span className="text-xs font-heading font-black text-yellow-400 block mt-0.5">{val}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </motion.div>
+              );
+            })()}
+
             {/* NEW EXAMS REGISTRATION FORM COMPONENT (Sleek Accordion) */}
             <AnimatePresence>
               {(showExamForm || activeTab === 'exam') && !formSuccess && (
@@ -3363,7 +3510,7 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
 
 
             {/* EXAMS & BELT GRADING HISTORICAL TIMELINE REGISTER LOGS */}
-            {activeTab === 'progress' && (
+            {activeTab !== 'attendance' && (
               <div className="space-y-4 animate-fade-in">
               <h4 className="font-title text-base font-extrabold text-white uppercase flex items-center gap-2 text-left">
                 <ClipboardList className="w-4.5 h-4.5 text-yellow-500" />
