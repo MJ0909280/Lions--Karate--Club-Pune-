@@ -1843,7 +1843,7 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
       // Auto-update student name if current activeStudent.fullName is 'Karate Student' or generic
       if (records.length > 0) {
         const realExamName = records.find(r => r.studentName && r.studentName.trim().toLowerCase() !== 'karate student')?.studentName 
-          || records.find(r => (r as any).fullName && (r as any).fullName.trim().toLowerCase() !== 'karate student')?.fullName;
+          || records.find(r => (r as any).fullName && ((r as any).fullName as string).trim().toLowerCase() !== 'karate student')?.studentName;
         if (realExamName) {
           setActiveStudent(prev => {
             if (!prev || prev.fullName === 'Karate Student' || !prev.fullName || prev.fullName.trim() === '') {
