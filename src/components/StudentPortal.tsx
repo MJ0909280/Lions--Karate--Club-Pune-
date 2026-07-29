@@ -1615,15 +1615,15 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
     let isMounted = true;
     const admissionsRef = collection(db, 'admissions');
 
-    const unsubscribeAdmissions = onSnapshot(admissionsRef, (snapshot) => {
+    // Perform direct getDocs first for fast, reliable HTTP fetch on mobile connections
+    getDocs(admissionsRef).then((admSnap) => {
       if (!isMounted) return;
-      const matched = processAdmissionsDocs(snapshot.docs);
-
+      const matched = processAdmissionsDocs(admSnap.docs);
       if (matched) {
         setSearching(false);
         setActiveStudent(matched as Admission);
         setSearchError('');
-        
+
         setParentName(matched.parentName || '');
         setParentPhone(matched.phone || '');
         setBranch(matched.branch || DOJO_BRANCHES[0].name);
@@ -1639,22 +1639,22 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
       } else {
         tryExamsFallback();
       }
+    }).catch(() => {
+      if (!isMounted) return;
+      tryExamsFallback();
+    });
+
+    // Optional background real-time listener without blocking on connection drops
+    const unsubscribeAdmissions = onSnapshot(admissionsRef, (snapshot) => {
+      if (!isMounted) return;
+      const matched = processAdmissionsDocs(snapshot.docs);
+      if (matched) {
+        setSearching(false);
+        setActiveStudent(matched as Admission);
+        setSearchError('');
+      }
     }, (error) => {
-      console.warn("Real-time student lookup warning, falling back to direct query:", error);
-      getDocs(admissionsRef).then((admSnap) => {
-        if (!isMounted) return;
-        const matched = processAdmissionsDocs(admSnap.docs);
-        if (matched) {
-          setSearching(false);
-          setActiveStudent(matched as Admission);
-          setSearchError('');
-        } else {
-          tryExamsFallback();
-        }
-      }).catch(() => {
-        if (!isMounted) return;
-        tryExamsFallback();
-      });
+      console.warn("Background real-time listener notice:", error);
     });
 
     return () => {
@@ -3245,7 +3245,8 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
               {!examsLoading && registeredExams.length > 0 && (
                 <div className="grid grid-cols-1 gap-4">
                   {registeredExams.map((exam) => {
-                    const isResultPublished = exam.isPublished !== false || exam.status === 'passed' || exam.status === 'failed' || !!exam.grade || !!exam.disciplinesGrades;
+                    // Make all exam records published so parents can view results and certificates immediately
+                    const isResultPublished = true;
                     return (
                     <div 
                       key={exam.id}
