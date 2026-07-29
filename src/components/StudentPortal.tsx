@@ -1620,9 +1620,13 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
 
         if (score > highestScore) {
           highestScore = score;
+          const matchedName = (data.fullName || data.studentName || data.childName || data.name || '').trim();
           bestDoc = {
+            ...data,
             id: docSnap.id,
-            ...data
+            fullName: matchedName || 'Karate Student',
+            studentName: matchedName || 'Karate Student',
+            studentId: stId || data.studentId || searchUpper,
           };
         }
       });
@@ -1640,7 +1644,7 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
           const exData = exDoc.data();
           const exStId = (exData.studentId || exData.rollId || '').trim();
           const exDocId = (exDoc.id || '').trim();
-          const exName = (exData.studentName || '').trim().toLowerCase();
+          const exName = (exData.studentName || exData.fullName || '').trim().toLowerCase();
           
           let score = 0;
           const exStIdUpper = exStId.toUpperCase();
@@ -1666,10 +1670,11 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
 
         if (highestExamScore > 0 && bestExam) {
           setSearching(false);
+          const realName = (bestExam.studentName || bestExam.fullName || '').trim();
           const virtualStudent = {
             id: 'exam_st_' + (bestExam.studentId || searchUpper),
             studentId: bestExam.studentId || searchUpper,
-            fullName: bestExam.studentName || 'Karate Student',
+            fullName: realName || 'Karate Student',
             parentName: bestExam.parentName || '',
             phone: bestExam.parentPhone || '',
             beltLevel: bestExam.targetBelt || 'Shotokan Belt',
@@ -1689,7 +1694,7 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
               const rcData = rcDoc.data();
               const rcStId = (rcData.studentId || '').trim();
               const rcDocId = (rcDoc.id || '').trim();
-              const rcName = (rcData.studentName || '').trim().toLowerCase();
+              const rcName = (rcData.studentName || rcData.fullName || '').trim().toLowerCase();
 
               let score = 0;
               const rcStIdUpper = rcStId.toUpperCase();
@@ -1715,10 +1720,11 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
 
             if (highestRcScore > 0 && bestReceipt) {
               setSearching(false);
+              const realName = (bestReceipt.studentName || bestReceipt.fullName || '').trim();
               const virtualStudent = {
                 id: 'rc_st_' + (bestReceipt.studentId || searchUpper),
                 studentId: bestReceipt.studentId || searchUpper,
-                fullName: bestReceipt.studentName || 'Karate Student',
+                fullName: realName || 'Karate Student',
                 parentName: bestReceipt.parentName || '',
                 phone: bestReceipt.phone || '',
                 beltLevel: bestReceipt.beltLevel || 'Shotokan Belt',
@@ -1728,66 +1734,22 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
               setActiveStudent(virtualStudent);
               setSearchError('');
             } else {
-              // Fail-safe: If input contains digits or starts with LKCP, grant instant access with virtual roll ID
+              // No student record found in any collection
               setSearching(false);
-              let formattedId = searchUpper;
-              if (/^\d+$/.test(rawSearch)) {
-                formattedId = `LKCP-2026-${rawSearch.padStart(3, '0')}`;
-              } else if (!formattedId.startsWith('LKCP-')) {
-                formattedId = `LKCP-2026-${formattedId}`;
-              }
-
-              const autoStudent = {
-                id: 'auto_st_' + formattedId,
-                studentId: formattedId,
-                fullName: 'Karate Student',
-                parentName: 'Parent',
-                phone: '',
-                beltLevel: 'Shotokan White Belt',
-                status: 'approved',
-                createdAt: Date.now()
-              } as Admission;
-
-              setActiveStudent(autoStudent);
-              setSearchError('');
+              setActiveStudent(null);
+              setSearchError(`No active student record found matching "${rawSearch}". Please verify the Roll ID or student name with your coach.`);
             }
           }).catch(() => {
             setSearching(false);
-            let formattedId = searchUpper;
-            if (/^\d+$/.test(rawSearch)) {
-              formattedId = `LKCP-2026-${rawSearch.padStart(3, '0')}`;
-            }
-            setActiveStudent({
-              id: 'auto_st_' + formattedId,
-              studentId: formattedId,
-              fullName: 'Karate Student',
-              parentName: 'Parent',
-              phone: '',
-              beltLevel: 'Shotokan White Belt',
-              status: 'approved',
-              createdAt: Date.now()
-            } as Admission);
-            setSearchError('');
+            setActiveStudent(null);
+            setSearchError(`No active student record found matching "${rawSearch}". Please verify the Roll ID or student name with your coach.`);
           });
         }
       }).catch((err) => {
         console.warn("Exams collection search fallback notice:", err);
         setSearching(false);
-        let formattedId = searchUpper;
-        if (/^\d+$/.test(rawSearch)) {
-          formattedId = `LKCP-2026-${rawSearch.padStart(3, '0')}`;
-        }
-        setActiveStudent({
-          id: 'auto_st_' + formattedId,
-          studentId: formattedId,
-          fullName: 'Karate Student',
-          parentName: 'Parent',
-          phone: '',
-          beltLevel: 'Shotokan White Belt',
-          status: 'approved',
-          createdAt: Date.now()
-        } as Admission);
-        setSearchError('');
+        setActiveStudent(null);
+        setSearchError(`No active student record found matching "${rawSearch}". Please verify the Roll ID or student name with your coach.`);
       });
     };
 
