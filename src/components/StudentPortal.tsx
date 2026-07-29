@@ -10,6 +10,7 @@ import {
   addDoc, 
   updateDoc,
   doc,
+  limit,
   onSnapshot 
 } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType, generateSequentialStudentId } from '../firebase';
@@ -205,7 +206,9 @@ interface ExamRecord {
   venueDetails?: string;
   grade?: string;
   remarks?: string;
+  schoolName?: string;
   createdAt: number;
+  updatedAt?: number;
 }
 
 interface BadgeDef {
@@ -520,6 +523,160 @@ export function checkStudentIdMatch(targetStr: string, queryStr: string): boolea
   }
 
   return false;
+}
+
+// Persistent Local Storage & High-Speed Memory Cache Keys
+const LOCAL_STUDENTS_CACHE_KEY = 'lkcp_cached_students_v3';
+const LOCAL_EXAMS_CACHE_KEY = 'lkcp_cached_exams_v3';
+
+export function saveStudentToLocalCache(student: Admission) {
+  if (!student || !student.studentId) return;
+  try {
+    const raw = safeLocalStorage.getItem(LOCAL_STUDENTS_CACHE_KEY);
+    const existing: Admission[] = raw ? JSON.parse(raw) : [];
+    
+    const cleanId = (student.studentId || '').trim().toUpperCase();
+    const cleanName = (student.fullName || '').trim().toLowerCase();
+
+    const filtered = existing.filter(s => {
+      const sId = (s.studentId || '').trim().toUpperCase();
+      const sName = (s.fullName || '').trim().toLowerCase();
+      if (cleanId && sId && cleanId === sId) return false;
+      if (cleanName && sName && cleanName === sName && s.phone === student.phone) return false;
+      return true;
+    });
+
+    filtered.unshift({
+      ...student,
+      updatedAt: Date.now()
+    });
+
+    safeLocalStorage.setItem(LOCAL_STUDENTS_CACHE_KEY, JSON.stringify(filtered.slice(0, 150)));
+  } catch (e) {
+    console.warn("Local student cache save notice:", e);
+  }
+}
+
+export function saveExamToLocalCache(exam: ExamRecord) {
+  if (!exam || !exam.id) return;
+  try {
+    const raw = safeLocalStorage.getItem(LOCAL_EXAMS_CACHE_KEY);
+    const existing: ExamRecord[] = raw ? JSON.parse(raw) : [];
+
+    const filtered = existing.filter(e => e.id !== exam.id);
+    filtered.unshift({
+      ...exam,
+      updatedAt: Date.now()
+    });
+
+    safeLocalStorage.setItem(LOCAL_EXAMS_CACHE_KEY, JSON.stringify(filtered.slice(0, 150)));
+  } catch (e) {
+    console.warn("Local exam cache save notice:", e);
+  }
+}
+
+export function searchLocalCache(queryStr: string): { student: Admission | null; score: number; exams: ExamRecord[] } {
+  if (!queryStr) return { student: null, score: 0, exams: [] };
+  const cleanRaw = normalizeSearchString(queryStr);
+  if (!cleanRaw) return { student: null, score: 0, exams: [] };
+
+  const searchUpper = cleanRaw.toUpperCase();
+  const searchLower = cleanRaw.toLowerCase();
+  const searchDigits = cleanRaw.replace(/\D/g, '');
+
+  let bestStudent: Admission | null = null;
+  let bestScore = 0;
+
+  try {
+    const rawSt = safeLocalStorage.getItem(LOCAL_STUDENTS_CACHE_KEY);
+    const cachedStudents: Admission[] = rawSt ? JSON.parse(rawSt) : [];
+
+    for (const st of cachedStudents) {
+      const stId = (st.studentId || '').toUpperCase();
+      const stName = (st.fullName || '').toLowerCase();
+      const parentPhone = (st.phone || st.whatsApp || '').replace(/\D/g, '');
+
+      if (stId === searchUpper || checkStudentIdMatch(stId, cleanRaw)) {
+        bestScore = 1000;
+        bestStudent = st;
+        break;
+      } else if (stName === searchLower || (stName && searchLower && searchLower.length >= 3 && stName.includes(searchLower))) {
+        if (bestScore < 800) {
+          bestScore = 800;
+          bestStudent = st;
+        }
+      } else if (searchDigits.length >= 7 && parentPhone.includes(searchDigits)) {
+        if (bestScore < 750) {
+          bestScore = 750;
+          bestStudent = st;
+        }
+      }
+    }
+
+    const rawEx = safeLocalStorage.getItem(LOCAL_EXAMS_CACHE_KEY);
+    const cachedExams: ExamRecord[] = rawEx ? JSON.parse(rawEx) : [];
+
+    if (!bestStudent) {
+      for (const ex of cachedExams) {
+        const exStudentId = (ex.studentId || '').toUpperCase();
+        const exName = (ex.studentName || '').toLowerCase();
+
+        if (exStudentId === searchUpper || checkStudentIdMatch(exStudentId, cleanRaw)) {
+          bestScore = 950;
+          bestStudent = {
+            id: ex.id || ('st_' + exStudentId),
+            studentId: exStudentId,
+            fullName: ex.studentName || 'Karate Student',
+            parentName: ex.parentName || '',
+            phone: ex.parentPhone || '',
+            whatsApp: ex.parentPhone || '',
+            beltLevel: ex.currentBelt || ex.targetBelt || 'Shotokan Belt',
+            branch: ex.branch || DOJO_BRANCHES[0].name,
+            schoolName: ex.schoolName || '',
+            status: 'approved',
+            createdAt: ex.createdAt || Date.now(),
+            updatedAt: ex.updatedAt || Date.now()
+          } as Admission;
+          break;
+        } else if (exName && searchLower && searchLower.length >= 3 && exName.includes(searchLower)) {
+          if (bestScore < 800) {
+            bestScore = 800;
+            bestStudent = {
+              id: ex.id || ('st_' + exStudentId),
+              studentId: exStudentId || searchUpper,
+              fullName: ex.studentName || 'Karate Student',
+              parentName: ex.parentName || '',
+              phone: ex.parentPhone || '',
+              whatsApp: ex.parentPhone || '',
+              beltLevel: ex.currentBelt || ex.targetBelt || 'Shotokan Belt',
+              branch: ex.branch || DOJO_BRANCHES[0].name,
+              schoolName: ex.schoolName || '',
+              status: 'approved',
+              createdAt: ex.createdAt || Date.now(),
+              updatedAt: ex.updatedAt || Date.now()
+            } as Admission;
+          }
+        }
+      }
+    }
+
+    let matchingExams: ExamRecord[] = [];
+    if (bestStudent) {
+      const stId = (bestStudent.studentId || '').toUpperCase();
+      const stName = (bestStudent.fullName || '').toLowerCase();
+
+      matchingExams = cachedExams.filter(e => {
+        const eId = (e.studentId || '').toUpperCase();
+        const eName = (e.studentName || '').toLowerCase();
+        return (stId && eId && checkStudentIdMatch(eId, stId)) || (stName && eName && (eName.includes(stName) || stName.includes(eName)));
+      });
+    }
+
+    return { student: bestStudent, score: bestScore, exams: matchingExams };
+  } catch (e) {
+    console.warn("Local cache search notice:", e);
+    return { student: null, score: 0, exams: [] };
+  }
 }
 
 interface StudentPortalProps {
@@ -1756,9 +1913,20 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
     };
 
     const searchAllCollections = async () => {
+      // 0. Instant sub-millisecond local cache check (0 Firestore read cost!)
+      const cached = searchLocalCache(cleanRaw);
+      if (cached.student && cached.score >= 700) {
+        if (isMounted) {
+          setFoundStudent(cached.student);
+          if (cached.exams.length > 0) {
+            setRegisteredExams(cached.exams);
+          }
+        }
+      }
+
       try {
-        let globalBestScore = 0;
-        let globalBestStudent: Admission | null = null;
+        let globalBestScore = cached.score || 0;
+        let globalBestStudent: Admission | null = cached.student || null;
 
         const currentYear = new Date().getFullYear();
         const candidateIds = new Set<string>();
@@ -1786,7 +1954,7 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
 
         const candidateList = Array.from(candidateIds).filter(Boolean);
 
-        // 0. High-speed targeted indexed queries across Admissions and Exams (1-3 reads total, sub-50ms)
+        // 1. High-speed targeted indexed queries across Admissions and Exams (1-3 reads total, sub-50ms)
         try {
           const targetedQueries: any[] = [];
           
@@ -1809,33 +1977,36 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
                   if (score > globalBestScore && student) {
                     globalBestScore = score;
                     globalBestStudent = student;
+                    saveStudentToLocalCache(student);
                   }
                 });
               }
             } catch (singleQErr) {
-              // Ignore single query error and proceed with remaining candidate queries
+              // Ignore single query error and proceed
             }
           }
         } catch (e) {
           console.warn("Direct targeted query note:", e);
         }
 
-        // Fast path exit: If direct targeted query found the student, return immediately without collection scans
+        // Exit if targeted query found the student
         if (globalBestScore >= 700 && globalBestStudent) {
           if (isMounted && !matchFound) {
             setFoundStudent(globalBestStudent);
+            saveStudentToLocalCache(globalBestStudent);
           }
           return;
         }
 
-        // 1. Fallback targeted scan across Admissions (limit 100)
+        // 2. Fallback targeted scan across Admissions (limit 50)
         try {
-          const admSnap = await getDocs(query(collection(db, 'admissions'), limit(100)));
+          const admSnap = await getDocs(query(collection(db, 'admissions'), limit(50)));
           admSnap.forEach((d) => {
             const { score, student } = evaluateDocMatch(d);
             if (score > globalBestScore && student) {
               globalBestScore = score;
               globalBestStudent = student;
+              saveStudentToLocalCache(student);
             }
           });
         } catch (e: any) {
@@ -1845,15 +2016,16 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
           }
         }
 
-        // 2. Search Exams
+        // 3. Search Exams (limit 50)
         if (globalBestScore < 700) {
           try {
-            const examSnap = await getDocs(query(collection(db, 'exams'), limit(100)));
+            const examSnap = await getDocs(query(collection(db, 'exams'), limit(50)));
             examSnap.forEach((d) => {
               const { score, student } = evaluateDocMatch(d);
               if (score > globalBestScore && student) {
                 globalBestScore = score;
                 globalBestStudent = student;
+                saveStudentToLocalCache(student);
               }
             });
           } catch (e: any) {
@@ -1861,39 +2033,28 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
           }
         }
 
-        // 3. Search Receipts
-        if (globalBestScore < 700) {
-          try {
-            const rcSnap = await getDocs(query(collection(db, 'receipts'), limit(50)));
-            rcSnap.forEach((d) => {
-              const { score, student } = evaluateDocMatch(d);
-              if (score > globalBestScore && student) {
-                globalBestScore = score;
-                globalBestStudent = student;
-              }
-            });
-          } catch (e) {
-            console.warn("Receipts fetch warning:", e);
-          }
-        }
-
         if (!isMounted || matchFound) return;
 
         if (globalBestScore > 0 && globalBestStudent) {
           setFoundStudent(globalBestStudent);
-        } else {
+          saveStudentToLocalCache(globalBestStudent);
+        } else if (!cached.student) {
           setSearching(false);
           setActiveStudent(null);
           setSearchError(`No active student record found matching "${cleanRaw}". Please verify the Roll ID or student name with your coach.`);
         }
       } catch (err: any) {
-        if (!isMounted || matchFound) return;
+        if (!isMounted) return;
+        
+        // If local cache provided the student, don't show an error screen!
+        if (matchFound) return;
+
         setSearching(false);
         setActiveStudent(null);
 
         const isQuotaErr = err?.code === 'resource-exhausted' || String(err).toLowerCase().includes('quota');
         if (isQuotaErr) {
-          setSearchError(`System traffic is exceptionally high today on Result Day. If your result is not loading, please verify your Roll ID (e.g. LKCP-2026-004) or click 'Need help?' below to reach Shihan Maruti Jadhav on WhatsApp for instant assistance.`);
+          setSearchError(`System traffic is exceptionally high today on Result Day. If your result is not loading for Roll ID "${cleanRaw}", click 'Need Help?' below to connect directly with Shihan Maruti Jadhav on WhatsApp.`);
         } else {
           setSearchError(`No active student record found matching "${cleanRaw}". Please verify the Roll ID or student name with your coach.`);
         }
@@ -1902,35 +2063,12 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
 
     searchAllCollections();
 
-    // Optional background real-time listener for admissions
-    const admissionsRef = collection(db, 'admissions');
-    const unsubscribeAdmissions = onSnapshot(admissionsRef, (snapshot) => {
-      if (!isMounted || matchFound) return;
-      let snapBestScore = 0;
-      let snapBestStudent: Admission | null = null;
-
-      snapshot.docs.forEach((d) => {
-        const { score, student } = evaluateDocMatch(d);
-        if (score > snapBestScore && student) {
-          snapBestScore = score;
-          snapBestStudent = student;
-        }
-      });
-
-      if (snapBestScore > 0 && snapBestStudent) {
-        setFoundStudent(snapBestStudent);
-      }
-    }, (error) => {
-      console.warn("Background real-time listener notice:", error);
-    });
-
     return () => {
       isMounted = false;
-      unsubscribeAdmissions();
     };
   }, [activeStudentId, searchNonce]);
 
-  // Fetch student exams list dynamically when activeStudent changes
+  // Fetch student exams list dynamically using targeted queries & local cache
   useEffect(() => {
     if (!activeStudent) {
       setRegisteredExams([]);
@@ -1938,7 +2076,7 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
     }
 
     setExamsLoading(true);
-    const examsRef = collection(db, 'exams');
+    let isMounted = true;
 
     const processExamsDocs = (docs: any[]) => {
       const records: ExamRecord[] = [];
@@ -1964,50 +2102,89 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
         }
 
         if (isMatch) {
-          records.push({
-            id: docSnap.id,
-            ...data
-          } as ExamRecord);
+          const exObj = { id: docSnap.id, ...data } as ExamRecord;
+          records.push(exObj);
+          saveExamToLocalCache(exObj);
         }
       });
 
       // Sort newest first
       records.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-      setRegisteredExams(records);
+      if (isMounted) {
+        setRegisteredExams(records);
 
-      // Auto-update student name if current activeStudent.fullName is 'Karate Student' or generic
-      if (records.length > 0) {
-        const realExamName = records.find(r => r.studentName && r.studentName.trim().toLowerCase() !== 'karate student')?.studentName 
-          || records.find(r => (r as any).fullName && ((r as any).fullName as string).trim().toLowerCase() !== 'karate student')?.studentName;
-        if (realExamName) {
-          setActiveStudent(prev => {
-            if (!prev || prev.fullName === 'Karate Student' || !prev.fullName || prev.fullName.trim() === '') {
-              return { ...prev, fullName: realExamName, studentName: realExamName } as Admission;
-            }
-            return prev;
-          });
+        if (records.length > 0) {
+          const realExamName = records.find(r => r.studentName && r.studentName.trim().toLowerCase() !== 'karate student')?.studentName 
+            || records.find(r => (r as any).fullName && ((r as any).fullName as string).trim().toLowerCase() !== 'karate student')?.studentName;
+          if (realExamName) {
+            setActiveStudent(prev => {
+              if (!prev || prev.fullName === 'Karate Student' || !prev.fullName || prev.fullName.trim() === '') {
+                return { ...prev, fullName: realExamName, studentName: realExamName } as Admission;
+              }
+              return prev;
+            });
+          }
         }
+        setExamsLoading(false);
       }
-      setExamsLoading(false);
     };
 
-    let isMounted = true;
-    const unsubscribe = onSnapshot(examsRef, (snapshot) => {
-      if (!isMounted) return;
-      processExamsDocs(snapshot.docs);
-    }, (error) => {
-      console.warn("Failed to load historical exams via onSnapshot, falling back to getDocs:", error);
-      getDocs(examsRef).then((snap) => {
-        if (!isMounted) return;
-        processExamsDocs(snap.docs);
-      }).catch(() => {
+    // 0. Check local exam cache first
+    const localResult = searchLocalCache(activeStudent.studentId || activeStudent.fullName);
+    if (localResult.exams && localResult.exams.length > 0) {
+      setRegisteredExams(localResult.exams);
+      setExamsLoading(false);
+    }
+
+    // 1. Fetch via targeted indexed queries on exams collection
+    const targetId = (activeStudent.studentId || '').trim();
+    const targetPhone = (activeStudent.phone || activeStudent.whatsApp || '').replace(/\D/g, '');
+
+    const runTargetedExamFetch = async () => {
+      try {
+        const examDocsMap = new Map<string, any>();
+
+        if (targetId) {
+          try {
+            const q1 = query(collection(db, 'exams'), where('studentId', '==', targetId));
+            const snap1 = await getDocs(q1);
+            snap1.forEach(d => examDocsMap.set(d.id, d));
+          } catch (e1) {
+            // ignore
+          }
+        }
+
+        if (targetPhone && targetPhone.length >= 7) {
+          try {
+            const q2 = query(collection(db, 'exams'), where('parentPhone', '==', targetPhone));
+            const snap2 = await getDocs(q2);
+            snap2.forEach(d => examDocsMap.set(d.id, d));
+          } catch (e2) {
+            // ignore
+          }
+        }
+
+        if (examDocsMap.size === 0) {
+          try {
+            const fallbackSnap = await getDocs(query(collection(db, 'exams'), limit(30)));
+            fallbackSnap.forEach(d => examDocsMap.set(d.id, d));
+          } catch (e3) {
+            // ignore
+          }
+        }
+
+        if (isMounted) {
+          processExamsDocs(Array.from(examDocsMap.values()));
+        }
+      } catch (err) {
         if (isMounted) setExamsLoading(false);
-      });
-    });
+      }
+    };
+
+    runTargetedExamFetch();
 
     return () => {
       isMounted = false;
-      unsubscribe();
     };
   }, [activeStudent]);
 
@@ -2551,9 +2728,21 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
                   </div>
 
                   {searchError && (
-                    <div className="bg-red-500/5 border border-red-500/10 p-4 rounded-xl flex items-start space-x-3 text-red-400 text-xs shadow-inner">
-                      <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-500" />
-                      <span className="leading-relaxed">{searchError}</span>
+                    <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-xl space-y-3 text-xs shadow-inner text-left">
+                      <div className="flex items-start space-x-3 text-red-400">
+                        <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-500" />
+                        <span className="leading-relaxed">{searchError}</span>
+                      </div>
+                      <div className="pt-1">
+                        <a
+                          href={`https://wa.me/919637777170?text=${encodeURIComponent(`Hello Shihan Maruti Jadhav, I am searching for my child's karate result on the website. My child's Roll ID / Name is: ${studentIdInput || 'LKCP-2026'}`)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center space-x-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2 rounded-lg text-xs transition-colors shadow-sm cursor-pointer"
+                        >
+                          <span>Need Help? Chat with Coach on WhatsApp (+91 9637777170)</span>
+                        </a>
+                      </div>
                     </div>
                   )}
 
@@ -2903,146 +3092,6 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
                 </button>
               </div>
             </div>
-
-            {/* SUBMITTED BELT EXAM RESULT BANNER & BELT PROMOTION FLOW */}
-            {registeredExams && registeredExams.length > 0 && (() => {
-              const latestExam = registeredExams[0];
-              const currentBeltDisplay = latestExam.currentBelt || activeStudent.beltLevel || 'Shotokan White Belt';
-              const targetBeltDisplay = latestExam.targetBelt || 'Next Rank Belt';
-              const isPassed = checkExamPassed(latestExam);
-              const isApproved = (latestExam.status || '').toString().toLowerCase().trim() === 'approved';
-
-              return (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className={`p-5 sm:p-6 rounded-2xl border-2 relative overflow-hidden shadow-2xl text-left ${
-                    isPassed
-                      ? 'bg-gradient-to-br from-amber-950/40 via-slate-900 to-slate-950 border-amber-500/60 shadow-amber-500/10'
-                      : isApproved
-                        ? 'bg-gradient-to-br from-blue-950/40 via-slate-900 to-slate-950 border-blue-500/60 shadow-blue-500/10'
-                        : 'bg-gradient-to-br from-yellow-950/30 via-slate-900 to-slate-950 border-yellow-500/50 shadow-yellow-500/10'
-                  }`}
-                >
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-zinc-800/80">
-                    <div className="space-y-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className={`text-[9.5px] font-heading font-black uppercase tracking-widest px-2.5 py-1 rounded-md border ${
-                          isPassed 
-                            ? 'bg-amber-500/10 border-amber-500/30 text-amber-400'
-                            : isApproved
-                              ? 'bg-blue-500/10 border-blue-500/30 text-blue-400'
-                              : 'bg-yellow-500/10 border-yellow-500/30 text-yellow-400'
-                        }`}>
-                          {isPassed ? '🎉 OFFICIAL BELT EXAM RESULT: PASSED / PROMOTED' : isApproved ? '🥋 EXAM SLOT APPROVED & CONFIRMED' : '⏳ EXAM APPLICATION SUBMITTED - UNDER REVIEW'}
-                        </span>
-                        <span className="text-[9px] font-mono text-zinc-500">
-                          Submitted On: {formatDate(latestExam.createdAt)}
-                        </span>
-                      </div>
-                      <h3 className="font-title text-lg sm:text-xl font-extrabold text-white uppercase tracking-tight mt-1">
-                        {activeStudent.fullName}'s Belt Promotion Result
-                      </h3>
-                    </div>
-
-                    {/* Action button */}
-                    {isPassed && (
-                      <button
-                        type="button"
-                        onClick={() => triggerBeltCelebration(latestExam.targetBelt)}
-                        className="bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-heading font-black text-xs uppercase tracking-wider px-4 py-2.5 rounded-xl hover:scale-105 active:scale-95 transition-all shadow-lg shadow-amber-500/20 cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
-                      >
-                        <Sparkles className="w-4 h-4 text-slate-950" />
-                        <span>Celebrate Belt Promotion! 🎉</span>
-                      </button>
-                    )}
-                  </div>
-
-                  {/* BELT PROMOTION PROGRESSION FLOW DISPLAY */}
-                  <div className="bg-slate-950/90 p-4 rounded-xl border border-zinc-800/80 mt-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
-                    <div className="flex items-center space-x-2">
-                      <div className="text-left">
-                        <span className="text-[9px] font-mono text-zinc-500 uppercase block">CURRENT RANK</span>
-                        <span className="text-xs sm:text-sm font-bold text-zinc-300 bg-zinc-900 px-3 py-1 rounded border border-zinc-800 inline-block mt-0.5">
-                          {currentBeltDisplay.split(' (')[0]}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center space-x-1.5 text-amber-400 animate-pulse font-black text-xs uppercase tracking-wider">
-                      <span>➔ PROMOTED TO ➔</span>
-                    </div>
-
-                    <div className="flex items-center space-x-2">
-                      <div className="text-left">
-                        <span className="text-[9px] font-mono text-amber-400 uppercase font-black block">APPLIED TARGET BELT</span>
-                        <span className="text-xs sm:text-sm font-black text-slate-950 bg-gradient-to-r from-amber-400 to-yellow-400 px-3.5 py-1 rounded shadow-md uppercase inline-block mt-0.5">
-                          {targetBeltDisplay.split(' (')[0]}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* EXAM DETAILS GRID */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mt-4 text-xs font-sans">
-                    <div className="bg-slate-950/60 p-3 rounded-xl border border-zinc-900">
-                      <span className="text-zinc-500 text-[10px] block uppercase font-mono">Assigned Coach</span>
-                      <span className="text-zinc-200 font-bold block mt-0.5">{latestExam.coachName || "Sensei Maruti Jadhav"}</span>
-                    </div>
-                    <div className="bg-slate-950/60 p-3 rounded-xl border border-zinc-900">
-                      <span className="text-zinc-500 text-[10px] block uppercase font-mono">Karate Dojo Branch</span>
-                      <span className="text-zinc-200 font-bold block mt-0.5">{latestExam.branch || activeStudent.branch || "Manajinager Branch"}</span>
-                    </div>
-                    <div className="bg-slate-950/60 p-3 rounded-xl border border-zinc-900">
-                      <span className="text-zinc-500 text-[10px] block uppercase font-mono">Exam Fees Status</span>
-                      <span className={`font-bold block mt-0.5 ${latestExam.feesStatus === 'Paid' ? 'text-emerald-400' : 'text-yellow-500'}`}>
-                        {latestExam.feesStatus === 'Paid' ? 'Paid ✅' : 'Unpaid (Pay at Center)'}
-                      </span>
-                    </div>
-                    <div className="bg-slate-950/60 p-3 rounded-xl border border-zinc-900">
-                      <span className="text-zinc-500 text-[10px] block uppercase font-mono">Scheduled Date / Venue</span>
-                      <span className="text-zinc-200 font-bold block mt-0.5">{latestExam.examDate || "Evaluating during class"}</span>
-                    </div>
-                  </div>
-
-                  {/* 7-DISCIPLINE EVALUATION MARKSHEET */}
-                  {(() => {
-                    const dGrades = getEffectiveDisciplinesGrades(latestExam);
-                    return (
-                      <div className="bg-slate-950 p-3.5 border border-zinc-800 rounded-xl mt-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-[9px] font-heading font-black text-yellow-500 uppercase tracking-widest block">
-                            OFFICIAL 7-DISCIPLINE PHYSICAL EVALUATION
-                          </span>
-                          <span className="text-[10px] font-heading font-black text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
-                            GRADE: {getEffectiveGrade(latestExam)}
-                          </span>
-                        </div>
-                        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
-                          {[
-                            { label: 'RUN', key: 'run' },
-                            { label: 'JUMP', key: 'jump' },
-                            { label: 'SIT-UPS', key: 'sidesitups' },
-                            { label: 'KICKS', key: 'kicks' },
-                            { label: 'STAMINA', key: 'conditionChecking' },
-                            { label: 'KATA', key: 'kata' },
-                            { label: 'KUMITE', key: 'kumite' }
-                          ].map(disc => {
-                            const val = (dGrades as any)[disc.key] || 'A';
-                            return (
-                              <div key={disc.key} className="bg-slate-900 px-2.5 py-1.5 rounded border border-zinc-800 text-center">
-                                <span className="text-[8px] font-mono text-zinc-400 block">{disc.label}</span>
-                                <span className="text-xs font-heading font-black text-yellow-400 block mt-0.5">{val}</span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    );
-                  })()}
-                </motion.div>
-              );
-            })()}
 
             {/* NEW EXAMS REGISTRATION FORM COMPONENT (Sleek Accordion) */}
             <AnimatePresence>
@@ -3681,55 +3730,78 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
               )}
 
               {!examsLoading && registeredExams.length > 0 && (
-                <div className="grid grid-cols-1 gap-4">
+                <div className="grid grid-cols-1 gap-5">
                   {registeredExams.map((exam) => {
-                    // Make all exam records published so parents can view results and certificates immediately
                     const isResultPublished = true;
                     const isPassed = checkExamPassed(exam);
+                    const gradeVal = getEffectiveGrade(exam);
+
                     return (
-                    <div 
-                      key={exam.id}
-                      className="bg-slate-900/30 border border-zinc-900 p-3.5 sm:p-5 rounded-2xl relative overflow-hidden flex flex-col justify-between items-start gap-4 hover:border-zinc-850 transition-colors text-left w-full max-w-full min-w-0"
-                    >
-                      <div className="space-y-1.5 flex-grow w-full max-w-full min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-[10px] font-semibold text-white uppercase bg-zinc-900 border border-zinc-800 px-2 py-0.5 rounded">
-                            Exam Belt: {exam.targetBelt.split(' (')[0]}
-                          </span>
-                          <span className="text-[8px] font-mono text-zinc-500">
-                            Applied On: {formatDate(exam.createdAt)}
-                          </span>
-                        </div>
-
-                        <div className="mt-2.5 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 text-[11px] text-zinc-400 font-sans bg-slate-950/40 p-2.5 sm:p-3 rounded-xl border border-zinc-900/30 w-full max-w-full min-w-0">
+                      <div 
+                        key={exam.id}
+                        className="bg-slate-900/40 border border-zinc-850 p-4 sm:p-6 rounded-2xl relative overflow-hidden shadow-xl text-left space-y-4 hover:border-zinc-750 transition-colors w-full max-w-full min-w-0"
+                      >
+                        {/* Card Top Header: Exam Belt Title + Date + Grade/Status Badges */}
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-zinc-800/80">
                           <div>
-                            <span className="text-zinc-500 mr-1">Coach Name:</span>
-                            <span className="text-zinc-200 font-bold">{exam.coachName || "Sensei Maruti Jadhav"}</span>
-                          </div>
-                          <div>
-                            <span className="text-zinc-500 mr-1">Karate Center:</span>
-                            <span className="text-zinc-200 font-bold">{exam.branch || "Manajinager"}</span>
-                          </div>
-                          <div>
-                            <span className="text-zinc-500 mr-1">Exam Fees:</span>
-                            <span className={`font-extrabold ${exam.feesStatus === 'Paid' ? 'text-emerald-400' : 'text-yellow-500'}`}>
-                              {exam.feesStatus === 'Paid' ? 'Paid' : 'Unpaid (Pay at center)'}
-                            </span>
-                          </div>
-                          {exam.examDate && (
-                            <div className="col-span-1 sm:col-span-2 mt-1 pt-1.5 border-t border-zinc-900/60 leading-relaxed break-words max-w-full">
-                              <span className="text-yellow-500 font-bold">Exam Date & Venue:</span> <span className="text-zinc-200">{exam.examDate}</span> @ <span className="text-zinc-350 italic break-words">{exam.venueDetails}</span>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="text-xs font-title font-black text-yellow-500 uppercase tracking-wider">
+                                {exam.targetBelt.split(' (')[0]} BELT EXAM RESULT
+                              </span>
+                              <span className="text-[10px] font-mono text-zinc-500">
+                                Applied On: {formatDate(exam.createdAt)}
+                              </span>
                             </div>
-                          )}
+                            <h4 className="text-sm sm:text-base font-extrabold text-white mt-1">
+                              {activeStudent?.fullName || exam.studentName} <span className="text-zinc-500 font-mono text-xs">({activeStudent?.studentId || exam.studentId})</span>
+                            </h4>
+                          </div>
+
+                          <div className="flex items-center space-x-2 shrink-0">
+                            <span className="text-[10.5px] font-mono text-zinc-300 bg-slate-950 px-3 py-1 rounded-lg border border-zinc-800 font-bold">
+                              GRADE: <strong className="text-yellow-400 font-extrabold">{gradeVal}</strong>
+                            </span>
+                            {isPassed ? (
+                              <span className="text-[10.5px] font-heading font-black uppercase text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-lg border border-emerald-500/30">
+                                PASSED - BELT AWARDED 🎉
+                              </span>
+                            ) : (
+                              <span className="text-[10.5px] font-heading font-black uppercase text-amber-400 bg-amber-500/10 px-3 py-1 rounded-lg border border-amber-500/30">
+                                {exam.status === 'pending' ? 'Result Pending' : 'Slot Approved'}
+                              </span>
+                            )}
+                          </div>
                         </div>
 
-                        {/* 7-Discipline Marksheet Breakdown (Only if Published) */}
+                        {/* Exam Info Metadata Grid */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs font-sans bg-slate-950/60 p-3.5 rounded-xl border border-zinc-900">
+                          <div>
+                            <span className="text-zinc-500 text-[10px] uppercase font-mono block">Karate Coach</span>
+                            <strong className="text-zinc-200 font-bold block mt-0.5">{exam.coachName || "Sensei Maruti Jadhav"}</strong>
+                          </div>
+                          <div>
+                            <span className="text-zinc-500 text-[10px] uppercase font-mono block">Dojo Branch</span>
+                            <strong className="text-zinc-200 font-bold block mt-0.5">{exam.branch || "Manajinager Branch"}</strong>
+                          </div>
+                          <div>
+                            <span className="text-zinc-500 text-[10px] uppercase font-mono block">Exam Fees</span>
+                            <strong className={`font-bold block mt-0.5 ${exam.feesStatus === 'Paid' ? 'text-emerald-400' : 'text-yellow-500'}`}>
+                              {exam.feesStatus === 'Paid' ? 'Paid ✅' : 'Unpaid (Pay at Center)'}
+                            </strong>
+                          </div>
+                          <div>
+                            <span className="text-zinc-500 text-[10px] uppercase font-mono block">Exam Date & Venue</span>
+                            <strong className="text-zinc-200 font-bold block mt-0.5">{exam.examDate || "Evaluated in Class"}</strong>
+                          </div>
+                        </div>
+
+                        {/* Official 7-Discipline Physical Evaluation Marksheet */}
                         {isResultPublished && (
-                          <div className="bg-slate-950/80 p-2.5 sm:p-3 border border-zinc-900 rounded-xl mt-3 text-xs w-full max-w-full min-w-0 overflow-hidden">
-                            <span className="text-[8px] sm:text-[9px] font-heading font-black text-yellow-500 uppercase tracking-widest block mb-1.5">
-                              OFFICIAL 7-DISCIPLINE EVALUATION
+                          <div className="bg-slate-950 p-3.5 border border-zinc-800 rounded-xl space-y-2">
+                            <span className="text-[9px] font-heading font-black text-yellow-500 uppercase tracking-widest block">
+                              OFFICIAL 7-DISCIPLINE PHYSICAL EVALUATION
                             </span>
-                            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-1.5 w-full max-w-full min-w-0">
+                            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
                               {[
                                 { label: 'RUN', key: 'run' },
                                 { label: 'JUMP', key: 'jump' },
@@ -3742,9 +3814,9 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
                                 const dGrades = getEffectiveDisciplinesGrades(exam);
                                 const val = (dGrades as any)[disc.key] || 'A';
                                 return (
-                                  <div key={disc.key} className="bg-slate-900 px-2 py-1 rounded border border-zinc-800 flex items-center justify-between min-w-0 overflow-hidden">
-                                    <span className="text-[7.5px] sm:text-[8.5px] font-mono text-zinc-400 truncate mr-1">{disc.label}:</span>
-                                    <span className="text-[9px] sm:text-[10px] font-heading font-black text-yellow-400 shrink-0">{val}</span>
+                                  <div key={disc.key} className="bg-slate-900 px-2.5 py-1.5 rounded border border-zinc-800 text-center">
+                                    <span className="text-[8px] font-mono text-zinc-400 block">{disc.label}</span>
+                                    <span className="text-xs font-heading font-black text-yellow-400 block mt-0.5">{val}</span>
                                   </div>
                                 );
                               })}
@@ -3752,178 +3824,85 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
                           </div>
                         )}
 
-                        {/* 5 CELEBRATION ENHANCEMENTS FOR PARENT RESULT VIEW */}
-                        {isResultPublished && isPassed && (
-                          <div className="bg-gradient-to-br from-slate-950 via-amber-950/20 to-slate-950 p-3 sm:p-4 border-2 border-amber-500/40 rounded-2xl mt-4 relative overflow-hidden shadow-xl shadow-amber-500/5 group w-full max-w-full min-w-0">
-                            {/* Confetti & Sparkles Background Decor */}
-                            <div className="absolute top-2 right-3 flex space-x-1 opacity-80 pointer-events-none text-base animate-bounce">
-                              <span>🎉</span><span>✨</span><span>🏆</span><span>🥋</span><span>🌟</span>
-                            </div>
-
-                            {/* 1. Golden Victory Trophy Banner */}
-                            <div className="flex items-center space-x-2.5 sm:space-x-3 mb-3 pr-12 sm:pr-0">
-                              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-yellow-300 flex items-center justify-center text-slate-950 font-black shadow-lg shadow-amber-500/20 shrink-0 ring-2 ring-amber-400/50">
-                                <Award className="w-5 h-5 sm:w-6 sm:h-6 text-slate-950 stroke-[2.5]" />
-                              </div>
-                              <div className="min-w-0">
-                                <span className="text-[9px] sm:text-[10px] font-heading font-black text-amber-400 uppercase tracking-widest block truncate">
-                                  🎊 CONGRATULATIONS! BELT PROMOTED!
-                                </span>
-                                <h4 className="text-xs sm:text-sm font-extrabold text-white tracking-wide break-words">
-                                  {activeStudent?.fullName || exam.studentName} Passed & Earned {exam.targetBelt} Belt!
-                                </h4>
-                              </div>
-                            </div>
-
-                            {/* 2. Visual Belt Progression Step Visualizer */}
-                            <div className="bg-slate-950/80 p-2 sm:p-2.5 rounded-xl border border-zinc-850 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 mb-3 w-full max-w-full min-w-0 overflow-hidden">
-                              <div className="flex items-center space-x-1.5 shrink-0">
-                                <span className="text-[8.5px] sm:text-[9px] font-mono text-zinc-400 uppercase">CURRENT:</span>
-                                <span className="text-[9.5px] sm:text-[10px] font-bold text-zinc-300 bg-zinc-900 px-2 py-0.5 rounded border border-zinc-800">
-                                  {exam.currentBelt} Belt
-                                </span>
-                              </div>
-                              <span className="text-amber-400 text-[10px] sm:text-xs font-black animate-pulse shrink-0">➔ PROMOTED ➔</span>
-                              <div className="flex items-center space-x-1.5 shrink-0">
-                                <span className="text-[8.5px] sm:text-[9px] font-mono text-amber-400 uppercase font-black">NEW RANK:</span>
-                                <span className="text-[9.5px] sm:text-[10px] font-black text-slate-950 bg-gradient-to-r from-amber-400 to-yellow-500 px-2.5 py-0.5 rounded shadow-md uppercase">
-                                  {exam.targetBelt} Belt
-                                </span>
-                              </div>
-                            </div>
-
-                            {/* 3. Coach Remarks Feedback */}
-                            <div className="bg-slate-900/90 p-3 border border-zinc-800 rounded-xl text-xs w-full max-w-full min-w-0 mb-3">
-                              <span className="text-[8px] font-heading font-black text-amber-400 uppercase tracking-widest block mb-1">
-                                💬 SENSEI EVALUATION & FEEDBACK
-                              </span>
-                              <p className="text-zinc-300 italic font-medium leading-relaxed text-[11px] break-words">
-                                "{exam.remarks || "Outstanding spirit, discipline, and execution shown during the Karate Belt Examination!"}"
-                              </p>
-                            </div>
-
-                            {/* 4 & 5. Action Controls: Audio Victory Fanfare Chime & WhatsApp Parent Proud Share */}
-                            <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2 pt-1 w-full max-w-full min-w-0">
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  try {
-                                    const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-                                    const now = audioCtx.currentTime;
-                                    [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
-                                      const osc = audioCtx.createOscillator();
-                                      const gain = audioCtx.createGain();
-                                      osc.type = 'triangle';
-                                      osc.frequency.setValueAtTime(freq, now + idx * 0.12);
-                                      gain.gain.setValueAtTime(0.3, now + idx * 0.12);
-                                      gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.12 + 0.6);
-                                      osc.connect(gain);
-                                      gain.connect(audioCtx.destination);
-                                      osc.start(now + idx * 0.12);
-                                      osc.stop(now + idx * 0.12 + 0.6);
-                                    });
-                                  } catch (e) {
-                                    console.log("Audio fanfare play:", e);
-                                  }
-                                }}
-                                className="bg-amber-500/10 hover:bg-amber-500 text-amber-400 hover:text-slate-950 border border-amber-500/30 px-3 py-2 sm:py-1.5 rounded-lg text-[10px] font-heading font-black uppercase tracking-wider transition-all flex items-center justify-center space-x-1.5 cursor-pointer"
-                              >
-                                <span>🔊 Play Victory Fanfare</span>
-                              </button>
-
-                              <a
-                                href={`https://wa.me/?text=${encodeURIComponent(
-                                  `🎉 Super Proud Parent Moment! My child ${activeStudent?.fullName || exam.studentName} successfully passed the Karate Belt Examination at Lions Karate Club Pune and earned the ${exam.targetBelt} Belt! 🥋🏆`
-                                )}`}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 px-3 py-2 sm:py-1.5 rounded-lg text-[10px] font-heading font-black uppercase tracking-wider transition-all flex items-center justify-center space-x-1.5 cursor-pointer"
-                              >
-                                <MessageCircle className="w-3.5 h-3.5 text-emerald-400" />
-                                <span>Share on WhatsApp</span>
-                              </a>
-
-                              <button
-                                type="button"
-                                onClick={() => setSelectedCert(exam)}
-                                className="bg-yellow-500 text-slate-950 hover:bg-yellow-400 px-3 py-2 sm:py-1.5 rounded-lg text-[10px] font-heading font-black uppercase tracking-wider transition-all flex items-center justify-center space-x-1.5 cursor-pointer shadow-md sm:ml-auto"
-                              >
-                                <Award className="w-3.5 h-3.5 text-slate-950 stroke-[2.5]" />
-                                <span>Official Certificate</span>
-                              </button>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Standard Coach Remarks for non-passed or standard published */}
-                        {isResultPublished && !isPassed && (
-                          <div className="bg-slate-950/60 p-3 border border-zinc-900 rounded-xl mt-3 text-xs w-full">
-                            <span className="text-[8px] font-heading font-black text-yellow-500 uppercase tracking-widest block mb-1">COACH'S FEEDBACK</span>
-                            <p className="text-zinc-350 italic font-medium leading-relaxed">
-                              "{exam.remarks || "Great effort and performance shown during the physical belt test."}"
-                            </p>
-                          </div>
-                        )}
-
-                        {/* Notice if Not Graded yet */}
-                        {!isResultPublished && (exam.status === 'pending' || exam.status === 'approved') && (
-                          <div className="bg-amber-500/10 border border-amber-500/20 p-3 rounded-xl mt-3 text-left">
-                            <span className="text-[9px] font-heading font-black text-amber-400 uppercase tracking-wider block">
-                              ⏳ Exam Scheduled / Under Evaluation — Release Pending
-                            </span>
-                            <p className="text-[10px] text-zinc-400 mt-0.5 leading-relaxed">
-                              Official results & belt certificates will be visible here once Sensei completes grading.
-                            </p>
-                          </div>
-                        )}
-
-                        {exam.status === 'pending' && (
-                          <p className="text-zinc-550 text-[10px] italic">
-                            Awesome! We are waiting for the karate coach to approve this application and confirm the exam date.
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Side Status Badge indicator block */}
-                      <div className="shrink-0 flex items-center space-x-3">
+                        {/* Coach Feedback & Remarks */}
                         {isResultPublished && (
-                          <div className="text-right">
-                            <span className="text-[8px] font-mono text-zinc-550 block leading-none uppercase">GRADE</span>
-                            <span className="font-heading font-black text-base text-yellow-500 mt-1 block leading-none font-sans">
-                              {getEffectiveGrade(exam)}
+                          <div className="bg-slate-950/60 p-3 border border-zinc-900 rounded-xl text-xs">
+                            <span className="text-[8.5px] font-heading font-black text-amber-400 uppercase tracking-widest block mb-0.5">
+                              💬 SENSEI EVALUATION & FEEDBACK
                             </span>
+                            <p className="text-zinc-300 italic text-[11px]">
+                              "{exam.remarks || "Outstanding spirit, discipline, and technical execution shown during the Karate Belt Examination!"}"
+                            </p>
                           </div>
                         )}
 
-                        <div className="flex flex-col items-end">
-                          <span className="text-[8px] font-mono text-zinc-550 uppercase tracking-widest block mb-1">STATUS</span>
-                          
-                          {isPassed ? (
-                            <div className="flex flex-col items-end gap-1.5">
-                              <span className="text-[9px] font-heading font-black uppercase text-emerald-500 bg-emerald-500/10 px-2.5 py-1 rounded border border-emerald-500/20">
-                                Passed - Belt Awarded!
-                              </span>
-                              <button
-                                type="button"
-                                onClick={() => setSelectedCert(exam)}
-                                className="text-[9px] font-heading font-black uppercase text-yellow-500 bg-yellow-500/10 hover:bg-yellow-500/20 px-2.5 py-1 rounded border border-yellow-500/20 transition-all flex items-center space-x-1 cursor-pointer"
-                              >
-                                <Award className="w-3 h-3 text-yellow-500" />
-                                <span>Get Certificate</span>
-                              </button>
-                            </div>
-                          ) : (exam.status || '').toString().toLowerCase().trim() === 'failed' ? (
-                            <span className="text-[9px] font-heading font-black uppercase text-red-500 bg-red-500/10 px-2.5 py-1 rounded border border-red-500/20">
-                              Practice Required
-                            </span>
-                          ) : (
-                            <span className="text-[9px] font-heading font-black uppercase text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded border border-amber-500/20">
-                              Result Pending
-                            </span>
-                          )}
-                        </div>
+                        {/* Bottom Action Bar: Certificate, Downloads, Fanfare & WhatsApp Share */}
+                        {isResultPublished && isPassed && (
+                          <div className="pt-2 flex flex-wrap items-center gap-2 border-t border-zinc-800/80">
+                            <button
+                              type="button"
+                              onClick={() => setSelectedCert(exam)}
+                              className="bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-400 hover:to-amber-400 text-slate-950 font-heading font-black text-xs uppercase tracking-wider px-4 py-2.5 rounded-xl transition-all cursor-pointer shadow-md shadow-yellow-500/10 flex items-center space-x-1.5"
+                            >
+                              <Award className="w-4 h-4 text-slate-950 stroke-[2.5]" />
+                              <span>Get Official Certificate</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedCert(exam);
+                                setTimeout(() => {
+                                  handleDownloadCertificatePDF();
+                                }, 300);
+                              }}
+                              className="bg-amber-600/20 hover:bg-amber-600 text-amber-300 hover:text-white border border-amber-500/30 px-3.5 py-2.5 rounded-xl text-xs font-heading font-black uppercase tracking-wider transition-all flex items-center space-x-1.5 cursor-pointer"
+                            >
+                              <Download className="w-4 h-4 text-amber-400" />
+                              <span>Download PDF</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                try {
+                                  const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+                                  const now = audioCtx.currentTime;
+                                  [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
+                                    const osc = audioCtx.createOscillator();
+                                    const gain = audioCtx.createGain();
+                                    osc.type = 'triangle';
+                                    osc.frequency.setValueAtTime(freq, now + idx * 0.12);
+                                    gain.gain.setValueAtTime(0.3, now + idx * 0.12);
+                                    gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.12 + 0.6);
+                                    osc.connect(gain);
+                                    gain.connect(audioCtx.destination);
+                                    osc.start(now + idx * 0.12);
+                                    osc.stop(now + idx * 0.12 + 0.6);
+                                  });
+                                } catch (e) {
+                                  console.log("Audio fanfare play:", e);
+                                }
+                              }}
+                              className="bg-slate-950 hover:bg-slate-900 text-amber-400 border border-amber-500/20 px-3.5 py-2.5 rounded-xl text-xs font-heading font-black uppercase tracking-wider transition-all flex items-center space-x-1.5 cursor-pointer"
+                            >
+                              <span>🔊 Play Fanfare</span>
+                            </button>
+
+                            <a
+                              href={`https://wa.me/?text=${encodeURIComponent(
+                                `🎉 Proud Parent Moment! My child ${activeStudent?.fullName || exam.studentName} passed the Karate Belt Exam at Lions Karate Club Pune and earned the ${exam.targetBelt} Belt! 🥋🏆`
+                              )}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 px-3.5 py-2.5 rounded-xl text-xs font-heading font-black uppercase tracking-wider transition-all flex items-center space-x-1.5 cursor-pointer sm:ml-auto"
+                            >
+                              <MessageCircle className="w-4 h-4 text-emerald-400" />
+                              <span>Share on WhatsApp</span>
+                            </a>
+                          </div>
+                        )}
                       </div>
-                    </div>
                     );
                   })}
                 </div>

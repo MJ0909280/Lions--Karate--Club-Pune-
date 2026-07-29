@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, DragEvent, ChangeEvent } from 'react';
 import { collection, addDoc, getDocs, query, where } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType, triggerWhatsAppNotification, generateSequentialStudentId } from '../firebase';
 import { BELT_LEVELS, BATCH_TIMINGS, BatchInfo, DOJO_BRANCHES } from '../types';
+import { saveStudentToLocalCache } from './StudentPortal';
 import { Upload, Camera, FileText, CheckCircle2, ShieldAlert, ArrowRight, RefreshCw, AlertCircle } from 'lucide-react';
 
 const DEFAULT_STUDENT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='%23111'><rect width='100' height='100' fill='%231a1a1a'/><circle cx='50' cy='35' r='14' fill='%23c9a96e'/><path d='M50 50 L35 75 L30 73 L42 53 L38 50 L30 55 L28 50 L40 42 Z' fill='%23fff'/><path d='M50 50 L65 80 L72 82 L58 55 L65 48 L75 52 L78 47 L60 40 Z' fill='%23fff'/><path d='M42 45 H58 V49 H42 Z' fill='%239B1B20'/></svg>";
@@ -287,6 +288,9 @@ export default function AdmissionForm({ preselectedBatch = "", onSuccess }: Admi
 
       // Add to firestore collection 'admissions'
       const docRef = await addDoc(collection(db, 'admissions'), admissionPayload);
+
+      // Save to local cache for instant sub-millisecond offline lookup
+      saveStudentToLocalCache({ id: docRef.id, ...admissionPayload } as any);
 
       // Trigger automatic background WhatsApp alert to the Shihan admin
       try {

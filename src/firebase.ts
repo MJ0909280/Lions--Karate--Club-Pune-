@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { initializeFirestore, doc, getDoc, runTransaction, collection, query, where, getDocs, enableIndexedDbPersistence } from 'firebase/firestore';
+import { initializeFirestore, doc, getDoc, runTransaction, collection, query, where, getDocs, limit, enableIndexedDbPersistence } from 'firebase/firestore';
 
 // Embedded Firebase credentials so the ZIP download & Vercel deployment work instantly
 const metaEnv = (import.meta as any).env || {};
