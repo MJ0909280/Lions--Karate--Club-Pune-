@@ -1954,25 +1954,42 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
 
         const candidateList = Array.from(candidateIds).filter(Boolean);
 
-        // 1. High-speed targeted indexed queries across Admissions and Exams (1-3 reads total, sub-50ms)
+        // 1. Ultra efficient batch indexed queries across Admissions and Exams (1-2 reads total)
         try {
-          const targetedQueries: any[] = [];
-          
-          candidateList.slice(0, 10).forEach(cid => {
-            targetedQueries.push(query(collection(db, 'admissions'), where('studentId', '==', cid)));
-            targetedQueries.push(query(collection(db, 'exams'), where('studentId', '==', cid)));
-          });
-
-          if (searchDigits.length >= 7) {
-            targetedQueries.push(query(collection(db, 'admissions'), where('phone', '==', searchDigits)));
-            targetedQueries.push(query(collection(db, 'exams'), where('parentPhone', '==', searchDigits)));
-          }
-
-          for (const q of targetedQueries) {
+          if (candidateList.length > 0) {
+            // Admissions indexed search by Roll ID batch
             try {
-              const qSnap = await getDocs(q);
-              if (!qSnap.empty) {
-                qSnap.forEach((d) => {
+              const admInSnap = await getDocs(query(collection(db, 'admissions'), where('studentId', 'in', candidateList.slice(0, 10))));
+              admInSnap.forEach((d) => {
+                const { score, student } = evaluateDocMatch(d);
+                if (score > globalBestScore && student) {
+                  globalBestScore = score;
+                  globalBestStudent = student;
+                  saveStudentToLocalCache(student);
+                }
+              });
+            } catch (err) {
+              // Fallback to targeted individual queries if 'in' fails
+              for (const cid of candidateList.slice(0, 4)) {
+                try {
+                  const qSnap = await getDocs(query(collection(db, 'admissions'), where('studentId', '==', cid)));
+                  qSnap.forEach((d) => {
+                    const { score, student } = evaluateDocMatch(d);
+                    if (score > globalBestScore && student) {
+                      globalBestScore = score;
+                      globalBestStudent = student;
+                      saveStudentToLocalCache(student);
+                    }
+                  });
+                } catch {}
+              }
+            }
+
+            // Exams indexed search by Roll ID batch
+            if (globalBestScore < 700) {
+              try {
+                const examInSnap = await getDocs(query(collection(db, 'exams'), where('studentId', 'in', candidateList.slice(0, 10))));
+                examInSnap.forEach((d) => {
                   const { score, student } = evaluateDocMatch(d);
                   if (score > globalBestScore && student) {
                     globalBestScore = score;
@@ -1980,10 +1997,37 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
                     saveStudentToLocalCache(student);
                   }
                 });
+              } catch (err) {
+                for (const cid of candidateList.slice(0, 4)) {
+                  try {
+                    const qSnap = await getDocs(query(collection(db, 'exams'), where('studentId', '==', cid)));
+                    qSnap.forEach((d) => {
+                      const { score, student } = evaluateDocMatch(d);
+                      if (score > globalBestScore && student) {
+                        globalBestScore = score;
+                        globalBestStudent = student;
+                        saveStudentToLocalCache(student);
+                      }
+                    });
+                  } catch {}
+                }
               }
-            } catch (singleQErr) {
-              // Ignore single query error and proceed
             }
+          }
+
+          // Search by phone if digits entered
+          if (globalBestScore < 700 && searchDigits.length >= 7) {
+            try {
+              const phoneSnap = await getDocs(query(collection(db, 'admissions'), where('phone', '==', searchDigits)));
+              phoneSnap.forEach((d) => {
+                const { score, student } = evaluateDocMatch(d);
+                if (score > globalBestScore && student) {
+                  globalBestScore = score;
+                  globalBestStudent = student;
+                  saveStudentToLocalCache(student);
+                }
+              });
+            } catch {}
           }
         } catch (e) {
           console.warn("Direct targeted query note:", e);
@@ -1998,28 +2042,30 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
           return;
         }
 
-        // 2. Fallback targeted scan across Admissions (limit 50)
-        try {
-          const admSnap = await getDocs(query(collection(db, 'admissions'), limit(50)));
-          admSnap.forEach((d) => {
-            const { score, student } = evaluateDocMatch(d);
-            if (score > globalBestScore && student) {
-              globalBestScore = score;
-              globalBestStudent = student;
-              saveStudentToLocalCache(student);
+        // 2. Light fallback targeted scan across Admissions (limit 15 instead of 50 to conserve quota)
+        if (globalBestScore < 700) {
+          try {
+            const admSnap = await getDocs(query(collection(db, 'admissions'), limit(15)));
+            admSnap.forEach((d) => {
+              const { score, student } = evaluateDocMatch(d);
+              if (score > globalBestScore && student) {
+                globalBestScore = score;
+                globalBestStudent = student;
+                saveStudentToLocalCache(student);
+              }
+            });
+          } catch (e: any) {
+            console.warn("Admissions query warning:", e);
+            if (e?.code === 'resource-exhausted' || String(e).toLowerCase().includes('quota')) {
+              throw e;
             }
-          });
-        } catch (e: any) {
-          console.warn("Admissions query warning:", e);
-          if (e?.code === 'resource-exhausted' || String(e).toLowerCase().includes('quota')) {
-            throw e;
           }
         }
 
-        // 3. Search Exams (limit 50)
+        // 3. Search Exams (limit 15)
         if (globalBestScore < 700) {
           try {
-            const examSnap = await getDocs(query(collection(db, 'exams'), limit(50)));
+            const examSnap = await getDocs(query(collection(db, 'exams'), limit(15)));
             examSnap.forEach((d) => {
               const { score, student } = evaluateDocMatch(d);
               if (score > globalBestScore && student) {

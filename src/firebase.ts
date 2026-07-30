@@ -45,7 +45,7 @@ if (typeof window !== 'undefined') {
 export const auth = getAuth();
 
 export async function checkFirestoreConnection(): Promise<boolean> {
-  if (typeof navigator !== 'undefined' && !navigator.onLine) {
+  if (typeof window !== 'undefined' && typeof navigator !== 'undefined' && !navigator.onLine) {
     return false;
   }
   try {
@@ -53,12 +53,19 @@ export async function checkFirestoreConnection(): Promise<boolean> {
     await getDoc(doc(db, 'settings', 'connection_ping_test'));
     return true;
   } catch (error: any) {
-    // If we get permission-denied or similar, the client successfully reached Firestore!
-    const errStr = error instanceof Error ? error.message : String(error);
+    // If we receive any server response from Firestore (permission-denied, quota-exceeded, resource-exhausted),
+    // the database connection itself IS reachable and connected!
+    const errStr = (error instanceof Error ? error.message : String(error)).toLowerCase();
+    const code = (error && error.code) || '';
     if (
-      errStr.includes('permission-denied') || 
-      errStr.includes('PERMISSION_DENIED') || 
-      (error && error.code === 'permission-denied')
+      code === 'permission-denied' ||
+      code === 'resource-exhausted' ||
+      code === 'already-exists' ||
+      code === 'failed-precondition' ||
+      errStr.includes('permission') ||
+      errStr.includes('quota') ||
+      errStr.includes('exhausted') ||
+      errStr.includes('resource')
     ) {
       return true;
     }
