@@ -560,12 +560,12 @@ export function saveStudentToLocalCache(student: Admission) {
 }
 
 export function saveExamToLocalCache(exam: ExamRecord) {
-  if (!exam || !exam.id) return;
+  if (!exam || !exam.id || exam.id.startsWith('verified-exam-')) return;
   try {
     const raw = safeLocalStorage.getItem(LOCAL_EXAMS_CACHE_KEY);
     const existing: ExamRecord[] = raw ? JSON.parse(raw) : [];
 
-    const filtered = existing.filter(e => e.id !== exam.id);
+    const filtered = existing.filter(e => e.id !== exam.id && !e.id.startsWith('verified-exam-'));
     filtered.unshift({
       ...exam,
       updatedAt: Date.now()
@@ -616,7 +616,9 @@ export function searchLocalCache(queryStr: string): { student: Admission | null;
     }
 
     const rawEx = safeLocalStorage.getItem(LOCAL_EXAMS_CACHE_KEY);
-    const cachedExams: ExamRecord[] = rawEx ? JSON.parse(rawEx) : [];
+    const rawCachedExams: ExamRecord[] = rawEx ? JSON.parse(rawEx) : [];
+    // Filter out synthesized records
+    const cachedExams = rawCachedExams.filter(e => !e.id || !e.id.startsWith('verified-exam-'));
 
     if (!bestStudent) {
       for (const ex of cachedExams) {
@@ -693,6 +695,22 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
   useEffect(() => {
     setActiveTabState(initialTab);
   }, [initialTab]);
+
+  // Clean up legacy synthesized exam records from local cache
+  useEffect(() => {
+    try {
+      const raw = safeLocalStorage.getItem(LOCAL_EXAMS_CACHE_KEY);
+      if (raw) {
+        const existing: ExamRecord[] = JSON.parse(raw);
+        const cleaned = existing.filter(e => !e.id || !e.id.startsWith('verified-exam-'));
+        if (cleaned.length !== existing.length) {
+          safeLocalStorage.setItem(LOCAL_EXAMS_CACHE_KEY, JSON.stringify(cleaned));
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
+  }, []);
 
   const [studentIdInput, setStudentIdInput] = useState('');
   const [searching, setSearching] = useState(false);
@@ -2156,50 +2174,13 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
         }
       });
 
-      // If no explicit exam record was found in Firestore, but activeStudent has a valid belt level,
-      // synthesize an official verified belt exam result record so student/parent can view results, marksheet, and certificate!
-      if (records.length === 0 && activeStudent) {
-        const currentBelt = activeStudent.beltLevel || 'White Belt (10th Kyu)';
-        const cleanBeltLower = currentBelt.toLowerCase();
-        
-        // Synthesize result for all active students with a belt rank
-        const synthesizedRecord: ExamRecord = {
-          id: `verified-exam-${activeStudent.studentId || activeStudent.id || 'std'}`,
-          studentId: activeStudent.studentId || 'LKCP-2026',
-          studentName: activeStudent.fullName || 'Karate Student',
-          parentName: activeStudent.parentName || 'Parent / Guardian',
-          parentPhone: activeStudent.phone || activeStudent.whatsApp || '',
-          branch: activeStudent.branch || 'Lions Karate Club Pune',
-          coachName: activeStudent.coachName || 'Shihan Maruti Jadhav',
-          currentBelt: currentBelt,
-          targetBelt: currentBelt,
-          status: 'passed',
-          feesStatus: 'Paid',
-          examDate: activeStudent.joiningDate ? new Date(activeStudent.joiningDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : 'Official Verified Record',
-          venueDetails: activeStudent.branch || 'Lions Main Dojo',
-          grade: cleanBeltLower.includes('black') ? 'DISTINCTION (A+)' : 'A+',
-          remarks: `Officially verified karate belt level promotion and performance record for ${currentBelt}. Qualified in official 7-discipline evaluation.`,
-          schoolName: activeStudent.schoolName || '',
-          createdAt: activeStudent.joiningDate || activeStudent.createdAt || Date.now(),
-          isPublished: true,
-          disciplinesGrades: {
-            'Kihon (Basic Techniques)': 'A+',
-            'Kata (Form & Pattern)': 'A+',
-            'Kumite (Sparring)': 'A+',
-            'Fitness & Stamina': 'A+',
-            'Flexibility & Kicks': 'A+',
-            'Dojo Discipline & Ethics': 'A+',
-            'Self Defense Applications': 'A+'
-          }
-        };
-        records.push(synthesizedRecord);
-        saveExamToLocalCache(synthesizedRecord);
-      }
+      // Filter out any synthesized records
+      const cleanRecords = records.filter(r => !r.id || !r.id.startsWith('verified-exam-'));
 
       // Sort newest first
-      records.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+      cleanRecords.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
       if (isMounted) {
-        setRegisteredExams(records);
+        setRegisteredExams(cleanRecords);
 
         if (records.length > 0) {
           const realExamName = records.find(r => r.studentName && r.studentName.trim().toLowerCase() !== 'karate student')?.studentName 
