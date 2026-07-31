@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import html2pdf from 'html2pdf.js';
 import confetti from 'canvas-confetti';
@@ -725,6 +725,7 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
   const [showExamForm, setShowExamForm] = useState(false);
   const [selectedCert, setSelectedCert] = useState<ExamRecord | null>(null);
   const [downloadingCert, setDownloadingCert] = useState(false);
+  const [selectedExamDateFilter, setSelectedExamDateFilter] = useState<string>('all');
 
   // Belt Progress Celebration states
   const [showCelebrationModal, setShowCelebrationModal] = useState(false);
@@ -1674,6 +1675,44 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
   const [examSchedules, setExamSchedules] = useState<any[]>([]);
   const [schedulesLoading, setSchedulesLoading] = useState(false);
   const [selectedScheduleId, setSelectedScheduleId] = useState('');
+
+  // Compute available exam dates across schedules and past student records
+  const availableExamDates = useMemo(() => {
+    const datesSet = new Set<string>();
+
+    if (examSchedules && examSchedules.length > 0) {
+      examSchedules.forEach(s => {
+        if (s.examDate) datesSet.add(s.examDate.trim());
+      });
+    }
+
+    if (registeredExams && registeredExams.length > 0) {
+      registeredExams.forEach(e => {
+        if (e.examDate) {
+          datesSet.add(e.examDate.trim());
+        } else if (e.createdAt) {
+          datesSet.add(formatDate(e.createdAt));
+        }
+      });
+    }
+
+    if (datesSet.size === 0) {
+      datesSet.add('July 31, 2026');
+      datesSet.add('July 26, 2026');
+    }
+
+    return Array.from(datesSet);
+  }, [examSchedules, registeredExams]);
+
+  // Filter student exam results by selected exam date
+  const displayedExams = useMemo(() => {
+    if (selectedExamDateFilter === 'all') return registeredExams;
+    return registeredExams.filter(exam => {
+      const examDateStr = (exam.examDate || formatDate(exam.createdAt) || '').toLowerCase().trim();
+      const targetFilter = selectedExamDateFilter.toLowerCase().trim();
+      return examDateStr.includes(targetFilter) || targetFilter.includes(examDateStr);
+    });
+  }, [registeredExams, selectedExamDateFilter]);
 
   // New Exam Form states
   const [targetBelt, setTargetBelt] = useState('');
@@ -2787,6 +2826,30 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
                 <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-yellow-500/30 to-transparent" />
                 
                 <form onSubmit={handleSearchSubmit} className="space-y-5">
+                  {/* EXAM SESSION / DATE SELECTOR */}
+                  <div>
+                    <label htmlFor="exam-session-date-select" className="text-zinc-400 text-xs font-heading font-black uppercase tracking-wider block mb-2 text-left flex items-center gap-1.5">
+                      <Calendar className="w-4 h-4 text-yellow-500" />
+                      Select Exam Date / Session
+                    </label>
+                    <select
+                      id="exam-session-date-select"
+                      value={selectedExamDateFilter}
+                      onChange={(e) => setSelectedExamDateFilter(e.target.value)}
+                      className="w-full bg-slate-950 border border-zinc-850 px-4 py-3 text-xs text-white rounded-xl focus:outline-none focus:border-yellow-500/60 font-sans cursor-pointer mb-1"
+                    >
+                      <option value="all">-- All Exam Dates (Latest Result) --</option>
+                      {availableExamDates.map((dateStr) => (
+                        <option key={dateStr} value={dateStr}>
+                          📅 Exam Date: {dateStr}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-[10.5px] text-zinc-500 text-left font-sans">
+                      Select the specific exam session date to view results for that exam.
+                    </p>
+                  </div>
+
                   <div>
                     <label htmlFor="student-portal-id" className="text-zinc-400 text-xs font-heading font-black uppercase tracking-wider block mb-2 text-left">
                       {activeTab === 'exam' ? "Enter your child's Karate Roll ID to start" : "Enter your child's Karate Roll ID"}
@@ -3817,10 +3880,33 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
             {/* EXAMS & BELT GRADING HISTORICAL TIMELINE REGISTER LOGS */}
             {activeTab !== 'attendance' && (
               <div className="space-y-4 animate-fade-in">
-              <h4 className="font-title text-base font-extrabold text-white uppercase flex items-center gap-2 text-left">
-                <ClipboardList className="w-4.5 h-4.5 text-yellow-500" />
-                Past Exams & Performance Results
-              </h4>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-left">
+                <h4 className="font-title text-base font-extrabold text-white uppercase flex items-center gap-2">
+                  <ClipboardList className="w-4.5 h-4.5 text-yellow-500" />
+                  Past Exams & Performance Results
+                </h4>
+
+                {registeredExams.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] text-zinc-400 font-sans shrink-0 flex items-center gap-1">
+                      <Calendar className="w-3.5 h-3.5 text-yellow-500" />
+                      Filter Exam Date:
+                    </span>
+                    <select
+                      value={selectedExamDateFilter}
+                      onChange={(e) => setSelectedExamDateFilter(e.target.value)}
+                      className="bg-slate-950 border border-zinc-800 text-zinc-200 text-xs px-3 py-1.5 rounded-lg focus:outline-none focus:border-yellow-500 cursor-pointer font-sans"
+                    >
+                      <option value="all">All Exam Dates</option>
+                      {availableExamDates.map((d) => (
+                        <option key={d} value={d}>
+                          {d}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
 
               {examsLoading && (
                 <ExamsHistoricalSkeleton />
@@ -3836,9 +3922,27 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
                 </div>
               )}
 
-              {!examsLoading && registeredExams.length > 0 && (
+              {!examsLoading && registeredExams.length > 0 && displayedExams.length === 0 && (
+                <div className="py-10 text-center text-zinc-550 bg-slate-900/10 border border-zinc-900 rounded-2xl p-6 space-y-3">
+                  <Calendar className="w-8 h-8 mx-auto text-yellow-500/60" />
+                  <h5 className="font-heading font-bold text-xs uppercase text-zinc-350 tracking-wider">
+                    No result found for exam date: {selectedExamDateFilter}
+                  </h5>
+                  <p className="text-[10.5px] text-zinc-500 max-w-sm mx-auto">
+                    Please select "All Exam Dates" in the date dropdown above to view all performance records for your child.
+                  </p>
+                  <button
+                    onClick={() => setSelectedExamDateFilter('all')}
+                    className="bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 border border-yellow-500/30 text-xs font-bold px-4 py-2 rounded-lg transition-all cursor-pointer"
+                  >
+                    Show All Exam Dates
+                  </button>
+                </div>
+              )}
+
+              {!examsLoading && displayedExams.length > 0 && (
                 <div className="grid grid-cols-1 gap-5">
-                  {registeredExams.map((exam) => {
+                  {displayedExams.map((exam) => {
                     const isResultPublished = true;
                     const isPassed = checkExamPassed(exam);
                     const gradeVal = getEffectiveGrade(exam);
