@@ -117,7 +117,7 @@ export default function AttendanceTracker() {
   });
 
   const [selectedCoach, setSelectedCoach] = useState<string>(() => {
-    return safeLocalStorage.getItem('lkcp_active_coach') || DOJO_BRANCHES[0].coach;
+    return safeLocalStorage.getItem('lkcp_active_coach') || 'All Coaches';
   });
 
   const [selectedBatch, setSelectedBatch] = useState<string>('All Batches');
@@ -306,12 +306,28 @@ export default function AttendanceTracker() {
 
   // Filter students logically
   const filteredStudents = allStudents.filter((student) => {
-    // 1. Coach filter: match by assigned coach name
-    // Many students might have Maruti Sir or Shivraj Sir explicitly as coachName
-    const coachMatch = !selectedCoach || 
-                        (student.coachName && student.coachName.toLowerCase().includes(selectedCoach.split(' Sir')[0].toLowerCase())) ||
-                        (student.branch && DOJO_BRANCHES.find(b => b.id === student.branch)?.coach.toLowerCase().includes(selectedCoach.split(' Sir')[0].toLowerCase())) ||
-                        selectedCoach === 'All Coaches';
+    // 1. Coach filter: match by assigned coach name or branch coach
+    let coachMatch = true;
+    if (selectedCoach && selectedCoach !== 'All Coaches') {
+      const filterLower = selectedCoach.toLowerCase();
+      const studentCoachLower = (student.coachName || '').toLowerCase();
+      const studentBranchLower = (student.branch || '').toLowerCase();
+
+      let coachKeyword = '';
+      if (filterLower.includes('maruti')) coachKeyword = 'maruti';
+      else if (filterLower.includes('shivraj')) coachKeyword = 'shivraj';
+      else if (filterLower.includes('shital')) coachKeyword = 'shital';
+
+      if (coachKeyword) {
+        const branchMatchesCoach = DOJO_BRANCHES.some(b => 
+          (b.id.toLowerCase() === studentBranchLower || b.name.toLowerCase() === studentBranchLower) &&
+          b.coach.toLowerCase().includes(coachKeyword)
+        );
+        coachMatch = studentCoachLower.includes(coachKeyword) || branchMatchesCoach;
+      } else {
+        coachMatch = studentCoachLower.includes(filterLower);
+      }
+    }
 
     // 2. Batch filter
     const batchMatch = selectedBatch === 'All Batches' || 
@@ -839,6 +855,14 @@ Thank you.`;
                         <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-[10px] text-zinc-500 font-mono leading-none">
                           <span className="text-yellow-500 border border-yellow-500/10 bg-yellow-500/5 px-2 py-0.5 rounded-[3px] text-[8px] uppercase tracking-wider font-semibold font-sans shrink-0">
                             {student.beltLevel?.split(' (')[0] || 'White Belt'}
+                          </span>
+                          <span className="h-1 w-1 rounded-full bg-zinc-800" />
+                          <span className="text-emerald-400 border border-emerald-500/15 bg-emerald-500/5 px-2 py-0.5 rounded-[3px] text-[8px] uppercase tracking-wider font-semibold font-sans shrink-0">
+                            Coach: {
+                              student.coachName ? 
+                                student.coachName.replace(' 2nd dan Black Belt', '').replace(' 2nd dan Black belt', '').replace(' assistant Coach', '') : 
+                                (DOJO_BRANCHES.find(b => b.id === student.branch || b.name === student.branch)?.coach.split(' Sir')[0] || 'Maruti Sir')
+                            }
                           </span>
                           <span className="h-1 w-1 rounded-full bg-zinc-800" />
                           <span className="truncate max-w-[150px]">{student.batch || 'Unassigned Batch'}</span>

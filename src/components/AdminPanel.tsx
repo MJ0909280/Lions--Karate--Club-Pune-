@@ -872,6 +872,8 @@ export default function AdminPanel() {
   const [editSchoolName, setEditSchoolName] = useState('');
   const [editAddress, setEditAddress] = useState('');
   const [editFeesStatus, setEditFeesStatus] = useState<'Paid' | 'Unpaid'>('Unpaid');
+  const [editPhotoUrl, setEditPhotoUrl] = useState('');
+  const [editDragOver, setEditDragOver] = useState(false);
   const [editProfileSaving, setEditProfileSaving] = useState(false);
   const [editProfileError, setEditProfileError] = useState('');
 
@@ -1559,6 +1561,78 @@ export default function AdminPanel() {
     const files = e.dataTransfer.files;
     if (files && files.length > 0) {
       compressAndProcessMImage(files[0]);
+    }
+  };
+
+  const compressAndProcessEditImage = (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      setEditProfileError('Please select a valid image file (JPG, PNG, WebP).');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrlResult = e.target?.result as string;
+      const img = new Image();
+      img.onerror = () => {
+        setEditPhotoUrl(DEFAULT_STUDENT_AVATAR);
+        setEditProfileError('');
+      };
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 300;
+          const MAX_HEIGHT = 300;
+          let width = img.width || MAX_WIDTH;
+          let height = img.height || MAX_HEIGHT;
+
+          const size = Math.min(width, height);
+          const offsetX = (width - size) / 2;
+          const offsetY = (height - size) / 2;
+
+          canvas.width = MAX_WIDTH;
+          canvas.height = MAX_HEIGHT;
+
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            ctx.drawImage(img, offsetX, offsetY, size, size, 0, 0, MAX_WIDTH, MAX_HEIGHT);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+            setEditPhotoUrl(dataUrl);
+            setEditProfileError('');
+          } else {
+            setEditPhotoUrl(dataUrlResult);
+            setEditProfileError('');
+          }
+        } catch (canvasErr) {
+          console.warn('Edit photo canvas fallback:', canvasErr);
+          setEditPhotoUrl(dataUrlResult);
+          setEditProfileError('');
+        }
+      };
+      img.src = dataUrlResult;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleEditPhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      compressAndProcessEditImage(files[0]);
+    }
+  };
+
+  const handleEditDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setEditDragOver(true);
+  };
+
+  const handleEditDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setEditDragOver(false);
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      compressAndProcessEditImage(files[0]);
     }
   };
 
@@ -2252,6 +2326,8 @@ export default function AdminPanel() {
   const handleStartEditProfile = () => {
     if (!selectedAdmission) return;
     setEditFullName(selectedAdmission.fullName || '');
+    setEditPhotoUrl(selectedAdmission.photoUrl || '');
+    setEditDragOver(false);
     setEditDob(selectedAdmission.dob || '');
     setEditAge(selectedAdmission.age || '');
     setEditGender(selectedAdmission.gender || 'male');
@@ -2291,6 +2367,7 @@ export default function AdminPanel() {
       const docRef = doc(db, 'admissions', selectedAdmission.id);
       const updateData: Partial<Admission> = {
         fullName: editFullName.trim(),
+        photoUrl: editPhotoUrl || selectedAdmission.photoUrl || DEFAULT_STUDENT_AVATAR,
         dob: editDob,
         age: Number(editAge) || 10,
         gender: editGender,
@@ -6527,6 +6604,55 @@ export default function AdminPanel() {
                       <span>{editProfileError}</span>
                     </div>
                   )}
+
+                  {/* Student Photo Upload & Preview Section */}
+                  <div className="p-3.5 bg-slate-950/60 border border-zinc-850 rounded-xl space-y-2">
+                    <label className="text-zinc-400 uppercase tracking-widest text-[9px] block font-bold">
+                      Student ID Passport Photo / Badge Image
+                    </label>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-center">
+                      <div 
+                        onDragOver={handleEditDragOver}
+                        onDragLeave={() => setEditDragOver(false)}
+                        onDrop={handleEditDrop}
+                        onClick={() => document.getElementById('edit-photo-file-input')?.click()}
+                        className={`sm:col-span-2 h-[95px] border-2 border-dashed rounded-xl flex flex-col justify-center items-center px-3 text-center cursor-pointer transition-all ${
+                          editDragOver ? 'border-yellow-500 bg-yellow-500/5' : 'border-zinc-800 bg-slate-900/40 hover:border-zinc-700'
+                        }`}
+                      >
+                        <input 
+                          id="edit-photo-file-input"
+                          type="file"
+                          onChange={handleEditPhotoSelect}
+                          accept="image/*"
+                          className="hidden"
+                        />
+                        <Upload className="w-5 h-5 text-zinc-400 mb-1" />
+                        <span className="text-zinc-300 text-xs font-medium">Click or drag & drop to update photo</span>
+                        <span className="text-zinc-550 text-[9px] mt-0.5">JPG, PNG, WebP (Square ratio best)</span>
+                      </div>
+
+                      <div className="flex flex-col items-center justify-center p-2 bg-slate-900 border border-zinc-850 rounded-xl h-[95px]">
+                        {editPhotoUrl ? (
+                          <div className="relative w-16 h-16 rounded-lg overflow-hidden border border-yellow-500/30">
+                            <img src={editPhotoUrl} alt="Preview" className="w-full h-full object-cover object-top" />
+                            <button
+                              type="button"
+                              onClick={() => setEditPhotoUrl('')}
+                              className="absolute inset-0 bg-black/75 opacity-0 hover:opacity-100 flex items-center justify-center text-red-400 text-[9px] uppercase font-bold tracking-wide transition-opacity"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col items-center text-zinc-600">
+                            <Camera className="w-5 h-5 mb-1 text-zinc-500" />
+                            <span className="text-[9px] uppercase font-bold tracking-wider text-zinc-500">No Photo</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Full Name */}
