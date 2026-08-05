@@ -22,45 +22,59 @@
     <meta property="twitter:description" content="Join Lions Karate Club Pune for Karate, Kick-Boxing &amp; Self-Defense classes in Pune. ✅ Free Trial Classes ✅ Expert Coaches ✅ Kids &amp; Adults ✅ Admissions Open." />
     <meta property="twitter:image" content="https://res.cloudinary.com/dlzdagymx/image/upload/q_auto/f_auto/v1781350907/logo_new_bgwsw9.jpg" />
 
-    <!-- Local Business Schema Markup (JSON-LD) for Google Maps & local ranking -->
+    <!-- Local Business & Sports Club Schema Markup (JSON-LD) for Google Maps & Local Search Ranking -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "SportsActivityLocation",
-      "name": "LIONS KARATE CLUB PUNE",
-      "description": "Professional Karate, Kick-Boxing & Self-Defense training for Kids, Teens & Adults in Pune.",
-      "image": [
-        "https://res.cloudinary.com/dlzdagymx/image/upload/q_auto,f_auto/v1781350157/WhatsApp_Image_2026-06-13_at_4.57.58_PM_mvcjyf.jpg",
-        "https://res.cloudinary.com/dlzdagymx/image/upload/q_auto,f_auto/v1781350158/WhatsApp_Image_2026-06-13_at_4.58.00_PM_xp52ff.jpg",
-        "https://res.cloudinary.com/dlzdagymx/image/upload/q_auto,f_auto/v1781350156/WhatsApp_Image_2026-06-13_at_4.57.59_PM_cwcle3.jpg",
-        "https://res.cloudinary.com/dlzdagymx/image/upload/q_auto,f_auto/v1781348302/shoury_image_unjx3u.jpg"
-      ],
-      "@id": "https://lions-karate-club-pune.vercel.app/#club",
-      "url": "https://lions-karate-club-pune.vercel.app/",
-      "telephone": "+919049688172",
-      "priceRange": "₹₹",
-      "address": {
-        "@type": "PostalAddress",
-        "addressLocality": "Narhe, Pune",
-        "addressRegion": "Maharashtra",
-        "addressCountry": "IN"
-      },
-      "openingHoursSpecification": {
-        "@type": "OpeningHoursSpecification",
-        "dayOfWeek": [
-          "Monday",
-          "Tuesday",
-          "Wednesday",
-          "Thursday",
-          "Friday",
-          "Saturday"
-        ],
-        "opens": "17:00",
-        "closes": "21:00"
-      },
-      "sameAs": [
-        "https://www.instagram.com/lions_karate_club_pune?igsh=MTdpeHVjeTFkeTd6aw==",
-        "https://www.youtube.com/@LionsKarateClub"
+      "@graph": [
+        {
+          "@type": ["SportsClub", "SportsActivityLocation"],
+          "@id": "https://lions-karate-club-pune.vercel.app/#club",
+          "name": "Lions Karate Club Pune",
+          "alternateName": "Lions Karate Club",
+          "description": "Premier Shotokan Karate, Kick-Boxing, Belt Promotions & Self-Defense Training Academy for Kids, Teens & Adults in Pune.",
+          "image": [
+            "https://res.cloudinary.com/dlzdagymx/image/upload/q_auto,f_auto/v1781350907/logo_new_bgwsw9.jpg",
+            "https://res.cloudinary.com/dlzdagymx/image/upload/q_auto,f_auto/v1781350157/WhatsApp_Image_2026-06-13_at_4.57.58_PM_mvcjyf.jpg",
+            "https://res.cloudinary.com/dlzdagymx/image/upload/q_auto,f_auto/v1781350158/WhatsApp_Image_2026-06-13_at_4.58.00_PM_xp52ff.jpg"
+          ],
+          "url": "https://lions-karate-club-pune.vercel.app/",
+          "telephone": "+919049688172",
+          "priceRange": "₹₹",
+          "address": {
+            "@type": "PostalAddress",
+            "streetAddress": "Narhe Branch & Vadgaon Budruk",
+            "addressLocality": "Narhe, Pune",
+            "addressRegion": "Maharashtra",
+            "postalCode": "411041",
+            "addressCountry": "IN"
+          },
+          "geo": {
+            "@type": "GeoCoordinates",
+            "latitude": 18.4485,
+            "longitude": 73.8267
+          },
+          "openingHoursSpecification": {
+            "@type": "OpeningHoursSpecification",
+            "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+            "opens": "17:00",
+            "closes": "21:00"
+          },
+          "sameAs": [
+            "https://www.instagram.com/lions_karate_club_pune?igsh=MTdpeHVjeTFkeTd6aw==",
+            "https://www.youtube.com/@LionsKarateClub"
+          ]
+        },
+        {
+          "@type": "Course",
+          "name": "Shotokan Karate & Self-Defense Training",
+          "description": "Comprehensive Shotokan Karate, Kata, Kumite, Kick-Boxing, and physical fitness programs with certified Black Belt Senseis.",
+          "provider": {
+            "@type": "Organization",
+            "name": "Lions Karate Club Pune",
+            "sameAs": "https://lions-karate-club-pune.vercel.app/"
+          }
+        }
       ]
     }
     </script>
