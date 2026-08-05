@@ -168,10 +168,10 @@ export default function Hero({ onNavigate }: HeroProps) {
 
             {/* Immersive display headers */}
             <div className="space-y-4">
-              <h1 className="font-heading text-4xl sm:text-6xl xl:text-[76px] font-black uppercase text-white tracking-tighter leading-[0.9] select-none">
-                UNLOCK <br className="hidden sm:block" />
-                <span className="text-red-500 font-kanji text-transparent pr-1" style={{ WebkitTextStroke: '1.5px #FF2A35', color: 'transparent' }}>UNSTOPPABLE</span> <br />
-                FOCUS & DISCIPLINE
+              <h1 className="font-heading text-4xl sm:text-6xl xl:text-[72px] font-black uppercase text-white tracking-tighter leading-[0.95] select-none">
+                BECOME STRONG. <br className="hidden sm:block" />
+                <span className="text-red-500 font-kanji text-transparent pr-1" style={{ WebkitTextStroke: '1.5px #FF2A35', color: 'transparent' }}>STAY DISCIPLINED.</span> <br />
+                TRAIN LIKE A CHAMPION.
               </h1>
               
               <div className="flex items-center space-x-2 text-red-500">
@@ -187,13 +187,41 @@ export default function Hero({ onNavigate }: HeroProps) {
             </div>
 
             {/* Structured Subtitle with parent benefit drivers */}
-            <p className="text-zinc-300 text-sm sm:text-base md:text-lg font-body font-light tracking-wide leading-relaxed max-w-2xl">
-              Tired of screens and low focus? Help your child build steel-clad resilience, active confidence, and practical self-protection under internationally certified Black-Belt Senseis. 
-              <span className="text-red-500 font-medium"> Simple schedules. Perfect safety. Life-changing results.</span>
+            <p className="text-zinc-200 text-sm sm:text-base md:text-lg font-body font-medium tracking-wide leading-relaxed max-w-2xl">
+              Professional Karate, Kick-Boxing &amp; Self-Defense training for Kids, Teens &amp; Adults in Pune.
+              <span className="text-red-500 font-bold block sm:inline sm:ml-1"> Help your child build steel-clad resilience, focus &amp; real self-protection.</span>
             </p>
 
+            {/* Trust Badges Bar */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-1">
+              <div className="flex items-center space-x-2 bg-slate-900/80 border border-zinc-800 px-3 py-2 rounded-xl text-xs text-zinc-200 font-bold">
+                <Check className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                <span>Parent Trusted</span>
+              </div>
+              <div className="flex items-center space-x-2 bg-slate-900/80 border border-zinc-800 px-3 py-2 rounded-xl text-xs text-zinc-200 font-bold">
+                <Check className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                <span>Certified Coaches</span>
+              </div>
+              <div className="flex items-center space-x-2 bg-slate-900/80 border border-zinc-800 px-3 py-2 rounded-xl text-xs text-zinc-200 font-bold">
+                <Check className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                <span>Belt Examination</span>
+              </div>
+              <div className="flex items-center space-x-2 bg-slate-900/80 border border-zinc-800 px-3 py-2 rounded-xl text-xs text-zinc-200 font-bold">
+                <Check className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                <span>Student ID Card</span>
+              </div>
+              <div className="flex items-center space-x-2 bg-slate-900/80 border border-zinc-800 px-3 py-2 rounded-xl text-xs text-zinc-200 font-bold">
+                <Check className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                <span>National Players</span>
+              </div>
+              <div className="flex items-center space-x-2 bg-slate-900/80 border border-zinc-800 px-3 py-2 rounded-xl text-xs text-zinc-200 font-bold">
+                <Check className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                <span>Est. 2023 Pune</span>
+              </div>
+            </div>
+
             {/* Association & Affiliation Mini-Row */}
-            <div className="flex flex-wrap items-center gap-4 pt-2">
+            <div className="flex flex-wrap items-center gap-3 pt-1">
               <div className="flex items-center space-x-2 bg-slate-900/60 border border-zinc-850 px-3 py-1.5 rounded-xl">
                 <img 
                   src="https://res.cloudinary.com/dlzdagymx/image/upload/q_auto/f_auto/v1781585561/aa604cmh1_tfa8an.webp" 
@@ -241,9 +269,9 @@ export default function Hero({ onNavigate }: HeroProps) {
                 id="btn-claim-trials"
                 onClick={() => onNavigate('admission')}
                 type="primary"
-                className="group"
+                className="group shadow-lg shadow-red-600/20"
               >
-                <span>JOIN NOW / अभी जुड़ें</span>
+                <span>ENROLL NOW / अभी जुड़ें</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1.5 transition-transform" />
               </MartialButton>
               
