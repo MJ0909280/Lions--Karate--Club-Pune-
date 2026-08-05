@@ -2,6 +2,8 @@ import { useRef, useState, useEffect } from 'react';
 import { Admission } from '../types';
 import { Printer, Download, CheckCircle2, Trophy, Award, Landmark, Volume2 } from 'lucide-react';
 import { motion } from 'motion/react';
+import { db } from '../firebase';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 
 const DEFAULT_STUDENT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='%23111'><rect width='100' height='100' fill='%231a1a1a'/><circle cx='50' cy='35' r='14' fill='%23c9a96e'/><path d='M50 50 L35 75 L30 73 L42 53 L38 50 L30 55 L28 50 L40 42 Z' fill='%23fff'/><path d='M50 50 L65 80 L72 82 L58 55 L65 48 L75 52 L78 47 L60 40 Z' fill='%23fff'/><path d='M42 45 H58 V49 H42 Z' fill='%239B1B20'/></svg>";
 
@@ -15,6 +17,35 @@ export default function IDCard({ admission, showSuccessBanner = false, hideDownl
   const cardRef = useRef<HTMLDivElement>(null);
   const [downloading, setDownloading] = useState(false);
   const [emojis, setEmojis] = useState<{ id: number; char: string; left: number; delay: number; duration: number; size: number }[]>([]);
+  const [effectiveBelt, setEffectiveBelt] = useState<string>(admission.beltLevel || 'White Belt');
+
+  // Sync and dynamically fetch latest belt from Firestore exams if available
+  useEffect(() => {
+    setEffectiveBelt(admission.beltLevel || 'White Belt');
+
+    async function fetchLatestBelt() {
+      try {
+        if (!admission?.studentId) return;
+        const examsQ = query(collection(db, 'exams'), where('studentId', '==', admission.studentId));
+        const snap = await getDocs(examsQ);
+        if (!snap.empty) {
+          const passedExams = snap.docs
+            .map(d => d.data())
+            .filter(e => e.status === 'passed' && e.targetBelt);
+          if (passedExams.length > 0) {
+            passedExams.sort((a, b) => (b.updatedAt || b.createdAt || 0) - (a.updatedAt || a.createdAt || 0));
+            if (passedExams[0].targetBelt) {
+              setEffectiveBelt(passedExams[0].targetBelt);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("Failed to fetch latest exam belt:", err);
+      }
+    }
+
+    fetchLatestBelt();
+  }, [admission]);
 
   const qrDataString = `LIONS KARATE CLUB PUNE\nStudent ID: ${admission.studentId}\nName: ${admission.fullName}\nBatch: ${admission.batch}\nBranch: ${admission.branch || 'Manaji Nagar Branch'}`;
 
@@ -184,7 +215,7 @@ export default function IDCard({ admission, showSuccessBanner = false, hideDownl
         // Draw Rank / Belt Level (Vivid Artistic Red)
         ctx.fillStyle = '#FF3B3F';
         ctx.font = 'bold 11px "Space Grotesk", sans-serif';
-        ctx.fillText(admission.beltLevel.toUpperCase(), 200, 385);
+        ctx.fillText(effectiveBelt.toUpperCase(), 200, 385);
 
         // Draw divider line
         ctx.strokeStyle = 'rgba(0,0,0,0.1)';
@@ -511,7 +542,7 @@ export default function IDCard({ admission, showSuccessBanner = false, hideDownl
             {admission.fullName}
           </h2>
           <p className="text-[10px] font-bold text-[#FF3B3F] tracking-widest uppercase mb-3">
-            {admission.beltLevel}
+            {effectiveBelt}
           </p>
           
           {/* Metadata Parameters Grid */}
