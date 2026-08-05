@@ -17,6 +17,7 @@ import { db, handleFirestoreError, OperationType, generateSequentialStudentId } 
 import { safeLocalStorage } from '../utils/storage';
 import { Admission, BELT_LEVELS, DOJO_BRANCHES, calculateOverallGrade, DisciplineGrades } from '../types';
 import AttendanceTracker from './AttendanceTracker';
+import IDCard from './IDCard';
 import { 
   Search, 
   Award, 
@@ -726,6 +727,7 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
   const [selectedCert, setSelectedCert] = useState<ExamRecord | null>(null);
   const [downloadingCert, setDownloadingCert] = useState(false);
   const [selectedExamDateFilter, setSelectedExamDateFilter] = useState<string>('all');
+  const [showIDCardModal, setShowIDCardModal] = useState(false);
 
   // Belt Progress Celebration states
   const [showCelebrationModal, setShowCelebrationModal] = useState(false);
@@ -3251,7 +3253,16 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
                 </div>
               </div>
 
-              <div className="flex items-center space-x-3 self-start md:self-center">
+              <div className="flex flex-wrap items-center gap-2.5 self-start md:self-center">
+                <button
+                  type="button"
+                  onClick={() => setShowIDCardModal(true)}
+                  className="bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-heading font-black text-[10px] uppercase tracking-widest px-4 py-2.5 rounded-lg transition-all cursor-pointer flex items-center space-x-1.5 shadow-md shadow-yellow-500/10 active:scale-95"
+                >
+                  <CreditCard className="w-3.5 h-3.5 text-slate-950 stroke-[2.5px]" />
+                  <span>Download Student ID Card</span>
+                </button>
+
                 <button
                   type="button"
                   onClick={handleLogoutPortal}
@@ -4497,6 +4508,55 @@ export default function StudentPortal({ initialTab = 'progress', initialStudentI
                     <MessageCircle className="w-4 h-4" />
                     <span>Share on WhatsApp</span>
                   </a>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* STUDENT ID CARD DOWNLOAD MODAL */}
+        <AnimatePresence>
+          {showIDCardModal && activeStudent && (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 overflow-y-auto bg-black/95 backdrop-blur-md flex items-center justify-center p-4"
+              onClick={() => setShowIDCardModal(false)}
+            >
+              <motion.div 
+                initial={{ scale: 0.9, y: 20 }}
+                animate={{ scale: 1, y: 0 }}
+                exit={{ scale: 0.9, y: 20 }}
+                className="w-full max-w-2xl bg-slate-900 border border-zinc-850 rounded-2xl overflow-hidden p-6 relative my-8"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex justify-between items-center mb-6 pb-4 border-b border-zinc-850 uppercase">
+                  <span className="font-heading font-bold text-sm text-zinc-100 uppercase tracking-widest flex items-center gap-2">
+                    <CreditCard className="w-4 h-4 text-yellow-500" />
+                    Student ID Pass Card (Front Side)
+                  </span>
+                  <button 
+                    type="button"
+                    onClick={() => setShowIDCardModal(false)}
+                    className="bg-[#FF3B3F] hover:bg-rose-600 text-white font-heading font-black text-[10px] uppercase tracking-widest px-4 py-2 rounded-lg transition-all duration-150 flex items-center gap-1.5 shadow-md active:scale-95 cursor-pointer"
+                  >
+                    <X className="w-3.5 h-3.5 text-white stroke-[3px]" />
+                    <span>CLOSE</span>
+                  </button>
+                </div>
+
+                <IDCard admission={activeStudent} showSuccessBanner={false} />
+
+                <div className="mt-8 pt-4 border-t border-zinc-850/60 flex justify-center">
+                  <button
+                    type="button"
+                    onClick={() => setShowIDCardModal(false)}
+                    className="w-full sm:w-auto px-6 py-3 border border-zinc-850 hover:border-zinc-700 bg-zinc-950 hover:bg-zinc-900 text-zinc-400 hover:text-white rounded-lg text-[10px] font-heading font-black uppercase tracking-widest transition-all cursor-pointer flex items-center justify-center gap-2"
+                  >
+                    <X className="w-4 h-4 stroke-[2.5px]" />
+                    <span>Close & Return to Student Portal</span>
+                  </button>
                 </div>
               </motion.div>
             </motion.div>
