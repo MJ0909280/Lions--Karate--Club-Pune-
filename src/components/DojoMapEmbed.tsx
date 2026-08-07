@@ -22,7 +22,7 @@ export default function DojoMapEmbed() {
       name: 'Narhe - Manaji Nagar Dojo',
       tagline: 'Headquarters & Primary Belt Examination Center',
       address: 'Manaji Nagar, Narhe, Pune, Maharashtra 411041',
-      landmark: 'Near Bhumkar Chowk, Beside Silver Birch Hospital',
+      landmark: 'Near Ganpati Mandir, Vasundhara Pre-primary School',
       pincode: '411041',
       phone: '+91 90496 88172',
       timing: 'Mon to Sat: 05:00 PM – 09:30 PM',

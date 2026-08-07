@@ -75,7 +75,7 @@ export default function SEOConfig({ title, description, pagePath = "" }: SEOConf
       "email": "LIONSKARATECLUBPUNE09@gmail.com",
       "address": {
         "@type": "PostalAddress",
-        "streetAddress": "VASUNDHARA PRE-PRIMARY SCHOOL, Near Bhumkar Chowk, Beside Silver Birch Hospital, Manaji Nagar, Narhe",
+        "streetAddress": "Vasundhara Pre-Primary School, Near Ganpati Mandir, Manaji Nagar, Narhe",
         "addressLocality": "Pune",
         "addressRegion": "Maharashtra",
         "postalCode": "411041",
@@ -95,7 +95,7 @@ export default function SEOConfig({ title, description, pagePath = "" }: SEOConf
           "name": "Lions Karate Club — Narhe & Manaji Nagar Branch",
           "address": {
             "@type": "PostalAddress",
-            "streetAddress": "Vasundhara Pre-Primary School, Beside Silver Birch Hospital, Manaji Nagar, Narhe",
+            "streetAddress": "Vasundhara Pre-Primary School, Near Ganpati Mandir, Manaji Nagar, Narhe",
             "addressLocality": "Pune",
             "addressRegion": "Maharashtra",
             "postalCode": "411041"
