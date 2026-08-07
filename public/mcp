@@ -7,7 +7,7 @@
     "tools": [
       {
         "name": "get_dojo_branches",
-        "description": "Get all active training dojo branches in Pune (Narhe Manaji Nagar, Vadgaon Budruk, etc.)"
+        "description": "Get active training dojo location in Pune (Narhe Manaji Nagar)"
       },
       {
         "name": "check_student_admission",

@@ -19,7 +19,7 @@ export default function DojoMapEmbed() {
   const locations: DojoLocation[] = [
     {
       id: 'manaji-nagar',
-      name: 'Narhe - Manaji Nagar (Main Dojo)',
+      name: 'Narhe - Manaji Nagar Dojo',
       tagline: 'Headquarters & Primary Belt Examination Center',
       address: 'Manaji Nagar, Narhe, Pune, Maharashtra 411041',
       landmark: 'Near Bhumkar Chowk, Beside Silver Birch Hospital',
@@ -27,18 +27,6 @@ export default function DojoMapEmbed() {
       phone: '+91 90496 88172',
       timing: 'Mon to Sat: 05:00 PM – 09:30 PM',
       embedUrl: 'https://maps.google.com/maps?q=18.4485,73.8267+(Lions+Karate+Club+Narhe+Manaji+Nagar)&t=&z=16&ie=UTF8&iwloc=B&output=embed',
-      directGoogleMapsUrl: 'https://maps.app.goo.gl/3XTDzC6wYw5RB6Uk8'
-    },
-    {
-      id: 'vadgaon-budruk',
-      name: 'Vadgaon Budruk Branch',
-      tagline: 'Sinhagad Road Training Center',
-      address: 'Vadgaon Budruk, Sinhagad Road, Pune, Maharashtra 411041',
-      landmark: 'Near Anand Nagar & Sinhagad College Circle',
-      pincode: '411041',
-      phone: '+91 90496 88172',
-      timing: 'Mon to Sat: 05:00 PM – 09:00 PM',
-      embedUrl: 'https://maps.google.com/maps?q=18.4632,73.8252+(Lions+Karate+Club+Vadgaon+Budruk)&t=&z=15&ie=UTF8&iwloc=B&output=embed',
       directGoogleMapsUrl: 'https://maps.app.goo.gl/3XTDzC6wYw5RB6Uk8'
     }
   ];
@@ -61,32 +49,19 @@ export default function DojoMapEmbed() {
               <span>Offline Dojo Locations & Google Maps</span>
             </div>
             <h2 className="font-heading text-2xl sm:text-3xl font-black text-white uppercase tracking-wider">
-              Find Our Dojos in Pune
+              Find Our Dojo in Narhe, Pune
             </h2>
             <p className="text-zinc-400 text-xs sm:text-sm mt-1 max-w-2xl font-sans">
-              Visit Lions Karate Club Pune at our Manaji Nagar (Narhe) head dojo or Vadgaon Budruk branch. Free trial sessions available for kids & adults!
+              Visit Lions Karate Club Pune at our Manaji Nagar (Narhe) dojo. Free trial sessions available for kids & adults!
             </p>
           </div>
 
-          {/* Location Selector Tabs */}
-          <div className="flex items-center gap-2 bg-zinc-950 p-1.5 rounded-xl border border-zinc-900 shrink-0 self-start md:self-auto">
-            {locations.map((loc) => {
-              const isActive = activeLocation.id === loc.id;
-              return (
-                <button
-                  key={loc.id}
-                  onClick={() => setActiveLocation(loc)}
-                  className={`px-4 py-2 rounded-lg text-xs font-heading font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center gap-2 ${
-                    isActive
-                      ? 'bg-red-600 text-white shadow-lg shadow-red-600/20 border border-red-500/50'
-                      : 'text-zinc-400 hover:text-white hover:bg-zinc-900'
-                  }`}
-                >
-                  <MapPin className={`w-3.5 h-3.5 ${isActive ? 'text-white' : 'text-zinc-500'}`} />
-                  <span>{loc.id === 'manaji-nagar' ? 'Manaji Nagar (Narhe)' : 'Vadgaon Budruk'}</span>
-                </button>
-              );
-            })}
+          {/* Active Location Badge */}
+          <div className="flex items-center gap-2 bg-zinc-950 px-4 py-2 rounded-xl border border-zinc-900 shrink-0 self-start md:self-auto">
+            <MapPin className="w-4 h-4 text-red-500 animate-bounce" />
+            <span className="text-xs font-heading font-bold uppercase tracking-wider text-white">
+              Narhe - Manaji Nagar Branch
+            </span>
           </div>
         </div>
 

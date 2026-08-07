@@ -395,11 +395,10 @@ export default function App() {
 
           {/* Location contact parameter */}
           <div className="space-y-3">
-            <span className="font-heading font-black text-[10px] text-zinc-300 uppercase tracking-widest block">Dojo Locations</span>
+            <span className="font-heading font-black text-[10px] text-zinc-300 uppercase tracking-widest block">Dojo Location</span>
             <p className="text-xs text-zinc-500 leading-relaxed">
               <strong className="text-zinc-300">LIONS KARATE CLUB PUNE</strong><br />
-              📍 <a href="https://maps.app.goo.gl/3XTDzC6wYw5RB6Uk8" target="_blank" rel="noreferrer" className="text-yellow-500 hover:underline">Manaji Nagar, Narhe (Main Dojo)</a><br />
-              📍 Vadgaon Budruk, Pune<br />
+              📍 <a href="https://maps.app.goo.gl/3XTDzC6wYw5RB6Uk8" target="_blank" rel="noreferrer" className="text-yellow-500 hover:underline">Manaji Nagar, Narhe, Pune</a><br />
               Tel: <a href="tel:9049688172" className="text-zinc-300 hover:text-yellow-500 font-mono">9049688172</a><br />
               Email: <a href="mailto:LIONSKARATECLUBPUNE09@gmail.com" className="text-zinc-300 hover:text-yellow-500 break-all">LIONSKARATECLUBPUNE09@gmail.com</a>
             </p>

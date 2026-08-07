@@ -39,7 +39,7 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
           tools: [
             {
               name: 'get_dojo_branches',
-              description: 'Get all training dojo branches in Pune (Narhe Manaji Nagar, Vadgaon Budruk)',
+              description: 'Get training dojo details in Pune (Narhe Manaji Nagar)',
               inputSchema: {
                 type: 'object',
                 properties: {}
@@ -68,7 +68,7 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
             content: [
               {
                 type: 'text',
-                text: 'Branches: 1) Narhe Manaji Nagar Branch (Head Coach: Maruti Sir, 2nd Dan Black Belt) 2) Vadgaon Budruk Branch.'
+                text: 'Location: Narhe Manaji Nagar Dojo, Pune (Head Coach: Maruti Sir, 2nd Dan Black Belt).'
               }
             ]
           }
