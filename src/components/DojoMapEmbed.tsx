@@ -26,7 +26,7 @@ export default function DojoMapEmbed() {
       pincode: '411041',
       phone: '+91 90496 88172',
       timing: 'Mon to Sat: 05:00 PM – 09:30 PM',
-      embedUrl: 'https://maps.google.com/maps?q=18.4485,73.8267+(Lions+Karate+Club+Narhe+Manaji+Nagar)&t=&z=16&ie=UTF8&iwloc=B&output=embed',
+      embedUrl: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d224.83810571494917!2d73.82428734320607!3d18.453190649275967!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bc29527eaea0de1%3A0x92eaea4e93465da7!2sLIONS%20KARATE%20CLUB%20PUNE!5e1!3m2!1sen!2sin!4v1786120515986!5m2!1sen!2sin',
       directGoogleMapsUrl: 'https://maps.app.goo.gl/3XTDzC6wYw5RB6Uk8'
     }
   ];
