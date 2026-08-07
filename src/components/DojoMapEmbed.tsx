@@ -21,24 +21,24 @@ export default function DojoMapEmbed() {
       id: 'manaji-nagar',
       name: 'Narhe - Manaji Nagar (Main Dojo)',
       tagline: 'Headquarters & Primary Belt Examination Center',
-      address: 'Manaji Nagar, Narhe, Pune, Maharashtra',
+      address: 'Manaji Nagar, Narhe, Pune, Maharashtra 411041',
       landmark: 'Near Bhumkar Chowk, Beside Silver Birch Hospital',
       pincode: '411041',
       phone: '+91 90496 88172',
       timing: 'Mon to Sat: 05:00 PM – 09:30 PM',
-      embedUrl: 'https://maps.google.com/maps?q=Lions%20Karate%20Club%20Pune%20Narhe%20Manaji%20Nagar%20Pune&t=&z=16&ie=UTF8&iwloc=&output=embed',
+      embedUrl: 'https://maps.google.com/maps?q=18.4485,73.8267+(Lions+Karate+Club+Narhe+Manaji+Nagar)&t=&z=16&ie=UTF8&iwloc=B&output=embed',
       directGoogleMapsUrl: 'https://maps.app.goo.gl/3XTDzC6wYw5RB6Uk8'
     },
     {
       id: 'vadgaon-budruk',
       name: 'Vadgaon Budruk Branch',
       tagline: 'Sinhagad Road Training Center',
-      address: 'Vadgaon Budruk, Sinhagad Road, Pune, Maharashtra',
+      address: 'Vadgaon Budruk, Sinhagad Road, Pune, Maharashtra 411041',
       landmark: 'Near Anand Nagar & Sinhagad College Circle',
       pincode: '411041',
       phone: '+91 90496 88172',
       timing: 'Mon to Sat: 05:00 PM – 09:00 PM',
-      embedUrl: 'https://maps.google.com/maps?q=Vadgaon%20Budruk%20Narhe%20Pune%20Maharashtra&t=&z=15&ie=UTF8&iwloc=&output=embed',
+      embedUrl: 'https://maps.google.com/maps?q=18.4632,73.8252+(Lions+Karate+Club+Vadgaon+Budruk)&t=&z=15&ie=UTF8&iwloc=B&output=embed',
       directGoogleMapsUrl: 'https://maps.app.goo.gl/3XTDzC6wYw5RB6Uk8'
     }
   ];
@@ -204,8 +204,8 @@ export default function DojoMapEmbed() {
               </a>
             </div>
 
-            {/* Embedded iFrame */}
-            <div className="w-full h-full flex-grow relative bg-zinc-950">
+            {/* Embedded iFrame with Fallback & Interactive Quick Link */}
+            <div className="w-full h-full flex-grow relative bg-zinc-950 group">
               <iframe
                 key={activeLocation.id}
                 title={`Google Map - ${activeLocation.name}`}
@@ -216,8 +216,35 @@ export default function DojoMapEmbed() {
                 allowFullScreen
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
-                className="w-full h-full min-h-[380px] grayscale-[20%] contrast-[110%] rounded-b-2xl"
+                className="w-full h-full min-h-[380px] grayscale-[15%] contrast-[105%] rounded-b-2xl"
               />
+
+              {/* Bottom Floating Quick Link Badge for seamless mobile navigation */}
+              <div className="absolute bottom-4 left-4 right-4 bg-zinc-950/90 backdrop-blur-md border border-zinc-800 p-3 rounded-xl flex items-center justify-between shadow-2xl">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-red-600/20 border border-red-500/30 flex items-center justify-center text-red-500 shrink-0">
+                    <MapPin className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="text-white text-xs font-bold font-heading uppercase block">
+                      {activeLocation.name}
+                    </span>
+                    <span className="text-zinc-400 text-[10px] font-sans block">
+                      {activeLocation.landmark}
+                    </span>
+                  </div>
+                </div>
+
+                <a
+                  href={activeLocation.directGoogleMapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-red-600 hover:bg-red-500 text-white font-heading font-black text-[11px] uppercase tracking-wider px-3.5 py-2 rounded-lg transition-all shadow-md flex items-center gap-1.5 shrink-0 cursor-pointer"
+                >
+                  <span>Open Maps</span>
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+              </div>
             </div>
           </div>
 
