@@ -17,6 +17,7 @@ import StudentPortal from './components/StudentPortal';
 import ExamCheckIn from './components/ExamCheckIn';
 import WhatsAppFAB from './components/WhatsAppFAB';
 import TrailerOverlay from './components/TrailerOverlay';
+import DojoMapEmbed from './components/DojoMapEmbed';
 
 import { Award, ShieldAlert, ShieldCheck, ArrowLeft, RefreshCw, Star, MapPin, Instagram, Youtube, MessageCircle } from 'lucide-react';
 
@@ -330,6 +331,9 @@ export default function App() {
         </main>
       )}
 
+      {/* Google Maps Container Section for local business discovery */}
+      <DojoMapEmbed />
+
       {/* FOOTER SECTION: Standard across lander and portals */}
       <footer className="bg-slate-950 border-t border-zinc-900/60 py-12 px-4 sm:px-6 lg:px-8 no-print">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
@@ -391,11 +395,12 @@ export default function App() {
 
           {/* Location contact parameter */}
           <div className="space-y-3">
-            <span className="font-heading font-black text-[10px] text-zinc-300 uppercase tracking-widest block">Contact Info</span>
+            <span className="font-heading font-black text-[10px] text-zinc-300 uppercase tracking-widest block">Dojo Locations</span>
             <p className="text-xs text-zinc-500 leading-relaxed">
-              LIONS KARATE CLUB PUNE<br />
-              Pune, Maharashtra, India<br />
-              Tel: <a href="tel:9049688172" className="text-zinc-300 hover:text-yellow-500">9049688172</a><br />
+              <strong className="text-zinc-300">LIONS KARATE CLUB PUNE</strong><br />
+              📍 <a href="https://maps.app.goo.gl/3XTDzC6wYw5RB6Uk8" target="_blank" rel="noreferrer" className="text-yellow-500 hover:underline">Manaji Nagar, Narhe (Main Dojo)</a><br />
+              📍 Vadgaon Budruk, Pune<br />
+              Tel: <a href="tel:9049688172" className="text-zinc-300 hover:text-yellow-500 font-mono">9049688172</a><br />
               Email: <a href="mailto:LIONSKARATECLUBPUNE09@gmail.com" className="text-zinc-300 hover:text-yellow-500 break-all">LIONSKARATECLUBPUNE09@gmail.com</a>
             </p>
           </div>
