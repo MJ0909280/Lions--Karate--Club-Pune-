@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, DragEvent, ChangeEvent } from 'react';
 import { collection, addDoc, getDocs, query, where } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType, triggerWhatsAppNotification, generateSequentialStudentId } from '../firebase';
 import { BELT_LEVELS, BATCH_TIMINGS, BatchInfo, DOJO_BRANCHES } from '../types';
+import { runAdmissionAgent } from '../services/agentWorkflow';
 import { saveStudentToLocalCache } from './StudentPortal';
 import { Upload, Camera, FileText, CheckCircle2, ShieldAlert, ArrowRight, RefreshCw, AlertCircle } from 'lucide-react';
 
@@ -291,6 +292,28 @@ export default function AdmissionForm({ preselectedBatch = "", onSuccess }: Admi
 
       // Save to local cache for instant sub-millisecond offline lookup
       saveStudentToLocalCache({ id: docRef.id, ...admissionPayload } as any);
+
+      // Run the agentic enquiry workflow in Firestore for the owner dashboard and approvals.
+      try {
+        await runAdmissionAgent({
+          admissionId: docRef.id,
+          studentId,
+          fullName: fullName.trim(),
+          parentName: parentName.trim() || 'Self / Legal Guardian',
+          phone: phone.trim(),
+          whatsApp: whatsApp.trim() || phone.trim(),
+          email: email.trim(),
+          age: Number(age),
+          batch,
+          branch: selectedBranch.name,
+          coachName: selectedBranch.coach,
+          feesStatus,
+          schoolName: schoolName.trim(),
+          createdAt: currentTimestamp,
+        });
+      } catch (agentErr) {
+        console.warn("Non-blocking agent workflow failed:", agentErr);
+      }
 
       // Trigger automatic background WhatsApp alert to the Shihan admin
       try {
