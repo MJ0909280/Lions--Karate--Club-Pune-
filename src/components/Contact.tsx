@@ -3,6 +3,7 @@ import { Phone, Mail, Clock, ChevronDown, HelpCircle, Send, CheckCircle2, Messag
 import { motion, AnimatePresence } from 'motion/react';
 import { collection, addDoc } from 'firebase/firestore';
 import { db, triggerWhatsAppNotification } from '../firebase';
+import { runParentQueryAgent } from '../services/agentWorkflow';
 
 export default function Contact() {
   const [openFaqId, setOpenFaqId] = useState<number | null>(null);
@@ -14,6 +15,7 @@ export default function Contact() {
   const [email, setEmail] = useState('');
   const [queryType, setQueryType] = useState('General Query');
   const [message, setMessage] = useState('');
+  const [agentReply, setAgentReply] = useState('');
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
@@ -28,8 +30,10 @@ export default function Contact() {
 
     setIsSubmitting(true);
     setSubmitError('');
+    setAgentReply('');
 
     try {
+      const currentTimestamp = Date.now();
       const queryPayload = {
         parentName: parentName.trim(),
         childName: childName.trim() || '',
@@ -38,11 +42,28 @@ export default function Contact() {
         queryType,
         message: message.trim(),
         status: 'new' as const,
-        createdAt: Date.now(),
-        updatedAt: Date.now()
+        createdAt: currentTimestamp,
+        updatedAt: currentTimestamp
       };
 
-      await addDoc(collection(db, 'parent_queries'), queryPayload);
+      const queryDoc = await addDoc(collection(db, 'parent_queries'), queryPayload);
+
+      try {
+        const agentResult = await runParentQueryAgent({
+          queryId: queryDoc.id,
+          parentName: parentName.trim(),
+          childName: childName.trim() || '',
+          phone: phone.trim(),
+          email: email.trim() || '',
+          queryType,
+          message: message.trim(),
+          createdAt: currentTimestamp,
+        });
+        setAgentReply(agentResult.reply);
+      } catch (agentErr) {
+        console.warn('Non-blocking agent reply failed:', agentErr);
+        setAgentReply('Your enquiry was saved. Our admin team will review it and follow up shortly.');
+      }
 
       // Trigger automatic real-time WhatsApp alert
       await triggerWhatsAppNotification('inquiry', {
@@ -62,7 +83,7 @@ export default function Contact() {
 
       setTimeout(() => {
         setSubmitSuccess(false);
-      }, 5000);
+      }, 15000);
     } catch (err: any) {
       console.error('Error submitting query:', err);
       setSubmitError('Failed to send enquiry. Please try again or call us directly.');
@@ -234,13 +255,22 @@ export default function Contact() {
                     <CheckCircle2 className="w-12 h-12" />
                   </div>
                   <h3 className="font-title text-lg sm:text-2xl font-black text-white uppercase tracking-wider mb-3">
-                    Query Submitted Successfully!
+                    Agent Reply Ready!
                   </h3>
                   <p className="text-zinc-400 text-xs sm:text-sm max-w-md leading-relaxed font-sans">
-                    Thank you! Your online query has been registered in our portal. Dojo Administrators and Coaches have been alerted via WhatsApp and will connect with you shortly.
+                    Your query has been registered in our portal and processed by the Lions AI enquiry agent.
                   </p>
+                  {agentReply && (
+                    <div className="mt-5 max-w-lg bg-zinc-950/80 border border-yellow-500/20 rounded-xl p-4 text-left">
+                      <span className="block text-[10px] text-yellow-500 font-mono font-bold uppercase tracking-widest mb-2">Lions AI Agent Reply</span>
+                      <p className="text-zinc-200 text-xs sm:text-sm leading-relaxed font-sans">{agentReply}</p>
+                    </div>
+                  )}
                   <button
-                    onClick={() => setSubmitSuccess(false)}
+                    onClick={() => {
+                      setSubmitSuccess(false);
+                      setAgentReply('');
+                    }}
                     className="mt-8 font-heading font-extrabold text-xs uppercase tracking-widest bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-white px-5 py-3 rounded-lg cursor-pointer transition-colors"
                   >
                     Send Another Query
@@ -257,11 +287,11 @@ export default function Contact() {
                   <div className="flex items-center space-x-2 text-yellow-500 mb-1">
                     <MessageSquare className="w-5 h-5" />
                     <h3 className="font-title text-base sm:text-lg font-extrabold text-white uppercase tracking-wider">
-                      Parents Online Query Desk
+                      Parents AI Enquiry Desk
                     </h3>
                   </div>
                   <p className="text-zinc-500 text-xs leading-relaxed font-sans mb-4">
-                    Have questions about fees, timings, or belts? Type them in below. Submissions are processed instantly and are reviewed directly by the chief administrators.
+                    Ask about fees, timings, trial classes, admission or belt exams. The Lions AI agent replies instantly and saves the query for admin follow-up.
                   </p>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -353,7 +383,7 @@ export default function Contact() {
                     <textarea 
                       value={message}
                       onChange={(e) => setMessage(e.target.value)}
-                      placeholder="Write your query or message in detail so our head instructor can prepare a helpful answer before calling you back..."
+                      placeholder="Ask about fees, trial class, batch timing, admission steps, branch location, or belt exams..."
                       rows={4}
                       className="w-full text-xs font-sans text-zinc-200 bg-zinc-950/80 border border-zinc-900 rounded-lg p-3 focus:border-yellow-500/50 focus:outline-none focus:ring-0 transition-colors resize-none"
                       required
@@ -374,12 +404,12 @@ export default function Contact() {
                     {isSubmitting ? (
                       <>
                         <div className="w-3.5 h-3.5 border-2 border-slate-950 border-t-transparent rounded-full animate-spin"></div>
-                        <span>Submitting Query...</span>
+                        <span>Agent Thinking...</span>
                       </>
                     ) : (
                       <>
                         <Send className="w-3.5 h-3.5" />
-                        <span>Submit Enquiry Online</span>
+                        <span>Ask Lions AI Agent</span>
                       </>
                     )}
                   </button>
