@@ -145,56 +145,52 @@ export default function Navbar({ currentView, studentPortalTab, onNavigate }: Na
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute right-0 mt-2 w-56 rounded-xl bg-slate-950 border border-zinc-900 shadow-2xl p-2 z-50 flex flex-col space-y-1"
+                    className="absolute right-0 mt-2 w-64 rounded-xl bg-slate-950 border border-zinc-800 shadow-2xl p-2 z-50 flex flex-col space-y-1"
                   >
                     <button
                       onClick={() => { onNavigate('presence-checkin'); setIsPortalsOpen(false); }}
-                      className="flex items-center space-x-2.5 font-heading text-xs text-zinc-350 hover:text-[#FF2A35] hover:bg-[#FF2A35]/10 p-2.5 rounded-lg transition-colors text-left w-full cursor-pointer"
+                      className="flex items-center space-x-2.5 font-heading text-xs text-zinc-300 hover:text-[#FF2A35] hover:bg-[#FF2A35]/10 p-2.5 rounded-lg transition-colors text-left w-full cursor-pointer"
                     >
                       <QrCode className="w-4 h-4 text-[#FF2A35] shrink-0 animate-pulse" />
-                      <span className="font-bold text-white">QR Presence Check-In</span>
+                      <div>
+                        <span className="font-bold text-white block">📲 Daily Class Attendance (QR)</span>
+                        <span className="text-[10px] text-zinc-500 font-mono">Parents Quick Scan</span>
+                      </div>
                     </button>
-                    <button
-                      onClick={() => { onNavigate('attendance'); setIsPortalsOpen(false); }}
-                      className="flex items-center space-x-2.5 font-heading text-xs text-zinc-350 hover:text-yellow-400 hover:bg-zinc-900/30 p-2.5 rounded-lg transition-colors text-left w-full cursor-pointer"
-                    >
-                      <Calendar className="w-4 h-4 text-yellow-500 shrink-0" />
-                      <span>Attendance Tracker</span>
-                    </button>
+
                     <button
                       onClick={() => { onNavigate('checkin'); setIsPortalsOpen(false); }}
-                      className="flex items-center space-x-2.5 font-heading text-xs text-zinc-350 hover:text-[#FF3B3F] hover:bg-[#FF3B3F]/5 p-2.5 rounded-lg transition-colors text-left w-full cursor-pointer"
+                      className="flex items-center space-x-2.5 font-heading text-xs text-zinc-300 hover:text-emerald-400 hover:bg-emerald-500/10 p-2.5 rounded-lg transition-colors text-left w-full cursor-pointer"
                     >
-                      <UserCheck className="w-4 h-4 text-[#FF3B3F] shrink-0" />
-                      <span className="font-semibold text-white/90">Exam Day Check-In</span>
+                      <UserCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+                      <div>
+                        <span className="font-bold text-white block">🥋 Belt Exam Attendance</span>
+                        <span className="text-[10px] text-zinc-500 font-mono">Exam Day Roll Call</span>
+                      </div>
                     </button>
+
                     <button
                       onClick={() => { onNavigate('examiner-scoring'); setIsPortalsOpen(false); }}
-                      className="flex items-center space-x-2.5 font-heading text-xs text-zinc-350 hover:text-yellow-400 hover:bg-zinc-900/30 p-2.5 rounded-lg transition-colors text-left w-full cursor-pointer"
+                      className="flex items-center space-x-2.5 font-heading text-xs text-zinc-300 hover:text-yellow-400 hover:bg-yellow-500/10 p-2.5 rounded-lg transition-colors text-left w-full cursor-pointer"
                     >
                       <Award className="w-4 h-4 text-yellow-500 shrink-0" />
-                      <span className="font-semibold text-yellow-400">Examiner Scoring</span>
+                      <div>
+                        <span className="font-bold text-white block">🏆 Examiner Scoring Portal</span>
+                        <span className="text-[10px] text-zinc-500 font-mono">Black Belt Judges Only</span>
+                      </div>
                     </button>
+
+                    <div className="border-t border-zinc-800 my-1 pt-1" />
+
                     <button
                       onClick={() => { onNavigate('admin'); setIsPortalsOpen(false); }}
-                      className="flex items-center space-x-2.5 font-heading text-xs text-zinc-350 hover:text-yellow-400 hover:bg-zinc-900/30 p-2.5 rounded-lg transition-colors text-left w-full cursor-pointer"
+                      className="flex items-center space-x-2.5 font-heading text-xs text-zinc-300 hover:text-[#FF2A35] hover:bg-zinc-900 p-2.5 rounded-lg transition-colors text-left w-full cursor-pointer"
                     >
-                      <ShieldCheck className="w-4 h-4 text-zinc-400 shrink-0" />
-                      <span>Admin Portal</span>
-                    </button>
-                    <button
-                      onClick={() => { onNavigate('student-portal'); setIsPortalsOpen(false); }}
-                      className="flex items-center space-x-2.5 font-heading text-xs text-zinc-350 hover:text-yellow-400 hover:bg-zinc-900/30 p-2.5 rounded-lg transition-colors text-left w-full cursor-pointer"
-                    >
-                      <Award className="w-4 h-4 text-yellow-500 shrink-0" />
-                      <span>Check Results</span>
-                    </button>
-                    <button
-                      onClick={() => { onNavigate('belt-exam'); setIsPortalsOpen(false); }}
-                      className="flex items-center space-x-2.5 font-heading text-xs text-zinc-350 hover:text-red-400 hover:bg-zinc-900/30 p-2.5 rounded-lg transition-colors text-left w-full cursor-pointer"
-                    >
-                      <Calendar className="w-4 h-4 text-red-500 shrink-0" />
-                      <span>Apply For Exam</span>
+                      <ShieldCheck className="w-4 h-4 text-[#FF2A35] shrink-0" />
+                      <div>
+                        <span className="font-bold text-white block">🔒 Admin Control Panel</span>
+                        <span className="text-[10px] text-zinc-500 font-mono">Master Records & Lists</span>
+                      </div>
                     </button>
                   </motion.div>
                 )}
