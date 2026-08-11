@@ -335,6 +335,38 @@ export default function AdminPanel() {
   const [editingCandidateId, setEditingCandidateId] = useState<string | null>(null);
   const [editingCandidateNewId, setEditingCandidateNewId] = useState('');
 
+  // Exam Mode Status (Active on exam days only)
+  const [isExamActive, setIsExamActive] = useState<boolean>(() => localStorage.getItem('is_exam_day_active') === 'true');
+
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, 'settings', 'exam_settings'), (snap) => {
+      if (snap.exists()) {
+        const active = snap.data().isExamActive ?? false;
+        setIsExamActive(active);
+        localStorage.setItem('is_exam_day_active', String(active));
+      }
+    }, (err) => {
+      console.warn("Could not read exam settings in admin:", err);
+    });
+    return () => unsub();
+  }, []);
+
+  const handleAdminToggleExamMode = async (newStatus: boolean) => {
+    try {
+      await setDoc(doc(db, 'settings', 'exam_settings'), {
+        isExamActive: newStatus,
+        updatedAt: Date.now()
+      }, { merge: true });
+      setIsExamActive(newStatus);
+      localStorage.setItem('is_exam_day_active', String(newStatus));
+      alert(`Exam Day Check-In Mode is now ${newStatus ? 'ACTIVE 🟢 (Parents can mark attendance)' : 'INACTIVE 🔴 (Check-in portal closed)'}`);
+    } catch (err: any) {
+      console.error("Failed to update exam mode:", err);
+      setIsExamActive(newStatus);
+      localStorage.setItem('is_exam_day_active', String(newStatus));
+    }
+  };
+
   const handleTriggerIntegrityScan = () => {
     setIsScanningDuplicates(true);
     setTimeout(() => {
@@ -5194,6 +5226,19 @@ export default function AdminPanel() {
                         <option value="failed">Requires Review</option>
                       </select>
                     </div>
+
+                    <button
+                      onClick={() => handleAdminToggleExamMode(!isExamActive)}
+                      className={`px-3.5 py-2 rounded-lg text-xs font-heading font-black uppercase tracking-wider transition-all flex items-center justify-center space-x-1.5 cursor-pointer shrink-0 whitespace-nowrap shadow-md ${
+                        isExamActive
+                          ? 'bg-emerald-500 text-slate-950 hover:bg-emerald-400 font-extrabold shadow-emerald-500/20'
+                          : 'bg-[#FF2A35]/10 text-[#FF2A35] border border-[#FF2A35]/30 hover:bg-[#FF2A35]/20'
+                      }`}
+                      title="Toggle whether parents can check in on Belt Exam day"
+                    >
+                      <Calendar className="w-4 h-4" />
+                      <span>{isExamActive ? '🟢 Exam Day Active (Click to Close)' : '⚡ Activate Exam Day Mode'}</span>
+                    </button>
 
                     <button
                       onClick={handleDownloadExamsCSV}

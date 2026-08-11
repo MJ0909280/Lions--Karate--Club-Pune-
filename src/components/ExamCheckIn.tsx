@@ -36,6 +36,36 @@ export default function ExamCheckIn({ onBackToHome, initialTab = 'checkin' }: Ex
   const [errorMsg, setErrorMsg] = useState('');
   const [countdown, setCountdown] = useState(6);
 
+  // Exam Mode Status (Active on exam days only)
+  const [isExamActive, setIsExamActive] = useState<boolean>(() => localStorage.getItem('is_exam_day_active') === 'true');
+
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, 'settings', 'exam_settings'), (snap) => {
+      if (snap.exists()) {
+        const active = snap.data().isExamActive ?? false;
+        setIsExamActive(active);
+        localStorage.setItem('is_exam_day_active', String(active));
+      }
+    }, (err) => {
+      console.warn("Could not read exam settings:", err);
+    });
+    return () => unsub();
+  }, []);
+
+  const handleToggleExamMode = async (newStatus: boolean) => {
+    try {
+      await setDoc(doc(db, 'settings', 'exam_settings'), {
+        isExamActive: newStatus,
+        updatedAt: Date.now()
+      }, { merge: true });
+      setIsExamActive(newStatus);
+      localStorage.setItem('is_exam_day_active', String(newStatus));
+    } catch (err) {
+      console.error("Failed to toggle exam mode:", err);
+      setIsExamActive(newStatus);
+      localStorage.setItem('is_exam_day_active', String(newStatus));
+    }
+  };
   // Examiner Login State
   const [examinerName, setExaminerName] = useState(() => localStorage.getItem('examiner_name') || '');
   const [examinerPin, setExaminerPin] = useState('');
@@ -201,21 +231,14 @@ export default function ExamCheckIn({ onBackToHome, initialTab = 'checkin' }: Ex
   // Filter candidates for check-in
   const filteredCandidates = candidates.filter(c => {
     const queryStr = searchQuery.toLowerCase().trim();
-    
-    // If no search query and mode is 'all', require typing or show list if user explicitly chooses absent/present
-    const matchesSearch = !queryStr
-      ? checkInFilterMode !== 'all'
-      : (c.studentId || '').toLowerCase().includes(queryStr) ||
-        (c.studentName || '').toLowerCase().includes(queryStr) ||
-        (c.parentName || '').toLowerCase().includes(queryStr) ||
-        (c.parentPhone || '').toLowerCase().includes(queryStr);
+    if (!queryStr) return false; // PRIVACY: Never expose full student roster!
 
-    const matchesStatus = 
-      checkInFilterMode === 'all' ? true :
-      checkInFilterMode === 'present' ? c.checkedIn :
-      !c.checkedIn;
-
-    return matchesSearch && matchesStatus;
+    return (
+      (c.studentId || '').toLowerCase().includes(queryStr) ||
+      (c.studentName || '').toLowerCase().includes(queryStr) ||
+      (c.parentName || '').toLowerCase().includes(queryStr) ||
+      (c.parentPhone || '').toLowerCase().includes(queryStr)
+    );
   });
 
   // Filter candidates for grading
@@ -443,7 +466,45 @@ export default function ExamCheckIn({ onBackToHome, initialTab = 'checkin' }: Ex
       {activeTab === 'checkin' ? (
         /* TAB 1: ATTENDANCE CHECK-IN */
         <AnimatePresence mode="wait">
-          {!selectedStudent ? (
+          {!isExamActive ? (
+            /* EXAM DAY INACTIVE CARD */
+            <motion.div
+              key="inactive-step"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+              className="bg-slate-900 border border-zinc-800 p-8 rounded-2xl text-center space-y-5 shadow-2xl"
+            >
+              <div className="w-16 h-16 bg-red-500/10 border border-red-500/30 text-[#FF2A35] rounded-full flex items-center justify-center mx-auto shadow-inner">
+                <Calendar className="w-8 h-8" />
+              </div>
+              
+              <div className="space-y-1.5">
+                <h3 className="font-heading text-xl font-black uppercase text-white tracking-wider">
+                  Belt Examination Check-In Inactive
+                </h3>
+                <p className="text-zinc-400 text-xs max-w-md mx-auto leading-relaxed">
+                  Official Belt Examination check-in is currently closed. On exam day, Sensei activates the check-in portal so parents can mark attendance using Student Roll ID.
+                </p>
+              </div>
+
+              <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+                <button
+                  onClick={onBackToHome}
+                  className="w-full sm:w-auto px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-white font-heading font-black text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer"
+                >
+                  Return to Homepage
+                </button>
+                <button
+                  onClick={() => handleToggleExamMode(true)}
+                  className="w-full sm:w-auto px-6 py-3 bg-[#FF2A35] hover:bg-red-600 text-white font-heading font-black text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2"
+                >
+                  <Lock className="w-4 h-4" />
+                  <span>Sensei: Activate Exam Day</span>
+                </button>
+              </div>
+            </motion.div>
+          ) : !selectedStudent ? (
             <motion.div
               key="search-step"
               initial={{ opacity: 0, y: 15 }}
@@ -452,54 +513,24 @@ export default function ExamCheckIn({ onBackToHome, initialTab = 'checkin' }: Ex
               className="space-y-5 text-left"
             >
               <div className="bg-slate-900 border border-zinc-900 p-5 rounded-2xl space-y-4 shadow-xl">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <label className="block text-[11px] font-heading font-black uppercase tracking-wider text-zinc-400">
-                    Search Student For Attendance
+                <div className="flex items-center justify-between">
+                  <label className="block text-[11px] font-heading font-black uppercase tracking-wider text-white flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                    <span>Exam Day Student Search</span>
                   </label>
-
-                  {/* Attendance Mode Filter Pills */}
-                  <div className="flex items-center bg-slate-950 p-1 rounded-xl border border-zinc-800 text-[10px] font-heading font-black uppercase">
-                    <button
-                      type="button"
-                      onClick={() => setCheckInFilterMode('all')}
-                      className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
-                        checkInFilterMode === 'all'
-                          ? 'bg-yellow-500 text-slate-950 font-black'
-                          : 'text-zinc-400 hover:text-white'
-                      }`}
-                    >
-                      All
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setCheckInFilterMode('present')}
-                      className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
-                        checkInFilterMode === 'present'
-                          ? 'bg-emerald-500 text-slate-950 font-black'
-                          : 'text-emerald-400 hover:text-emerald-300'
-                      }`}
-                    >
-                      ✓ Present ({presentCount})
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setCheckInFilterMode('absent')}
-                      className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
-                        checkInFilterMode === 'absent'
-                          ? 'bg-red-500 text-white font-black'
-                          : 'text-red-400 hover:text-red-300'
-                      }`}
-                    >
-                      ✗ Absent ({absentCount})
-                    </button>
-                  </div>
+                  <button
+                    onClick={() => handleToggleExamMode(false)}
+                    className="text-[10px] font-mono font-bold text-zinc-500 hover:text-red-400 bg-zinc-950 px-2.5 py-1 rounded-lg border border-zinc-800 transition-colors"
+                  >
+                    🔒 Close Exam Day Mode
+                  </button>
                 </div>
                 
                 <div className="relative">
                   <Search className="absolute left-3.5 top-3.5 w-4.5 h-4.5 text-zinc-500" />
                   <input
                     type="text"
-                    placeholder="Type Student Name or LKCP Roll ID..."
+                    placeholder="Enter LKCP Roll ID (e.g. LKCP-2026-134) or Name..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full bg-slate-950 border border-zinc-800 text-sm font-medium text-white py-3.5 pl-11 pr-4 rounded-xl focus:outline-none focus:border-red-500 placeholder:text-zinc-600 transition-colors"
@@ -509,9 +540,9 @@ export default function ExamCheckIn({ onBackToHome, initialTab = 'checkin' }: Ex
                 {loading ? (
                   <div className="text-center py-6 text-zinc-500 text-xs">
                     <div className="w-5 h-5 border-2 border-red-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-                    <span>Loading candidates roster...</span>
+                    <span>Loading exam candidates...</span>
                   </div>
-                ) : (searchQuery.trim().length > 0 || checkInFilterMode !== 'all') ? (
+                ) : searchQuery.trim().length > 0 ? (
                   <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
                     {filteredCandidates.length > 0 ? (
                       filteredCandidates.map((c) => (
@@ -525,23 +556,19 @@ export default function ExamCheckIn({ onBackToHome, initialTab = 'checkin' }: Ex
                               <span className="font-heading font-black text-xs text-white group-hover:text-red-400 transition-colors uppercase">
                                 {c.studentName}
                               </span>
-                              {!c.checkedIn && (
-                                <span className="text-[9px] font-mono font-bold bg-red-500/10 text-red-400 border border-red-500/20 px-1.5 py-0.5 rounded">
-                                  Absent
-                                </span>
-                              )}
                             </div>
                             <span className="font-mono text-[10px] text-zinc-500 block">
-                              ID: {c.studentId} • Parent: {c.parentName || 'N/A'}
+                              ID: {c.studentId} • Target Belt: {c.targetBelt?.split(' (')[0]}
                             </span>
                           </div>
                           <div className="text-right shrink-0">
-                            <span className="text-[10px] font-heading font-black bg-zinc-900 text-yellow-500 px-2.5 py-1 rounded border border-zinc-800 uppercase block">
-                              {c.targetBelt?.split(' (')[0]}
-                            </span>
-                            {c.checkedIn && (
-                              <span className="text-[9px] font-mono font-bold text-emerald-400 mt-1 block">
+                            {c.checkedIn ? (
+                              <span className="text-[10px] font-mono font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-md block">
                                 ✓ Present ({c.checkInTime || 'Gate'})
+                              </span>
+                            ) : (
+                              <span className="text-[10px] font-heading font-black bg-red-500/10 text-red-400 border border-red-500/20 px-2.5 py-1 rounded-md uppercase block">
+                                Mark Attendance
                               </span>
                             )}
                           </div>
@@ -549,14 +576,15 @@ export default function ExamCheckIn({ onBackToHome, initialTab = 'checkin' }: Ex
                       ))
                     ) : (
                       <div className="text-center py-6 border border-dashed border-zinc-850 rounded-xl text-xs text-zinc-500">
-                        {checkInFilterMode === 'absent' ? '🎉 All students are present! No absent candidates.' : 'No matching student found. Please verify spelling or ID.'}
+                        No candidate found for "{searchQuery}". Please check Student ID or spelling.
                       </div>
                     )}
                   </div>
                 ) : (
                   <div className="text-center py-8 border border-dashed border-zinc-850 rounded-xl text-zinc-500 text-xs space-y-2">
-                    <UserCheck className="w-6 h-6 text-zinc-650 mx-auto" />
-                    <p>Type student name above or click <strong className="text-red-400">"✗ Absent ({absentCount})"</strong> to view absent list.</p>
+                    <ShieldCheck className="w-6 h-6 text-emerald-400 mx-auto" />
+                    <p className="font-bold text-zinc-300">Type your Student Roll ID or Name above</p>
+                    <p className="text-[11px] text-zinc-500">Student rosters are kept strictly private and hidden until searched.</p>
                   </div>
                 )}
               </div>
@@ -629,6 +657,22 @@ export default function ExamCheckIn({ onBackToHome, initialTab = 'checkin' }: Ex
                       </div>
                     );
                   })()}
+                </div>
+
+                {/* DOJO KUN WISDOM MESSAGE */}
+                <div className="bg-[#161619] border border-[#1E1E22] p-5 rounded-xl space-y-2 text-center mt-2">
+                  <div className="text-xl sm:text-2xl font-black text-[#FF2A35] tracking-widest font-serif">
+                    人格完成に努むること
+                  </div>
+                  <div className="text-xs font-mono text-amber-400/90 font-semibold italic">
+                    Jinkaku kansei ni tsutomuru koto
+                  </div>
+                  <div className="font-heading text-sm font-black uppercase text-white tracking-wider flex items-center justify-center gap-1.5">
+                    <span>Seek Perfection of Character. 🥋</span>
+                  </div>
+                  <div className="pt-1.5 border-t border-[#1E1E22] text-[10px] font-mono text-zinc-400">
+                    — Gichin Funakoshi (Founder of Shotokan Karate)
+                  </div>
                 </div>
               </div>
 
