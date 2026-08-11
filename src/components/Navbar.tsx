@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Menu, X, ShieldAlert, Award, Calendar, Users, Phone, ShieldCheck, ChevronDown, UserCheck } from 'lucide-react';
+import { Menu, X, ShieldAlert, Award, Calendar, Users, Phone, ShieldCheck, ChevronDown, UserCheck, QrCode } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { checkFirestoreConnection } from '../firebase';
 import MartialButton from './MartialButton';
@@ -148,10 +148,17 @@ export default function Navbar({ currentView, studentPortalTab, onNavigate }: Na
                     className="absolute right-0 mt-2 w-56 rounded-xl bg-slate-950 border border-zinc-900 shadow-2xl p-2 z-50 flex flex-col space-y-1"
                   >
                     <button
+                      onClick={() => { onNavigate('presence-checkin'); setIsPortalsOpen(false); }}
+                      className="flex items-center space-x-2.5 font-heading text-xs text-zinc-350 hover:text-[#FF2A35] hover:bg-[#FF2A35]/10 p-2.5 rounded-lg transition-colors text-left w-full cursor-pointer"
+                    >
+                      <QrCode className="w-4 h-4 text-[#FF2A35] shrink-0 animate-pulse" />
+                      <span className="font-bold text-white">QR Presence Check-In</span>
+                    </button>
+                    <button
                       onClick={() => { onNavigate('attendance'); setIsPortalsOpen(false); }}
                       className="flex items-center space-x-2.5 font-heading text-xs text-zinc-350 hover:text-yellow-400 hover:bg-zinc-900/30 p-2.5 rounded-lg transition-colors text-left w-full cursor-pointer"
                     >
-                      <Calendar className="w-4 h-4 text-yellow-500 shrink-0 animate-pulse" />
+                      <Calendar className="w-4 h-4 text-yellow-500 shrink-0" />
                       <span>Attendance Tracker</span>
                     </button>
                     <button

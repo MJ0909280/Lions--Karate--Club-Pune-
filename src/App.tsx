@@ -18,10 +18,11 @@ import ExamCheckIn from './components/ExamCheckIn';
 import WhatsAppFAB from './components/WhatsAppFAB';
 import TrailerOverlay from './components/TrailerOverlay';
 import DojoMapEmbed from './components/DojoMapEmbed';
+import PresenceCheckIn from './components/PresenceCheckIn';
 
 import { Award, ShieldAlert, ShieldCheck, ArrowLeft, RefreshCw, Star, MapPin, Instagram, Youtube, MessageCircle } from 'lucide-react';
 
-type ViewType = 'home' | 'admission' | 'success' | 'admin' | 'student-portal' | 'checkin' | 'examiner-scoring';
+type ViewType = 'home' | 'admission' | 'success' | 'admin' | 'student-portal' | 'checkin' | 'examiner-scoring' | 'presence-checkin';
 
 export default function App() {
   const [view, setView] = useState<ViewType>('home');
@@ -67,6 +68,8 @@ export default function App() {
       } else if (hash.startsWith('#attendance')) {
         setView('student-portal');
         setStudentPortalTab('attendance');
+      } else if (hash.startsWith('#presence') || hash.startsWith('#qr-checkin')) {
+        setView('presence-checkin');
       } else if (hash.startsWith('#checkin')) {
         setView('checkin');
       } else if (hash.startsWith('#examiner-scoring') || hash.startsWith('#scoring')) {
@@ -149,6 +152,10 @@ export default function App() {
       setStudentPortalTab('exam');
       window.location.hash = 'belt-exam';
       window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else if (nextView === 'presence-checkin') {
+      window.location.hash = 'presence-checkin';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      setView('presence-checkin');
     } else if (nextView === 'checkin') {
       window.location.hash = 'checkin';
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -328,6 +335,13 @@ export default function App() {
       {view === 'examiner-scoring' && (
         <main className="flex-grow pt-32 pb-20">
           <ExamCheckIn onBackToHome={() => navigateTo('home')} initialTab="grading" />
+        </main>
+      )}
+
+      {/* RENDER VIEW 8: DAILY PRESENCE CHECK-IN DASHBOARD WITH DYNAMIC QR */}
+      {view === 'presence-checkin' && (
+        <main className="flex-grow pt-24 pb-20">
+          <PresenceCheckIn onBackToHome={() => navigateTo('home')} />
         </main>
       )}
 
