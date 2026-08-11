@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { QrCode, CheckCircle2, UserCheck, Printer, Smartphone, ShieldCheck, Clock, RefreshCw, Search, Sparkles, Building2, ExternalLink } from 'lucide-react';
+import { QrCode, CheckCircle2, UserCheck, Printer, Smartphone, ShieldCheck, Clock, RefreshCw, Search, Sparkles, Building2, ExternalLink, Download, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { collection, query, where, getDocs, addDoc, serverTimestamp, orderBy, limit } from 'firebase/firestore';
+import { collection, query, where, getDocs, addDoc, serverTimestamp, orderBy, limit, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 
 interface RecentAttendanceRecord {
@@ -19,77 +19,164 @@ export default function PresenceCheckIn({ onBackToHome }: { onBackToHome?: () =>
   const [studentNameInput, setStudentNameInput] = useState<string>('');
   const [checkingIn, setCheckingIn] = useState<boolean>(false);
   const [checkInSuccess, setCheckInSuccess] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showPrintModal, setShowPrintModal] = useState<boolean>(false);
   
-  // Realtime or state list of recent checkins
-  const [recentCheckIns, setRecentCheckIns] = useState<RecentAttendanceRecord[]>([
-    {
-      id: 'demo-1',
-      studentName: 'Aarav Sharma',
-      studentId: 'LKC-2026-089',
-      batch: 'Evening (5:00 PM - 6:30 PM)',
-      timestamp: new Date(Date.now() - 3 * 60000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      status: 'Present'
-    },
-    {
-      id: 'demo-2',
-      studentName: 'Riya Patil',
-      studentId: 'LKC-2026-112',
-      batch: 'Evening (5:00 PM - 6:30 PM)',
-      timestamp: new Date(Date.now() - 8 * 60000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      status: 'Present'
-    },
-    {
-      id: 'demo-3',
-      studentName: 'Kabir Deshmukh',
-      studentId: 'LKC-2026-045',
-      batch: 'Evening (6:30 PM - 8:00 PM)',
-      timestamp: new Date(Date.now() - 22 * 60000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      status: 'Present'
-    }
-  ]);
+  // Realtime list of recent checkins from Firestore
+  const [recentCheckIns, setRecentCheckIns] = useState<RecentAttendanceRecord[]>([]);
+
+  // Realtime subscription to today's attendance logs in Firestore
+  useEffect(() => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    const logsQuery = query(
+      collection(db, 'attendance_logs'),
+      orderBy('timestamp', 'desc'),
+      limit(30)
+    );
+
+    const unsubscribe = onSnapshot(logsQuery, (snap) => {
+      const logs: RecentAttendanceRecord[] = snap.docs.map((docSnap) => {
+        const data = docSnap.data();
+        let formattedTime = 'Just now';
+        if (data.timestamp?.toDate) {
+          formattedTime = data.timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        } else if (data.timestamp) {
+          formattedTime = new Date(data.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+        return {
+          id: docSnap.id,
+          studentName: data.studentName || 'Karate Student',
+          studentId: data.studentId || 'N/A',
+          batch: data.batch || 'Evening Batch',
+          timestamp: formattedTime,
+          status: data.status || 'Present'
+        };
+      });
+      setRecentCheckIns(logs);
+    }, (err) => {
+      console.warn('Could not listen to attendance_logs:', err);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   // Construct attendance URL for QR Code
-  const attendanceUrl = `${window.location.origin}/#attendance`;
-  const qrCodeImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(attendanceUrl)}&color=ff2a35&bgcolor=0e0e10`;
+  const attendanceUrl = `${window.location.origin}/#qr-checkin`;
+  const qrCodeImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(attendanceUrl)}&color=ff2a35&bgcolor=0e0e10`;
+
+  const handleDownloadQR = async () => {
+    try {
+      const response = await fetch(qrCodeImageUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'Lions_Karate_Attendance_QR.png';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      window.open(qrCodeImageUrl, '_blank');
+    }
+  };
 
   const handleManualCheckIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!studentNameInput.trim()) return;
+    const nameSearch = studentNameInput.trim();
+    const idSearch = studentIdInput.trim().toUpperCase();
+
+    if (!nameSearch && !idSearch) {
+      setErrorMessage('Please enter Student Name or Roll ID to check in.');
+      return;
+    }
 
     setCheckingIn(true);
     setCheckInSuccess(null);
+    setErrorMessage(null);
 
     try {
-      const newRecord: RecentAttendanceRecord = {
-        id: 'rec-' + Date.now(),
-        studentName: studentNameInput.trim(),
-        studentId: studentIdInput.trim() || `LKC-${Math.floor(100 + Math.random() * 900)}`,
-        batch: selectedBatch,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        status: 'Present'
-      };
+      let matchedName = nameSearch;
+      let matchedId = idSearch;
+      let foundInDb = false;
 
-      // Try saving to Firestore if available
+      // 1. Search in Firestore 'students', 'admissions', and 'candidates'
       try {
-        await addDoc(collection(db, 'attendance_logs'), {
-          studentName: newRecord.studentName,
-          studentId: newRecord.studentId,
-          batch: newRecord.batch,
-          status: 'Present',
-          timestamp: serverTimestamp(),
-          date: new Date().toISOString().split('T')[0]
-        });
+        if (idSearch) {
+          const q1 = query(collection(db, 'students'), where('studentId', '==', idSearch));
+          const snap1 = await getDocs(q1);
+          if (!snap1.empty) {
+            const data = snap1.docs[0].data();
+            matchedName = data.fullName || data.name || data.studentName || nameSearch;
+            matchedId = idSearch;
+            foundInDb = true;
+          } else {
+            const q2 = query(collection(db, 'admissions'), where('studentId', '==', idSearch));
+            const snap2 = await getDocs(q2);
+            if (!snap2.empty) {
+              const data = snap2.docs[0].data();
+              matchedName = data.fullName || data.name || nameSearch;
+              matchedId = idSearch;
+              foundInDb = true;
+            } else {
+              const q3 = query(collection(db, 'candidates'), where('studentId', '==', idSearch));
+              const snap3 = await getDocs(q3);
+              if (!snap3.empty) {
+                const data = snap3.docs[0].data();
+                matchedName = data.studentName || data.fullName || nameSearch;
+                matchedId = idSearch;
+                foundInDb = true;
+              }
+            }
+          }
+        }
+
+        // If not found by ID or if only name provided, search by Name
+        if (!foundInDb && nameSearch) {
+          const qName = query(collection(db, 'students'));
+          const snapName = await getDocs(qName);
+          const foundDoc = snapName.docs.find(d => {
+            const dData = d.data();
+            const fullName = (dData.fullName || dData.name || dData.studentName || '').toLowerCase();
+            return fullName.includes(nameSearch.toLowerCase());
+          });
+
+          if (foundDoc) {
+            const data = foundDoc.data();
+            matchedName = data.fullName || data.name || data.studentName || nameSearch;
+            matchedId = data.studentId || idSearch || 'LKC-STUDENT';
+            foundInDb = true;
+          }
+        }
       } catch (dbErr) {
-        console.log('Saved locally (Offline/Demo mode)', dbErr);
+        console.warn('Database query error:', dbErr);
       }
 
-      setRecentCheckIns((prev) => [newRecord, ...prev]);
-      setCheckInSuccess(`Attendance marked PRESENT for ${newRecord.studentName}!`);
+      if (!foundInDb && !nameSearch) {
+        setErrorMessage(`Student ID "${idSearch}" not found in Lions Karate database. Please check ID or enter full name.`);
+        setCheckingIn(false);
+        return;
+      }
+
+      const finalName = matchedName || nameSearch;
+      const finalId = matchedId || idSearch || 'LKC-GEN';
+
+      // Write attendance record to Firestore
+      await addDoc(collection(db, 'attendance_logs'), {
+        studentName: finalName,
+        studentId: finalId,
+        batch: selectedBatch,
+        status: 'Present',
+        timestamp: serverTimestamp(),
+        date: new Date().toISOString().split('T')[0]
+      });
+
+      setCheckInSuccess(`✅ Attendance marked PRESENT for ${finalName} (${finalId})!`);
       setStudentNameInput('');
       setStudentIdInput('');
-    } catch (err) {
-      console.error(err);
+    } catch (err: any) {
+      console.error('Check-in error:', err);
+      setErrorMessage('Failed to record attendance. Please try again.');
     } finally {
       setCheckingIn(false);
     }
@@ -114,13 +201,21 @@ export default function PresenceCheckIn({ onBackToHome }: { onBackToHome?: () =>
             </p>
           </div>
 
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex flex-wrap items-center gap-3 shrink-0">
+            <button
+              onClick={handleDownloadQR}
+              className="inline-flex items-center gap-2 bg-[#FF2A35] hover:bg-red-600 text-white font-heading font-bold text-xs uppercase tracking-wider px-4 py-2.5 rounded-xl transition-all cursor-pointer shadow-lg shadow-[#FF2A35]/20"
+            >
+              <Download className="w-4 h-4" />
+              <span>Download QR Code</span>
+            </button>
+
             <button
               onClick={() => setShowPrintModal(true)}
               className="inline-flex items-center gap-2 bg-[#161619] hover:bg-[#1e1e22] text-[#FAFAFA] border border-[#1e1e22] font-heading font-bold text-xs uppercase tracking-wider px-4 py-2.5 rounded-xl transition-all cursor-pointer shadow-lg hover:border-[#FF2A35]/40"
             >
               <Printer className="w-4 h-4 text-[#FF2A35]" />
-              <span>Print Dojo QR Poster</span>
+              <span>Print Poster</span>
             </button>
             
             {onBackToHome && (
@@ -173,6 +268,15 @@ export default function PresenceCheckIn({ onBackToHome }: { onBackToHome?: () =>
                 <Smartphone className="w-4 h-4 text-[#FF2A35]" />
                 <span>Works on iOS & Android Cameras</span>
               </div>
+
+              <button
+                type="button"
+                onClick={handleDownloadQR}
+                className="mt-3 w-full py-2.5 bg-[#FF2A35]/10 hover:bg-[#FF2A35] text-[#FF2A35] hover:text-white border border-[#FF2A35]/30 rounded-xl font-heading font-black text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md"
+              >
+                <Download className="w-4 h-4" />
+                <span>Save QR Code Image (PNG)</span>
+              </button>
             </div>
 
             {/* Quick Link Details */}
@@ -225,8 +329,7 @@ export default function PresenceCheckIn({ onBackToHome }: { onBackToHome?: () =>
                     </label>
                     <input
                       type="text"
-                      required
-                      placeholder="e.g. Aarav Sharma"
+                      placeholder="Enter Student Full Name..."
                       value={studentNameInput}
                       onChange={(e) => setStudentNameInput(e.target.value)}
                       className="w-full bg-[#161619] border border-[#1E1E22] focus:border-[#FF2A35] rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none transition-colors"
@@ -239,7 +342,7 @@ export default function PresenceCheckIn({ onBackToHome }: { onBackToHome?: () =>
                     </label>
                     <input
                       type="text"
-                      placeholder="e.g. LKC-2026-089"
+                      placeholder="e.g. 101 or LKC-2026-089..."
                       value={studentIdInput}
                       onChange={(e) => setStudentIdInput(e.target.value)}
                       className="w-full bg-[#161619] border border-[#1E1E22] focus:border-[#FF2A35] rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none transition-colors"
@@ -274,6 +377,17 @@ export default function PresenceCheckIn({ onBackToHome }: { onBackToHome?: () =>
                   </motion.div>
                 )}
 
+                {errorMessage && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-3.5 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-xs font-semibold flex items-center gap-2"
+                  >
+                    <AlertCircle className="w-4 h-4 shrink-0 text-red-500" />
+                    <span>{errorMessage}</span>
+                  </motion.div>
+                )}
+
                 <button
                   type="submit"
                   disabled={checkingIn}
@@ -305,27 +419,35 @@ export default function PresenceCheckIn({ onBackToHome }: { onBackToHome?: () =>
               </div>
 
               <div className="space-y-2.5 max-h-64 overflow-y-auto pr-1 custom-scrollbar">
-                {recentCheckIns.map((rec) => (
-                  <div
-                    key={rec.id}
-                    className="bg-[#161619] border border-[#1E1E22] hover:border-zinc-700 p-3.5 rounded-xl flex items-center justify-between gap-3 text-xs transition-all"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold font-mono shrink-0">
-                        ✓
+                {recentCheckIns.length > 0 ? (
+                  recentCheckIns.map((rec) => (
+                    <div
+                      key={rec.id}
+                      className="bg-[#161619] border border-[#1E1E22] hover:border-zinc-700 p-3.5 rounded-xl flex items-center justify-between gap-3 text-xs transition-all"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold font-mono shrink-0">
+                          ✓
+                        </div>
+                        <div>
+                          <span className="font-bold text-white block">{rec.studentName}</span>
+                          <span className="text-[#A1A1AA] text-[11px] font-mono">{rec.studentId} • {rec.batch}</span>
+                        </div>
                       </div>
-                      <div>
-                        <span className="font-bold text-white block">{rec.studentName}</span>
-                        <span className="text-[#A1A1AA] text-[11px] font-mono">{rec.studentId} • {rec.batch}</span>
-                      </div>
-                    </div>
 
-                    <div className="text-right shrink-0">
-                      <span className="text-emerald-400 font-mono font-bold block">{rec.status}</span>
-                      <span className="text-[#A1A1AA] text-[10px] font-mono">{rec.timestamp}</span>
+                      <div className="text-right shrink-0">
+                        <span className="text-emerald-400 font-mono font-bold block">{rec.status}</span>
+                        <span className="text-[#A1A1AA] text-[10px] font-mono">{rec.timestamp}</span>
+                      </div>
                     </div>
+                  ))
+                ) : (
+                  <div className="py-8 text-center border border-dashed border-zinc-800 rounded-xl space-y-2 text-zinc-500 text-xs">
+                    <CheckCircle2 className="w-8 h-8 text-zinc-700 mx-auto" />
+                    <p className="font-semibold text-zinc-400">No attendance check-ins logged yet today.</p>
+                    <p className="text-[11px] text-zinc-600">Scanned QR check-ins and form submissions will sync here in real time from Firestore.</p>
                   </div>
-                ))}
+                )}
               </div>
             </div>
 
