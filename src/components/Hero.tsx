@@ -123,7 +123,7 @@ export default function Hero({ onNavigate }: HeroProps) {
           >
             {heroVideoUrl && <source src={heroVideoUrl} type="video/mp4" />}
             {/* Primary cloud hosted direct video source supplied by user */}
-            <source src="https://res.cloudinary.com/dlzdagymx/video/upload/v1779342942/lions-karate-website-media/m3hfwi7bsfujadlsy5sl.mp4" type="video/mp4" />
+            <source src="https://res.cloudinary.com/dlzdagymx/video/upload/v1786454954/0810_sfhphm.mp4" type="video/mp4" />
             {/* Direct reference to platform local paths if the user uploaded it to the project folder */}
             <source src="/hero.mp4" type="video/mp4" />
             <source src="/video.mp4" type="video/mp4" />
