@@ -11,8 +11,9 @@ interface HeroProps {
 }
 
 export default function Hero({ onNavigate }: HeroProps) {
-  const [videoMounted, setVideoMounted] = useState(false);
-  const [heroVideoUrl, setHeroVideoUrl] = useState<string>('');
+  const PRIMARY_HERO_VIDEO = "https://res.cloudinary.com/dlzdagymx/video/upload/v1786454954/0810_sfhphm.mp4";
+  const [videoMounted, setVideoMounted] = useState(true);
+  const [heroVideoUrl, setHeroVideoUrl] = useState<string>(PRIMARY_HERO_VIDEO);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
@@ -118,22 +119,15 @@ export default function Hero({ onNavigate }: HeroProps) {
             playsInline
             preload="auto"
             webkit-playsinline="true"
-            key={heroVideoUrl} // Re-bind node on link adjustments
+            key={PRIMARY_HERO_VIDEO}
             className="w-full h-full object-cover object-center absolute inset-0 transition-opacity duration-700 opacity-85"
           >
-            {heroVideoUrl && <source src={heroVideoUrl} type="video/mp4" />}
-            {/* Primary cloud hosted direct video source supplied by user */}
-            <source src="https://res.cloudinary.com/dlzdagymx/video/upload/v1786454954/0810_sfhphm.mp4" type="video/mp4" />
-            {/* Direct reference to platform local paths if the user uploaded it to the project folder */}
+            {/* Primary Cloudinary Video requested by user */}
+            <source src={PRIMARY_HERO_VIDEO} type="video/mp4" />
+            {heroVideoUrl && heroVideoUrl !== PRIMARY_HERO_VIDEO && (
+              <source src={heroVideoUrl} type="video/mp4" />
+            )}
             <source src="/hero.mp4" type="video/mp4" />
-            <source src="/video.mp4" type="video/mp4" />
-            <source src="/hero-video.mp4" type="video/mp4" />
-            <source src="/hero_video.mp4" type="video/mp4" />
-            <source src="hero.mp4" type="video/mp4" />
-            <source src="video.mp4" type="video/mp4" />
-            
-            {/* Premium high-quality Karate training loop video fallback (played in user's browser) */}
-            <source src="https://assets.mixkit.co/videos/preview/mixkit-karate-fighter-in-slow-motion-40342-large.mp4" type="video/mp4" />
           </video>
         )}
       </div>
