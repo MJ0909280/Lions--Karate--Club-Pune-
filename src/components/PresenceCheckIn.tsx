@@ -101,11 +101,10 @@ export default function PresenceCheckIn({ onBackToHome }: { onBackToHome?: () =>
         console.warn('Firestore lookup warning:', dbQueryErr);
       }
 
-      // If student ID was not found in database records
+      // If student ID was not matched in existing collections, fallback gracefully to Student ID
       if (!foundInDb) {
-        setErrorMessage(`Student ID "${rawId}" is not found in Lions Karate Club records. Please verify your Roll ID.`);
-        setCheckingIn(false);
-        return;
+        matchedName = `Student (${rawId})`;
+        matchedId = rawId;
       }
 
       // Save attendance log directly into Firestore
