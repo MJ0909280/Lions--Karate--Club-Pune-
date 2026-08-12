@@ -210,16 +210,16 @@ export default function Navbar({ currentView, studentPortalTab, onNavigate }: Na
           {/* Mobile hamburger menu toggle with increased accessibility & custom morph indicator */}
           <div className="flex lg:hidden items-center space-x-3">
             <button
-              onClick={() => onNavigate('attendance')}
-              aria-label="Attendance Portal"
-              title="Quick Attendance Tracker"
-              className={`p-2.5 rounded-lg border focus:outline-none focus:ring-2 focus:ring-yellow-500 transition-colors ${
-                currentView === 'student-portal' && studentPortalTab === 'attendance'
-                  ? 'bg-yellow-500/10 border-yellow-500 text-yellow-500'
-                  : 'border-zinc-800 bg-slate-900/40 text-zinc-400 hover:text-yellow-400 hover:border-zinc-500'
+              onClick={() => onNavigate('presence-checkin')}
+              aria-label="Daily Class Attendance QR Portal"
+              title="Daily Class Attendance QR"
+              className={`p-2.5 rounded-lg border focus:outline-none focus:ring-2 focus:ring-[#FF2A35] transition-colors ${
+                currentView === 'presence-checkin'
+                  ? 'bg-[#FF2A35]/20 border-[#FF2A35] text-[#FF2A35]'
+                  : 'border-zinc-800 bg-slate-900/40 text-zinc-400 hover:text-[#FF2A35] hover:border-zinc-500'
               }`}
             >
-              <Calendar className="w-4 h-4 text-yellow-500" />
+              <QrCode className="w-4 h-4 text-[#FF2A35]" />
             </button>
 
             <button
@@ -314,6 +314,23 @@ export default function Navbar({ currentView, studentPortalTab, onNavigate }: Na
                     BEGIN YOUR JOURNEY
                   </span>
                   
+                  <motion.button
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.14 }}
+                    onClick={() => {
+                      setIsOpen(false);
+                      onNavigate('presence-checkin');
+                    }}
+                    className={`w-full font-heading font-black text-xs uppercase tracking-widest py-3 px-4 rounded-xl text-center shadow-lg block cursor-pointer transition-all hover:scale-[1.01] ${
+                      currentView === 'presence-checkin'
+                        ? 'bg-[#FF2A35] text-white border border-red-500 shadow-red-500/20'
+                        : 'bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20'
+                    }`}
+                  >
+                    📲 DAILY CLASS ATTENDANCE (QR)
+                  </motion.button>
+
                   <motion.button
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
