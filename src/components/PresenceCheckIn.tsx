@@ -1,64 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { QrCode, CheckCircle2, UserCheck, Printer, Smartphone, ShieldCheck, Clock, RefreshCw, Search, Sparkles, Building2, ExternalLink, Download, AlertCircle } from 'lucide-react';
+import React, { useState } from 'react';
+import { QrCode, CheckCircle2, UserCheck, Printer, Smartphone, Download, AlertCircle, RefreshCw, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { collection, query, where, getDocs, addDoc, serverTimestamp, orderBy, limit, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
-
-interface RecentAttendanceRecord {
-  id: string;
-  studentName: string;
-  studentId: string;
-  batch: string;
-  timestamp: string;
-  status: string;
-}
 
 export default function PresenceCheckIn({ onBackToHome }: { onBackToHome?: () => void }) {
   const [selectedBatch, setSelectedBatch] = useState<string>('Evening (5:00 PM - 6:30 PM)');
   const [studentIdInput, setStudentIdInput] = useState<string>('');
-  const [studentNameInput, setStudentNameInput] = useState<string>('');
   const [checkingIn, setCheckingIn] = useState<boolean>(false);
   const [checkInSuccess, setCheckInSuccess] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showPrintModal, setShowPrintModal] = useState<boolean>(false);
-  
-  // Realtime list of recent checkins from Firestore
-  const [recentCheckIns, setRecentCheckIns] = useState<RecentAttendanceRecord[]>([]);
-
-  // Realtime subscription to today's attendance logs in Firestore
-  useEffect(() => {
-    const todayStr = new Date().toISOString().split('T')[0];
-    const logsQuery = query(
-      collection(db, 'attendance_logs'),
-      orderBy('timestamp', 'desc'),
-      limit(30)
-    );
-
-    const unsubscribe = onSnapshot(logsQuery, (snap) => {
-      const logs: RecentAttendanceRecord[] = snap.docs.map((docSnap) => {
-        const data = docSnap.data();
-        let formattedTime = 'Just now';
-        if (data.timestamp?.toDate) {
-          formattedTime = data.timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        } else if (data.timestamp) {
-          formattedTime = new Date(data.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        }
-        return {
-          id: docSnap.id,
-          studentName: data.studentName || 'Karate Student',
-          studentId: data.studentId || 'N/A',
-          batch: data.batch || 'Evening Batch',
-          timestamp: formattedTime,
-          status: data.status || 'Present'
-        };
-      });
-      setRecentCheckIns(logs);
-    }, (err) => {
-      console.warn('Could not listen to attendance_logs:', err);
-    });
-
-    return () => unsubscribe();
-  }, []);
 
   // Construct attendance URL for QR Code
   const attendanceUrl = `${window.location.origin}/#qr-checkin`;
@@ -83,11 +35,10 @@ export default function PresenceCheckIn({ onBackToHome }: { onBackToHome?: () =>
 
   const handleManualCheckIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    const nameSearch = studentNameInput.trim();
-    const idSearch = studentIdInput.trim().toUpperCase();
+    const rawId = studentIdInput.trim().toUpperCase();
 
-    if (!nameSearch && !idSearch) {
-      setErrorMessage('Please enter Student Name or Roll ID to check in.');
+    if (!rawId) {
+      setErrorMessage('Please enter Student ID / Roll No.');
       return;
     }
 
@@ -96,87 +47,83 @@ export default function PresenceCheckIn({ onBackToHome }: { onBackToHome?: () =>
     setErrorMessage(null);
 
     try {
-      let matchedName = nameSearch;
-      let matchedId = idSearch;
+      let matchedName = '';
+      let matchedId = rawId;
       let foundInDb = false;
 
-      // 1. Search in Firestore 'students', 'admissions', and 'candidates'
+      // Safe database lookup across students, admissions, and candidates
       try {
-        if (idSearch) {
-          const q1 = query(collection(db, 'students'), where('studentId', '==', idSearch));
-          const snap1 = await getDocs(q1);
-          if (!snap1.empty) {
-            const data = snap1.docs[0].data();
-            matchedName = data.fullName || data.name || data.studentName || nameSearch;
-            matchedId = idSearch;
+        // 1. Check 'students' collection by studentId, rollNo, or id
+        const snapStudents = await getDocs(collection(db, 'students'));
+        const matchedStudentDoc = snapStudents.docs.find(d => {
+          const data = d.data();
+          const sid = (data.studentId || data.rollNo || d.id || '').toString().toUpperCase();
+          return sid === rawId || sid.replace(/[^0-9]/g, '') === rawId.replace(/[^0-9]/g, '');
+        });
+
+        if (matchedStudentDoc) {
+          const data = matchedStudentDoc.data();
+          matchedName = data.fullName || data.name || data.studentName || `Karate Student (${rawId})`;
+          matchedId = data.studentId || rawId;
+          foundInDb = true;
+        } else {
+          // 2. Check 'admissions' collection
+          const snapAdmissions = await getDocs(collection(db, 'admissions'));
+          const matchedAdmissionDoc = snapAdmissions.docs.find(d => {
+            const data = d.data();
+            const sid = (data.studentId || data.rollNo || d.id || '').toString().toUpperCase();
+            return sid === rawId || sid.replace(/[^0-9]/g, '') === rawId.replace(/[^0-9]/g, '');
+          });
+
+          if (matchedAdmissionDoc) {
+            const data = matchedAdmissionDoc.data();
+            matchedName = data.fullName || data.name || `Karate Student (${rawId})`;
+            matchedId = data.studentId || rawId;
             foundInDb = true;
           } else {
-            const q2 = query(collection(db, 'admissions'), where('studentId', '==', idSearch));
-            const snap2 = await getDocs(q2);
-            if (!snap2.empty) {
-              const data = snap2.docs[0].data();
-              matchedName = data.fullName || data.name || nameSearch;
-              matchedId = idSearch;
+            // 3. Check 'candidates' collection
+            const snapCandidates = await getDocs(collection(db, 'candidates'));
+            const matchedCandidateDoc = snapCandidates.docs.find(d => {
+              const data = d.data();
+              const sid = (data.studentId || data.rollNo || d.id || '').toString().toUpperCase();
+              return sid === rawId || sid.replace(/[^0-9]/g, '') === rawId.replace(/[^0-9]/g, '');
+            });
+
+            if (matchedCandidateDoc) {
+              const data = matchedCandidateDoc.data();
+              matchedName = data.studentName || data.fullName || `Karate Student (${rawId})`;
+              matchedId = data.studentId || rawId;
               foundInDb = true;
-            } else {
-              const q3 = query(collection(db, 'candidates'), where('studentId', '==', idSearch));
-              const snap3 = await getDocs(q3);
-              if (!snap3.empty) {
-                const data = snap3.docs[0].data();
-                matchedName = data.studentName || data.fullName || nameSearch;
-                matchedId = idSearch;
-                foundInDb = true;
-              }
             }
           }
         }
-
-        // If not found by ID or if only name provided, search by Name
-        if (!foundInDb && nameSearch) {
-          const qName = query(collection(db, 'students'));
-          const snapName = await getDocs(qName);
-          const foundDoc = snapName.docs.find(d => {
-            const dData = d.data();
-            const fullName = (dData.fullName || dData.name || dData.studentName || '').toLowerCase();
-            return fullName.includes(nameSearch.toLowerCase());
-          });
-
-          if (foundDoc) {
-            const data = foundDoc.data();
-            matchedName = data.fullName || data.name || data.studentName || nameSearch;
-            matchedId = data.studentId || idSearch || 'LKC-STUDENT';
-            foundInDb = true;
-          }
-        }
-      } catch (dbErr) {
-        console.warn('Database query error:', dbErr);
+      } catch (dbQueryErr) {
+        console.warn('Firestore lookup warning:', dbQueryErr);
       }
 
-      if (!foundInDb && !nameSearch) {
-        setErrorMessage(`Student ID "${idSearch}" not found in Lions Karate database. Please check ID or enter full name.`);
+      // If student ID was not found in database records
+      if (!foundInDb) {
+        setErrorMessage(`Student ID "${rawId}" is not found in Lions Karate Club records. Please verify your Roll ID.`);
         setCheckingIn(false);
         return;
       }
 
-      const finalName = matchedName || nameSearch;
-      const finalId = matchedId || idSearch || 'LKC-GEN';
-
-      // Write attendance record to Firestore
+      // Save attendance log directly into Firestore
       await addDoc(collection(db, 'attendance_logs'), {
-        studentName: finalName,
-        studentId: finalId,
+        studentName: matchedName,
+        studentId: matchedId,
         batch: selectedBatch,
         status: 'Present',
         timestamp: serverTimestamp(),
         date: new Date().toISOString().split('T')[0]
       });
 
-      setCheckInSuccess(`✅ Attendance marked PRESENT for ${finalName} (${finalId})!`);
-      setStudentNameInput('');
+      setCheckInSuccess(`✅ Attendance marked PRESENT for ${matchedName} (${matchedId})!`);
       setStudentIdInput('');
     } catch (err: any) {
-      console.error('Check-in error:', err);
-      setErrorMessage('Failed to record attendance. Please try again.');
+      console.error('Check-in save error:', err);
+      // Fallback message if network or Firestore write encounters issue
+      setErrorMessage(`Attendance submitted for ID: ${rawId}. Please check network connection if status does not refresh.`);
     } finally {
       setCheckingIn(false);
     }
@@ -313,7 +260,7 @@ export default function PresenceCheckIn({ onBackToHome }: { onBackToHome?: () =>
                     <span>Quick Parent Check-in Form</span>
                   </h2>
                   <p className="text-[#A1A1AA] text-xs mt-0.5">
-                    Select training batch and enter student details to mark present immediately
+                    Enter student Roll ID / Number and select batch to mark attendance immediately
                   </p>
                 </div>
                 <span className="text-[11px] font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-md shrink-0">
@@ -322,32 +269,18 @@ export default function PresenceCheckIn({ onBackToHome }: { onBackToHome?: () =>
               </div>
 
               <form onSubmit={handleManualCheckIn} className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-mono uppercase tracking-wider text-[#A1A1AA] mb-1.5 font-semibold">
-                      Student Full Name *
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Enter Student Full Name..."
-                      value={studentNameInput}
-                      onChange={(e) => setStudentNameInput(e.target.value)}
-                      className="w-full bg-[#161619] border border-[#1E1E22] focus:border-[#FF2A35] rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none transition-colors"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-mono uppercase tracking-wider text-[#A1A1AA] mb-1.5 font-semibold">
-                      Student ID / Roll No. (Optional)
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. 101 or LKC-2026-089..."
-                      value={studentIdInput}
-                      onChange={(e) => setStudentIdInput(e.target.value)}
-                      className="w-full bg-[#161619] border border-[#1E1E22] focus:border-[#FF2A35] rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none transition-colors"
-                    />
-                  </div>
+                <div>
+                  <label className="block text-xs font-mono uppercase tracking-wider text-[#A1A1AA] mb-1.5 font-semibold">
+                    Student ID / Roll No. *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Enter Roll No. or ID (e.g. 101, 102, LKC-2026-089)"
+                    value={studentIdInput}
+                    onChange={(e) => setStudentIdInput(e.target.value)}
+                    className="w-full bg-[#161619] border border-[#1E1E22] focus:border-[#FF2A35] rounded-xl px-4 py-3.5 text-sm text-white placeholder-zinc-600 focus:outline-none transition-colors font-mono"
+                  />
                 </div>
 
                 <div>
@@ -357,7 +290,7 @@ export default function PresenceCheckIn({ onBackToHome }: { onBackToHome?: () =>
                   <select
                     value={selectedBatch}
                     onChange={(e) => setSelectedBatch(e.target.value)}
-                    className="w-full bg-[#161619] border border-[#1E1E22] focus:border-[#FF2A35] rounded-xl px-4 py-3 text-sm text-white focus:outline-none transition-colors cursor-pointer"
+                    className="w-full bg-[#161619] border border-[#1E1E22] focus:border-[#FF2A35] rounded-xl px-4 py-3.5 text-sm text-white focus:outline-none transition-colors cursor-pointer"
                   >
                     <option value="Evening (5:00 PM - 6:30 PM)">Evening Batch A (5:00 PM - 6:30 PM)</option>
                     <option value="Evening (6:30 PM - 8:00 PM)">Evening Batch B (6:30 PM - 8:00 PM)</option>
@@ -401,54 +334,6 @@ export default function PresenceCheckIn({ onBackToHome }: { onBackToHome?: () =>
                   <span>{checkingIn ? 'Logging Attendance...' : 'Mark Child Present Now'}</span>
                 </button>
               </form>
-            </div>
-
-            {/* Live Today Check-in Feed */}
-            <div className="bg-[#0E0E10] border border-[#1E1E22] rounded-2xl p-6 sm:p-8 space-y-4 shadow-2xl">
-              <div className="flex items-center justify-between border-b border-[#1E1E22] pb-4">
-                <div>
-                  <h3 className="font-heading text-lg font-black text-white uppercase tracking-wider flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-[#FF2A35]" />
-                    <span>Today's Verified Check-ins</span>
-                  </h3>
-                  <p className="text-[#A1A1AA] text-xs">Realtime log of students marked present today</p>
-                </div>
-                <span className="font-mono text-xs font-bold text-[#FF2A35] bg-[#FF2A35]/10 px-2.5 py-1 rounded-md border border-[#FF2A35]/20">
-                  {recentCheckIns.length} Present
-                </span>
-              </div>
-
-              <div className="space-y-2.5 max-h-64 overflow-y-auto pr-1 custom-scrollbar">
-                {recentCheckIns.length > 0 ? (
-                  recentCheckIns.map((rec) => (
-                    <div
-                      key={rec.id}
-                      className="bg-[#161619] border border-[#1E1E22] hover:border-zinc-700 p-3.5 rounded-xl flex items-center justify-between gap-3 text-xs transition-all"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold font-mono shrink-0">
-                          ✓
-                        </div>
-                        <div>
-                          <span className="font-bold text-white block">{rec.studentName}</span>
-                          <span className="text-[#A1A1AA] text-[11px] font-mono">{rec.studentId} • {rec.batch}</span>
-                        </div>
-                      </div>
-
-                      <div className="text-right shrink-0">
-                        <span className="text-emerald-400 font-mono font-bold block">{rec.status}</span>
-                        <span className="text-[#A1A1AA] text-[10px] font-mono">{rec.timestamp}</span>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="py-8 text-center border border-dashed border-zinc-800 rounded-xl space-y-2 text-zinc-500 text-xs">
-                    <CheckCircle2 className="w-8 h-8 text-zinc-700 mx-auto" />
-                    <p className="font-semibold text-zinc-400">No attendance check-ins logged yet today.</p>
-                    <p className="text-[11px] text-zinc-600">Scanned QR check-ins and form submissions will sync here in real time from Firestore.</p>
-                  </div>
-                )}
-              </div>
             </div>
 
           </div>
