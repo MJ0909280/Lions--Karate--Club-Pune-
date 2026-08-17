@@ -1,6 +1,6 @@
-import { initializeApp } from 'firebase/app';
+import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { initializeFirestore, doc, getDoc, runTransaction, collection, query, where, getDocs, limit, enableIndexedDbPersistence } from 'firebase/firestore';
+import { initializeFirestore, doc, getDoc, runTransaction, collection, query, where, getDocs, limit } from 'firebase/firestore';
 
 // Embedded Firebase credentials so the ZIP download & Vercel deployment work instantly
 const metaEnv = (import.meta as any).env || {};
@@ -16,33 +16,15 @@ const firebaseConfig = {
   firestoreDatabaseId: metaEnv.VITE_FIREBASE_DATABASE_ID || "ai-studio-baab1072-c05e-471a-891d-ef9f81c21754"
 };
 
-const app = initializeApp(firebaseConfig);
+const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
-// Initialize Firestore with Database ID from configuration, long polling and disabled fetch streams for iframe compatibility
+// Initialize Firestore with custom Database ID from configuration
 export const db = initializeFirestore(app, {
   experimentalForceLongPolling: true,
   useFetchStreams: false,
-  experimentalLongPollingOptions: {
-    useFetchStreams: false
-  }
 } as any, firebaseConfig.firestoreDatabaseId);
 
-// Enable offline database persistence for seamless offline app experience
-if (typeof window !== 'undefined') {
-  try {
-    enableIndexedDbPersistence(db).catch((err) => {
-      if (err.code === 'failed-precondition') {
-        console.warn('Firestore offline persistence failed: Multiple tabs open.');
-      } else if (err.code === 'unimplemented') {
-        console.warn('Firestore offline persistence failed: Browser does not support it.');
-      }
-    });
-  } catch (err) {
-    console.warn('Firestore offline persistence blocked by browser/sandbox context:', err);
-  }
-}
-
-export const auth = getAuth();
+export const auth = getAuth(app);
 
 export async function checkFirestoreConnection(): Promise<boolean> {
   if (typeof window !== 'undefined' && typeof navigator !== 'undefined' && !navigator.onLine) {
@@ -137,7 +119,6 @@ export async function triggerWhatsAppNotification(type: 'admission' | 'inquiry',
   parentName?: string;
 }) {
   try {
-    const { getDoc, doc } = await import('firebase/firestore');
     const snap = await getDoc(doc(db, 'settings', 'whatsapp'));
     if (!snap.exists()) {
       console.log("WhatsApp notifications: No configurations loaded from settings/whatsapp.");

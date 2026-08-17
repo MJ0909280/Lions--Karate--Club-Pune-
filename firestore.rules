@@ -65,6 +65,24 @@ service cloud.firestore {
       allow read, write: if true;
     }
 
+    // Attendance logs collection rules (for parent QR check-in)
+    match /attendance_logs/{logId} {
+      allow read, create: if true;
+      allow update, delete: if isAdmin();
+    }
+
+    // Students collection rules
+    match /students/{studentId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Candidates collection rules
+    match /candidates/{candidateId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     // SEO Indexing logs collection rules
     match /seo_indexing_logs/{logId} {
       allow create: if true;

@@ -11,8 +11,9 @@ import Hero from './components/Hero';
 import DojoExplorer from './components/DojoExplorer';
 import SEOConfig from './components/SEOConfig';
 import WhatsAppFAB from './components/WhatsAppFAB';
+import TrailerOverlay from './components/TrailerOverlay';
 
-// Secondary views code-split with React.lazy to reduce initial bundle size by ~80%
+// Secondary views code-split with React.lazy to reduce initial bundle size
 const AdmissionForm = lazy(() => import('./components/AdmissionForm'));
 const IDCard = lazy(() => import('./components/IDCard'));
 const AdminPanel = lazy(() => import('./components/AdminPanel'));
@@ -20,7 +21,6 @@ const StudentPortal = lazy(() => import('./components/StudentPortal'));
 const ExamCheckIn = lazy(() => import('./components/ExamCheckIn'));
 const PresenceCheckIn = lazy(() => import('./components/PresenceCheckIn'));
 const DojoMapEmbed = lazy(() => import('./components/DojoMapEmbed'));
-const TrailerOverlay = lazy(() => import('./components/TrailerOverlay'));
 
 import { Award, ShieldAlert, ShieldCheck, ArrowLeft, RefreshCw, Star, MapPin, Instagram, Youtube, MessageCircle } from 'lucide-react';
 
@@ -180,12 +180,10 @@ export default function App() {
       
       {/* Immersive Trailer Overlay */}
       {!trailerCompleted && (
-        <Suspense fallback={null}>
-          <TrailerOverlay onEnter={() => {
-            setTrailerCompleted(true);
-            safeSessionStorage.setItem('dojo_trailer_entered', 'true');
-          }} />
-        </Suspense>
+        <TrailerOverlay onEnter={() => {
+          setTrailerCompleted(true);
+          safeSessionStorage.setItem('dojo_trailer_entered', 'true');
+        }} />
       )}
 
       {/* Interactive mouse follow cursor glow */}
